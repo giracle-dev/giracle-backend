@@ -133,8 +133,3 @@ export const user = new Elysia({ prefix: "/user" })
       cookie: "optionalSession",
     },
   )
-  .use(getUserId)
-  .get("/profile", ({ username }) => ({
-    success: true,
-    username,
-  }));
