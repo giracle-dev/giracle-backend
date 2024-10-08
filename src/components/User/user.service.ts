@@ -1,18 +1,14 @@
 import { Elysia, t } from "elysia";
 
 export const userService = new Elysia({ name: "user/service" })
-  .state({
-    user: {} as Record<string, string>,
-    session: {} as Record<number, string>,
-  })
   .model({
     signIn: t.Object({
       username: t.String({ minLength: 1 }),
-      password: t.String({ minLength: 8 }),
+      password: t.String({ minLength: 4 }),
     }),
     session: t.Cookie(
       {
-        token: t.Number(),
+        token: t.String(),
       },
     ),
   })
@@ -24,16 +20,8 @@ export const userService = new Elysia({ name: "user/service" })
     isSignIn(enabled: true) {
       if (!enabled) return;
 
-      onBeforeHandle(({ error, cookie: { token }, store: { session } }) => {
+      onBeforeHandle(({ error, cookie: { token } }) => {
         if (!token.value)
-          return error(401, {
-            success: false,
-            message: "Unauthorized",
-          });
-
-        const username = session[token.value as unknown as number];
-
-        if (!username)
           return error(401, {
             success: false,
             message: "Unauthorized",
@@ -41,14 +29,3 @@ export const userService = new Elysia({ name: "user/service" })
       });
     },
   }));
-
-export const getUserId = new Elysia()
-  .use(userService)
-  .guard({
-    isSignIn: true,
-    cookie: "session",
-  })
-  .resolve(({ store: { session }, cookie: { token } }) => ({
-    username: session[token.value],
-  }))
-  .as("plugin");

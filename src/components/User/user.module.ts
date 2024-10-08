@@ -51,32 +51,72 @@ export const user = new Elysia({ prefix: "/user" })
   .post(
     "/sign-in",
     async ({
-      store: { user, session },
       error,
       body: { username, password },
       cookie: { token },
     }) => {
-      if (
-        !user[username] ||
-        !(await Bun.password.verify(password, user[username]))
-      )
+      //ユーザー情報取得
+      const user = await db.user.findUnique({
+        where: { name: username },
+        include: {
+          password: true,
+        }
+      });
+
+      //ユーザーが存在しない場合
+      if (!user) {
         return error(400, {
           success: false,
-          message: "Invalid username or password",
+          message: "Auth info is incorrect",
         });
+      }
+      //パスワードが設定されていない場合
+      if (!user.password) {
+        return error(400, {
+          success: false,
+          message: "Interlal error",
+        });
+      }
 
-      const key = crypto.getRandomValues(new Uint32Array(1))[0];
-      session[key] = username;
-      token.value = key;
+      //パスワードのハッシュ化
+      const passwordCheckResult = await Bun.password.verify(
+        password + user.password?.salt,
+        user.password.password
+      );
+
+      //パスワードが一致しない場合
+      if (!passwordCheckResult) {
+        return error(400, {
+          success: false,
+          message: "Auth info is incorrect",
+        });
+      }
+
+      //トークンを生成
+      const tokenGenerated = await db.token.create({
+        data: {
+          token: crypto.randomBytes(16).toString('hex'),
+          user: {
+            connect: {
+              name: username
+            }
+          }
+        }
+      });
+      //console.log("user.module :: /sign-in :: tokenGenerated", tokenGenerated);
+      //クッキーに格納
+      token.value = tokenGenerated.token;
+      token.httpOnly = true;
+
+      //{"username": "test", "password": "test"}
 
       return {
         success: true,
-        message: `Signed in as ${username}`,
+        message: `Signed in as ${username}`
       };
     },
     {
-      body: "signIn",
-      cookie: "optionalSession",
+      body: "signIn"
     },
   )
   .get(
