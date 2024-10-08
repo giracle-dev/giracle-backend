@@ -11,19 +11,19 @@ datasource db {
 }
 
 model User {
-  id    String     @id @default(uuid())
-  name  String?
+  id               String    @id @default(uuid())
+  name             String?   @unique
   selfIntroduction String
-  posts Post[]
-  password Password?
+  posts            Post[]
+  password         Password?
 }
 
 model Password {
-  id Int @id @default(autoincrement())
+  id       Int    @id @default(autoincrement())
   password String
-  salt String
-  user User @relation(fields: [userId], references: [id])
-  userId String @unique
+  salt     String
+  user     User   @relation(fields: [userId], references: [id])
+  userId   String @unique
 }
 
 model Post {
