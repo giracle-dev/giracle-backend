@@ -28,10 +28,13 @@ model Password {
 }
 
 model Token {
-  id     Int    @id @default(autoincrement())
-  token  String
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
+  id        Int      @id @default(autoincrement())
+  token     String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Post {
