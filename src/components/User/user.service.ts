@@ -15,17 +15,5 @@ export const userService = new Elysia({ name: "user/service" })
   .model((model) => ({
     ...model,
     optionalSession: t.Optional(model.session),
-  }))
-  .macro(({ onBeforeHandle }) => ({
-    isSignIn(enabled: true) {
-      if (!enabled) return;
-
-      onBeforeHandle(({ error, cookie: { token } }) => {
-        if (!token.value)
-          return error(401, {
-            success: false,
-            message: "Unauthorized",
-          });
-      });
-    },
-  }));
+  })
+);
