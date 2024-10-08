@@ -116,7 +116,8 @@ export const user = new Elysia({ prefix: "/user" })
       };
     },
     {
-      body: "signIn"
+      body: "signIn",
+      cookie: t.Cookie({ token: t.Optional(t.String()) }),
     },
   )
   .get(
