@@ -7,7 +7,8 @@
   },
   "dependencies": {
     "@elysiajs/swagger": "^1.1.5",
-    "elysia": "latest"
+    "elysia": "latest",
+    "prisma": "^5.20.0"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.3",
