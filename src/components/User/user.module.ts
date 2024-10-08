@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import Elysia from "elysia";
-import { userService, getUserId } from "./user.service";
+import Elysia, { t } from "elysia";
+import { userService } from "./user.service";
 import crypto from "node:crypto";
 
 const db = new PrismaClient();
@@ -121,7 +121,13 @@ export const user = new Elysia({ prefix: "/user" })
   )
   .get(
     "/sign-out",
-    ({ cookie: { token } }) => {
+    async ({ cookie: { token } }) => {
+      await db.token.delete({
+        where: {
+          token: token.value
+        }
+      });
+
       token.remove();
 
       return {
@@ -130,6 +136,6 @@ export const user = new Elysia({ prefix: "/user" })
       };
     },
     {
-      cookie: "optionalSession",
+      cookie: t.Cookie({ token: t.String() }),
     },
   )
