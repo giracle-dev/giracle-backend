@@ -16,6 +16,7 @@ model User {
   selfIntroduction String
   posts            Post[]
   password         Password?
+  Token            Token[]
 }
 
 model Password {
@@ -24,6 +25,13 @@ model Password {
   salt     String
   user     User   @relation(fields: [userId], references: [id])
   userId   String @unique
+}
+
+model Token {
+  id     Int    @id @default(autoincrement())
+  token  String
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
 }
 
 model Post {
