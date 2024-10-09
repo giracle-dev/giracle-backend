@@ -1,7 +1,7 @@
+import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { t } from "elysia";
 import { userService } from "./user.service";
-import crypto from "node:crypto";
 
 const db = new PrismaClient();
 
@@ -21,7 +21,7 @@ export const user = new Elysia({ prefix: "/user" })
       }
 
       //ソルト生成、パスワードのハッシュ化
-      const salt = crypto.randomBytes(16).toString('hex');
+      const salt = crypto.randomBytes(16).toString("hex");
       const passwordHashed = await Bun.password.hash(password + salt);
       //DBへユーザー情報を登録
       await db.user.create({
@@ -31,9 +31,9 @@ export const user = new Elysia({ prefix: "/user" })
           password: {
             create: {
               password: passwordHashed,
-              salt: salt
-            }
-          }
+              salt: salt,
+            },
+          },
         },
       });
 
@@ -50,17 +50,13 @@ export const user = new Elysia({ prefix: "/user" })
   )
   .post(
     "/sign-in",
-    async ({
-      error,
-      body: { username, password },
-      cookie: { token },
-    }) => {
+    async ({ error, body: { username, password }, cookie: { token } }) => {
       //ユーザー情報取得
       const user = await db.user.findUnique({
         where: { name: username },
         include: {
           password: true,
-        }
+        },
       });
 
       //ユーザーが存在しない場合
@@ -81,7 +77,7 @@ export const user = new Elysia({ prefix: "/user" })
       //パスワードのハッシュ化
       const passwordCheckResult = await Bun.password.verify(
         password + user.password?.salt,
-        user.password.password
+        user.password.password,
       );
 
       //パスワードが一致しない場合
@@ -95,13 +91,13 @@ export const user = new Elysia({ prefix: "/user" })
       //トークンを生成
       const tokenGenerated = await db.token.create({
         data: {
-          token: crypto.randomBytes(16).toString('hex'),
+          token: crypto.randomBytes(16).toString("hex"),
           user: {
             connect: {
-              name: username
-            }
-          }
-        }
+              name: username,
+            },
+          },
+        },
       });
       //console.log("user.module :: /sign-in :: tokenGenerated", tokenGenerated);
       //クッキーに格納
@@ -112,7 +108,7 @@ export const user = new Elysia({ prefix: "/user" })
 
       return {
         success: true,
-        message: `Signed in as ${username}`
+        message: `Signed in as ${username}`,
       };
     },
     {
@@ -125,8 +121,8 @@ export const user = new Elysia({ prefix: "/user" })
     async ({ cookie: { token } }) => {
       await db.token.delete({
         where: {
-          token: token.value
-        }
+          token: token.value,
+        },
       });
 
       token.remove();
@@ -139,4 +135,4 @@ export const user = new Elysia({ prefix: "/user" })
     {
       cookie: t.Cookie({ token: t.String() }),
     },
-  )
+  );
