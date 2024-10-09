@@ -3,7 +3,7 @@ import { swagger } from '@elysiajs/swagger'
 
 import { user } from './components/User/user.module'
 
-const app = new Elysia()
+export const app = new Elysia()
   .use(swagger())
   .onError(({ error, code }) => {
     if (code === 'NOT_FOUND') return 'Not Found :('
