@@ -12,18 +12,6 @@ Bun.env.API_DATABASE_URL = "file:./test.db";
 execSync("npx prisma db push", { stdio: "inherit" });
 
 describe("auth", async () => {
-  it("reponse test", async () => {
-    const appTEMP = new Elysia().get("/", () => "hi");
-
-    const response = await appTEMP
-      .handle(new Request("http://localhost"))
-      .then((res) => res.text());
-
-    console.log("auth.test :: reponse test : response", response);
-
-    expect(response).toBe("hi");
-  });
-
   //インスタンス生成
   const app = new Elysia().use(user);
   //テスト用DBインスタンス生成
