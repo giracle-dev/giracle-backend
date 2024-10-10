@@ -14,6 +14,7 @@ model User {
   password         Password?
   posts            Post[]
   Token            Token[]
+  Channel          Channel[]
 }
 
 model Password {
@@ -32,6 +33,14 @@ model Token {
   user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
+}
+
+model Channel {
+  id            String @id @default(uuid())
+  name          String @unique
+  description   String
+  createdUserId String
+  user          User   @relation(fields: [createdUserId], references: [id])
 }
 
 model Post {
