@@ -15,12 +15,10 @@ describe("channel", async () => {
   const app = new Elysia()
     .use(user)
     .use(channel);
-  //テスト用DBインスタンス生成
-  const dbTest = new PrismaClient({ datasources: { db: { url: "file:./test.db" } } });
-  //DBのマイグレーション
-  execSync("bunx prisma db push");
 
-  let resultJson: { success: boolean; message: string };
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  let resultJson: { success: boolean; message: string, data:{[key:string]: any} };
+  let createdChannelId: string;
 
   //ここでログインして処理
   const tokenRes = await app.handle(
@@ -66,5 +64,41 @@ describe("channel", async () => {
     resultJson = await response.json();
     //console.log("auth.test :: sign-up : response", resultJson);
     expect(resultJson.message).toBe("Channel created");
+    expect(resultJson.data.channelId).toBeString();
+
+    //作成したチャンネルIDを保存
+    createdChannelId = resultJson.data.channelId;
+  });
+
+  it("channel :: delete", async () => {
+    //不正リクエストを送信
+    const responseError = await app.handle(
+      new Request("http://localhost/channel/delete", {
+        method: "PUT",
+        credentials: "include",
+        headers: { 
+          "Content-Type": "application/json",
+          "Cookie": `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({ channelId: "asdf"}),
+      }),
+    );
+    expect(responseError.ok).toBe(false);
+
+    //正しいリクエストを送信
+    const response = await app.handle(
+      new Request("http://localhost/channel/delete", {
+        method: "DELETE",
+        credentials: "include",
+        headers: { 
+          "Content-Type": "application/json",
+          "Cookie": `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({ channelId: createdChannelId }),
+      }),
+    );
+    resultJson = await response.json();
+    //console.log("channel.test : delete : response", resultJson);
+    expect(resultJson.message).toBe("Channel deleted");
   });
 });

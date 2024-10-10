@@ -10,7 +10,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   .put(
     "/create",
     async ({ body: { channelName, description }, _userId }) => {
-      await db.channel.create({
+      const newChannel = await db.channel.create({
         data: {
           name: channelName,
           description: description,
@@ -25,6 +25,9 @@ export const channel = new Elysia({ prefix: "/channel" })
       return {
         success: true,
         message: "Channel created",
+        data: {
+          channelId: newChannel.id
+        }
       };
     },
     {
@@ -32,5 +35,49 @@ export const channel = new Elysia({ prefix: "/channel" })
         channelName: t.String({ minLength: 1 }),
         description: t.Optional(t.String()),
       }),
+      _userId: t.String({ minLength: 2 }),
     },
-  );
+  )
+  .delete(
+    "/delete",
+    async ({ body: { channelId }, _userId }) => {
+      const channel = await db.channel.findUnique({
+        where: {
+          id: channelId,
+        },
+      });
+
+      //チャンネルが存在しない
+      if (channel === null) {
+        return {
+          success: false,
+          message: "Channel not found",
+        };
+      }
+
+      //チャンネルの作成者でない
+      if (channel.createdUserId !== _userId) {
+        return {
+          success: false,
+          message: "You are not the creator of this channel",
+        };
+      }
+
+      await db.channel.delete({
+        where: {
+          id: channelId,
+        },
+      });
+
+      return {
+        success: true,
+        message: "Channel deleted",
+      };
+    },
+    {
+      body: t.Object({
+        channelId: t.String(),
+      }),
+    },
+  )
+  ;
