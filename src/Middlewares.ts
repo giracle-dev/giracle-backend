@@ -3,9 +3,6 @@ import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
 
-//ユーザーIdをトークンに紐付けるためだけのMap
-const userIdPassing = new Map<string, string>();
-
 const CheckToken = new Elysia({ name: 'CheckToken' })
   .guard({
     cookie: t.Object({token: t.String()})
