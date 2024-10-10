@@ -2,11 +2,13 @@ import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { t } from "elysia";
 import { userService } from "./user.service";
+import Middlewares from "../../Middlewares";
 
 const db = new PrismaClient();
 
 export const user = new Elysia({ prefix: "/user" })
   .use(userService)
+  .use(Middlewares)
   .put(
     "/sign-up",
     async ({ body: { username, password }, error }) => {
@@ -113,6 +115,65 @@ export const user = new Elysia({ prefix: "/user" })
     {
       body: "signIn",
       cookie: t.Cookie({ token: t.Optional(t.String()) }),
+    },
+  )
+  .post(
+    "/change-password",
+    async ({ error, body:{currentPassword, newPassword}, cookie: { token } }) => {
+      //console.log("user.module :: /sign-in :: tokenGenerated", tokenGenerated);
+      //ユーザー情報取得
+      const userdata = await db.user.findFirst({
+        where: {
+          Token: {
+            some: {
+              token: token.value,
+            },
+          },
+        },
+        include: {
+          password: true,
+        },
+      });
+      //ユーザー情報、またはその中のパスワードが取得できない場合
+      if (userdata === null || userdata.password === null) {
+        return error(500, "Internal Server Error");
+      }
+
+      //現在のパスワードが正しいか確認
+      const passwordCheckResult = await Bun.password.verify(
+        currentPassword + userdata.password.salt,
+        userdata.password.password,
+      );
+      //パスワードが一致しない場合
+      if (!passwordCheckResult) {
+        return error(401, {
+          success: false,
+          message: "Current password is incorrect",
+        });
+      }
+
+      //新しいパスワードをハッシュ化してDBに保存
+      await db.password.update({
+        where: {
+          userId: userdata.id,
+        },
+        data: {
+          password: await Bun.password.hash(newPassword + userdata.password.salt),
+        },
+      });
+
+      return {
+        success: true,
+        message: "Password changed",
+      };
+    },
+    {
+      body: t.Object({
+        currentPassword: t.String({ minLength: 4 }),
+        newPassword: t.String({ minLength: 4 }),
+      }),
+      cookie: t.Cookie({ token: t.String() }),
+      checkToken: true
     },
   )
   .get(
