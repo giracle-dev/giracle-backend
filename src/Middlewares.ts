@@ -14,7 +14,7 @@ const Middlewares = new Elysia({ name: 'CheckToken' })
 
     checkToken() {
       onBeforeHandle(async (context) => {
-        console.log("CheckToken :: checkToken : cookie->", context.cookie);
+        //console.log("CheckToken :: checkToken : cookie->", context.cookie);
 
         const tokenValue = context.cookie.token.value;
         if (tokenValue === undefined) {
