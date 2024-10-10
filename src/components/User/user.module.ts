@@ -2,13 +2,13 @@ import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { t } from "elysia";
 import { userService } from "./user.service";
-import Middlewares from "../../Middlewares";
+import CheckToken from "../../Middlewares";
 
 const db = new PrismaClient();
 
 export const user = new Elysia({ prefix: "/user" })
   .use(userService)
-  .use(Middlewares)
+  .use(CheckToken)
   .put(
     "/sign-up",
     async ({ body: { username, password }, error }) => {
@@ -119,16 +119,12 @@ export const user = new Elysia({ prefix: "/user" })
   )
   .post(
     "/change-password",
-    async ({ error, body:{currentPassword, newPassword}, cookie: { token } }) => {
+    async ({ error, body:{currentPassword, newPassword}, _userId }) => {
       //console.log("user.module :: /sign-in :: tokenGenerated", tokenGenerated);
       //ユーザー情報取得
       const userdata = await db.user.findFirst({
         where: {
-          Token: {
-            some: {
-              token: token.value,
-            },
-          },
+          id: _userId,
         },
         include: {
           password: true,
@@ -173,7 +169,6 @@ export const user = new Elysia({ prefix: "/user" })
         newPassword: t.String({ minLength: 4 }),
       }),
       cookie: t.Cookie({ token: t.String() }),
-      checkToken: true
     },
   )
   .get(
@@ -197,4 +192,22 @@ export const user = new Elysia({ prefix: "/user" })
     {
       cookie: t.Cookie({ token: t.String() }),
     },
+  )
+  .get(
+    "/verify-token",
+    ({ _userId }) => {
+      //もし空ならトークンが無効
+      if (_userId === "") {
+        return {
+          success: false,
+          message: "Token is invalid",
+        };
+      }
+
+      //トークンが有効
+      return {
+        success: true,
+        message: "Token is valid",
+      };
+    }
   );

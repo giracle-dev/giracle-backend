@@ -1,37 +1,31 @@
 import { Elysia, error } from 'elysia'
 import { PrismaClient } from "@prisma/client";
-import { errorToResponse } from 'elysia/dist/handler';
 
 const db = new PrismaClient();
 
-const Middlewares = new Elysia({ name: 'CheckToken' })
-  .macro(({ onBeforeHandle }) => ({
-    logToken() {
-      onBeforeHandle((context) => {
-        console.log("CheckToken :: logToken : cookie->", context.headers)
-      });
-    },
+const CheckToken = new Elysia({ name: 'CheckToken' })
+  .derive({ as: "scoped"}, async ({ cookie: { token } }) => {
+    //クッキーが無いなら停止
+    if (token.value === undefined) {
+      return {
+        _userId: ""
+      }
+    }
 
-    checkToken() {
-      onBeforeHandle(async (context) => {
-        //console.log("CheckToken :: checkToken : cookie->", context.cookie);
+    //トークンがDBにあるか確認
+    const tokenData = await db.token.findUnique({
+      where: {
+        token: token.value
+      }
+    });
+    //トークンが無いなら停止
+    if (tokenData === null) {
+      throw error(401, "Token is invalid");
+    }
 
-        const tokenValue = context.cookie.token.value;
-        if (tokenValue === undefined) {
-          throw error(401, "Token is invalid");
-        }
+    return {
+      _userId: tokenData.userId
+    }
+  })
 
-        const tokenData = await db.token.findUnique({
-          where: {
-            token: tokenValue
-          }
-        });
-
-        if (tokenData === null) {
-          throw error(401, "Token is invalid");
-        }
-      });
-    },
-  }));
-
-export default Middlewares;
+export default CheckToken;

@@ -2,6 +2,7 @@ import { swagger } from "@elysiajs/swagger";
 import { Elysia } from "elysia";
 
 import { user } from "./components/User/user.module";
+import { channel } from "./components/Channel/channel.module";
 
 export const app = new Elysia()
   .use(swagger())
@@ -11,6 +12,7 @@ export const app = new Elysia()
     console.error(error);
   })
   .use(user)
+  .use(channel)
   .listen(3000);
 
 console.log("Server running at http://localhost:3000");
