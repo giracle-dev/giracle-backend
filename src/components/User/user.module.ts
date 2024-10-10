@@ -118,12 +118,14 @@ export const user = new Elysia({ prefix: "/user" })
   .get(
     "/sign-out",
     async ({ cookie: { token } }) => {
+      //トークン削除
       await db.token.delete({
         where: {
           token: token.value,
         },
       });
 
+      //クッキー削除
       token.remove();
 
       return {
