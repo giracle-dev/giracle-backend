@@ -20,9 +20,6 @@ describe("channel", async () => {
   //DBのマイグレーション
   execSync("bunx prisma db push");
 
-  //Prismaでuserデータにかかわるものをすべて削除
-  await dbTest.channel.deleteMany({});
-
   let resultJson: { success: boolean; message: string };
 
   //ここでログインして処理
