@@ -103,8 +103,7 @@ export const user = new Elysia({ prefix: "/user" })
       //クッキーに格納
       token.value = tokenGenerated.token;
       token.httpOnly = true;
-
-      //{"username": "test", "password": "test"}
+      token.expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 15); //15日間有効
 
       return {
         success: true,
