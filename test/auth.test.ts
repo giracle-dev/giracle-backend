@@ -7,15 +7,15 @@ import { PrismaClient } from "@prisma/client";
 import { user } from "../src/components/User/user.module";
 
 //テスト用DBのURLを設定
-Bun.env.DATABASE_URL = "file:./test.db";
-//PrismaでスキーマからDBへプッシュしてテストで使えるようにする
-execSync("npx prisma db push", { stdio: "inherit" });
+//Bun.env.DATABASE_URL = "file:./test.db";
 
 describe("auth", async () => {
   //インスタンス生成
   const app = new Elysia().use(user);
   //テスト用DBインスタンス生成
-  const dbTest = new PrismaClient();
+  const dbTest = new PrismaClient({ datasources: { db: { url: "file:./test.db" } } });
+  //DBのマイグレーション
+  execSync("bunx prisma db push");
 
   //Prismaでuserデータにかかわるものをすべて削除
   await dbTest.token.deleteMany({});
