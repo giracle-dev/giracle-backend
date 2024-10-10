@@ -118,7 +118,7 @@ export const user = new Elysia({ prefix: "/user" })
   .get(
     "/sign-out",
     async ({ cookie: { token } }) => {
-      await db.token.delete({
+      await db.token.deleteMany({
         where: {
           token: token.value,
         },
