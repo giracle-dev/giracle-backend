@@ -79,7 +79,7 @@ const checkRoleTerm = new Elysia({ name: 'checkRoleTerm' })
           where: {
             userId: _userId,
             role: {
-              manageRole: true
+              [roleTerm]: true
             }
           }
         });
