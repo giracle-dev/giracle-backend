@@ -64,6 +64,11 @@ model RoleInfo {
   createdAt     DateTime @default(now())
   user          User     @relation(fields: [createdUserId], references: [id])
 
+  manageServer  Boolean @default(false)
+  manageChannel Boolean @default(false)
+  manageUser    Boolean @default(false)
+  manageRole    Boolean @default(false)
+
   RoleLink RoleLink[]
 }
 
