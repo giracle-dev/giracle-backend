@@ -33,6 +33,7 @@ const CheckToken = new Elysia({ name: 'CheckToken' })
     return {
       _userId: tokenData.userId
     }
-  })
+  }
+);
 
 export default CheckToken;
