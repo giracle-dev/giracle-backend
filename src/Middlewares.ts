@@ -39,9 +39,11 @@ const CheckToken = new Elysia({ name: 'CheckToken' })
     })
   )
   .derive({ as: "scoped"}, async ({cookie: {token}}) => {
+    const userIdLinked = userIdPassing.get(token.value || '');
+
     return {
-      _userId: userIdPassing.get(token.value) ?? ''
-    }
+      _userId: userIdLinked
+    };
   });
 
 const compareRoleLevelToRole = new Elysia({ name: 'compareRoleLevelToRole' })
