@@ -8,7 +8,6 @@ const db = new PrismaClient();
 
 export const user = new Elysia({ prefix: "/user" })
   .use(userService)
-  .use(CheckToken)
   .put(
     "/sign-up",
     async ({ body: { username, password }, error }) => {
@@ -117,6 +116,9 @@ export const user = new Elysia({ prefix: "/user" })
       cookie: t.Cookie({ token: t.Optional(t.String()) }),
     },
   )
+
+  .use(CheckToken)
+  
   .post(
     "/change-password",
     async ({ error, body:{currentPassword, newPassword}, _userId }) => {
@@ -206,5 +208,5 @@ export const user = new Elysia({ prefix: "/user" })
         success: true,
         message: "Token is valid",
       };
-    }
+    },
   );
