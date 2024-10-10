@@ -4,12 +4,19 @@ import { PrismaClient } from "@prisma/client";
 const db = new PrismaClient();
 
 const CheckToken = new Elysia({ name: 'CheckToken' })
-  .derive({ as: "scoped"}, async ({ cookie: { token } }) => {
-    //クッキーが無いなら停止
-    if (token.value === undefined) {
+  .derive({ as: "scoped"}, async ({ cookie: { token } }, enabled = false) => {
+    //無効化されているなら停止
+    if (!enabled) {
       return {
         _userId: ""
       }
+    };
+    
+    console.log("CheckToken :: triggered");
+
+    //クッキーが無いなら停止
+    if (token.value === undefined) {
+      throw error(401, "Token is invalid");
     }
 
     //トークンがDBにあるか確認
