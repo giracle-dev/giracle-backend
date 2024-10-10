@@ -1,6 +1,6 @@
 // test/index.test.ts
 import { describe, expect, it } from "bun:test";
-import { Elysia } from "elysia";
+import { Cookie, Elysia } from "elysia";
 
 import { execSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
@@ -23,6 +23,7 @@ describe("auth", async () => {
   await dbTest.user.deleteMany({});
 
   let resultJson: { success: boolean; message: string };
+  let tokenTesting: string;
 
   it("auth :: sign-up", async () => {
     //不正リクエストを送信
@@ -107,5 +108,41 @@ describe("auth", async () => {
     expect(resultJson.message).toStartWith("Signed in as ");
     //クッキー確認
     expect(response.headers.getSetCookie()[0]).toStartWith("token=");
+    //クッキーをsign-out用に保存
+    tokenTesting = response.headers.getSetCookie()[0].split(";")[0].split("=")[1];
+  });
+
+  it("auth :: sign-out", async () => {
+    //不正リクエストを送信
+    const responseError = await app.handle(
+      new Request("http://localhost/user/sign-out", {
+        method: "GET",
+        credentials: undefined,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    );
+
+    resultJson = await responseError.json();
+    //console.log("auth.test :: sign-out : responseError", resultJson);
+    expect(responseError.ok).toBe(false);
+
+    //正しいリクエストを送信
+    const response = await app.handle(
+      new Request("http://localhost/user/sign-out",
+        {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "Cookie": `token=${tokenTesting}`,
+        },
+      }),
+    );
+
+    resultJson = await response.json();
+    //console.log("auth.test :: sign-out : response", resultJson);
+    expect(resultJson.message).toBe("Signed out");
   });
 });
