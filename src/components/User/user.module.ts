@@ -192,4 +192,22 @@ export const user = new Elysia({ prefix: "/user" })
     {
       cookie: t.Cookie({ token: t.String() }),
     },
+  )
+  .get(
+    "/verify-token",
+    ({ _userId }) => {
+      //もし空ならトークンが無効
+      if (_userId === "") {
+        return {
+          success: false,
+          message: "Token is invalid",
+        };
+      }
+
+      //トークンが有効
+      return {
+        success: true,
+        message: "Token is valid",
+      };
+    }
   );
