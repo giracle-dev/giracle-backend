@@ -9,7 +9,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   .use(CheckToken)
   .put(
     "/create",
-    async ({ body: { channelName, description }, _userId }) => {
+    async ({ body: { channelName, description = "" }, _userId }) => {
       const newChannel = await db.channel.create({
         data: {
           name: channelName,
