@@ -9,26 +9,14 @@ export const channel = new Elysia({ prefix: "/channel" })
   .use(Middlewares)
   .put(
     "/create",
-    async ({ body: { channelName, description }, cookie: { token }, error }) => {
-      const tokenData = await db.token.findUnique({
-        where: {
-          token: token.value,
-        },
-      });
-      if (tokenData === null) {
-        return error(500, {
-          success: false,
-          message: "Internal Error",
-        });
-      }
-
+    async ({ body: { channelName, description }, userId }) => {
       await db.channel.create({
         data: {
           name: channelName,
           description: description,
           user: {
             connect: {
-              id: tokenData.userId,
+              id: userId,
             },
           }
         }
@@ -44,6 +32,5 @@ export const channel = new Elysia({ prefix: "/channel" })
         channelName: t.String({ minLength: 1 }),
         description: t.Optional(t.String()),
       }),
-      checkToken: true,
     },
   );
