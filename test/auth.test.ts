@@ -113,6 +113,56 @@ describe("auth", async () => {
     tokenTesting = response.headers.getSetCookie()[0].split(";")[0].split("=")[1];
   });
 
+  it("auth :: vrify-token", async () => {
+    //不正リクエストを送信
+    const responseError = await app.handle(
+      new Request("http://localhost/user/verify-token", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }),
+    );
+
+    resultJson = await responseError.json();
+    console.log("auth.test :: vrify-token : responseError", responseError);
+    //処理は成功として200が帰るが、認証はできないからfalse
+    expect(resultJson.success).toBe(false);
+
+    //間違ったトークンでのリクエストを送信
+    const responseWrong = await app.handle(
+      new Request("http://localhost/user/verify-token", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Cookie": "token=wrongtoken",
+        },
+      }),
+    );
+
+    //console.log("auth.test :: vrify-token : responseError", responseWrong);
+    //認証エラーになるはずだから401
+    expect(responseWrong.status).toBe(401);
+
+    //正しいリクエストを送信
+    const response = await app.handle(
+      new Request("http://localhost/user/verify-token", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Cookie": `token=${tokenTesting}`,
+        },
+      }),
+    );
+
+    resultJson = await response.json();
+    //console.log("auth.test :: vrify-token : response", resultJson);
+    expect(resultJson.message).toBe("Token is valid");
+  });
+
   it("auth :: change-password", async () => {
     //間違ったリクエストを送信
     const responseWrong = await app.handle(
