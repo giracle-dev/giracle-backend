@@ -195,13 +195,10 @@ export const user = new Elysia({ prefix: "/user" })
   )
   .get(
     "/verify-token",
-    ({ _userId }) => {
+    ({ _userId, error }) => {
       //もし空ならトークンが無効
       if (_userId === "") {
-        return {
-          success: false,
-          message: "Token is invalid",
-        };
+        throw error(401, "Token is invalid");
       }
 
       //トークンが有効

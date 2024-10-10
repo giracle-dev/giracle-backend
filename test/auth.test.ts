@@ -118,17 +118,16 @@ describe("auth", async () => {
     const responseError = await app.handle(
       new Request("http://localhost/user/verify-token", {
         method: "GET",
-        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
       }),
     );
 
-    resultJson = await responseError.json();
-    console.log("auth.test :: vrify-token : responseError", responseError);
-    //処理は成功として200が帰るが、認証はできないからfalse
-    expect(resultJson.success).toBe(false);
+    //resultJson = await responseError.json();
+    //console.log("auth.test :: vrify-token : responseError", responseError);
+    //処理は401になるはず
+    expect(responseError.status).toBe(401);
 
     //間違ったトークンでのリクエストを送信
     const responseWrong = await app.handle(
