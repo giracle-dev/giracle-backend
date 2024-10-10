@@ -7,7 +7,7 @@ import { PrismaClient } from "@prisma/client";
 import { user } from "../src/components/User/user.module";
 
 //テスト用DBのURLを設定
-Bun.env.API_DATABASE_URL = "file:./test.db";
+Bun.env.DATABASE_URL = "file:./test.db";
 //PrismaでスキーマからDBへプッシュしてテストで使えるようにする
 execSync("npx prisma db push", { stdio: "inherit" });
 
