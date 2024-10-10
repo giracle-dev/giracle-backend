@@ -113,26 +113,28 @@ describe("auth", async () => {
   });
 
   it("auth :: change-password", async () => {
-    //不正リクエストを送信
+    //間違ったリクエストを送信
     const responseWrong = await app.handle(
       new Request("http://localhost/user/change-password", {
         method: "POST",
-        credentials: undefined,
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          "Cookie": `token=${tokenTesting}`,
         },
         body: JSON.stringify({
-          currentPassword: "testuser",
+          currentPassword: "examplewrongpassword",
           newPassword: "asdf",
         })
       }),
     );
 
     resultJson = await responseWrong.json();
-    //console.log("auth.test :: sign-out : responseError", resultJson);
-    expect(responseWrong.ok).toBe(false);
+    //console.log("auth.test :: change-password : resultJson", resultJson);
+    expect(resultJson.success).toBe(false);
+    expect(resultJson.message).toBe("Current password is incorrect");
 
-    //不正リクエストを送信
+    //リクエストを送信
     const response = await app.handle(
       new Request("http://localhost/user/change-password", {
         method: "POST",
