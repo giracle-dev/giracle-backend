@@ -86,6 +86,5 @@ export const role = new Elysia({ prefix: "/role" })
       params: t.Object({
         roleId: t.String({ notEmpty: true }),
       }),
-      checkToken: true,
     }
   );
