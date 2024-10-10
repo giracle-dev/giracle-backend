@@ -1,4 +1,4 @@
-import { Elysia, error } from 'elysia'
+import { Elysia, error, t } from 'elysia'
 import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
@@ -7,42 +7,21 @@ const db = new PrismaClient();
 const userIdPassing = new Map<string, string>();
 
 const CheckToken = new Elysia({ name: 'CheckToken' })
-  .macro(
-    ({ onBeforeHandle }) => ({
-    async CheckToken(enabled = false) {
-      onBeforeHandle(async ({ cookie: { token }, headers }) => {
-        //console.log("CheckToken :: triggered enabled->", enabled);
-        //無効化されているなら停止
-        if (!enabled) {
-          return;
-        };
-
-        //クッキーが無いなら停止
-        if (token.value === undefined) {
-          throw error(401, "Token is invalid");
+  .guard({
+    cookie: t.Object({token: t.String()})
+  })
+  .resolve({ as: "scoped"}, async ({cookie: {token}}) => {
+     //トークンがDBにあるか確認
+     const tokenData = await db.token.findUnique({
+        where: {
+          token: token.value
         }
-
-        //トークンがDBにあるか確認
-        const tokenData = await db.token.findUnique({
-          where: {
-            token: token.value
-          }
-        });
-        //トークンが無いなら停止
-        if (tokenData === null) {
-          throw error(401, "Token is invalid");
-        }
-
-        userIdPassing.set(token.value, tokenData.userId);
       });
-    }
-    })
-  )
-  .derive({ as: "scoped"}, async ({cookie: {token}}) => {
-    const userIdLinked = userIdPassing.get(token.value || '');
+
+      if (tokenData === null) { return error(401, "Invalid token"); }
 
     return {
-      _userId: userIdLinked
+      _userId: tokenData?.userId
     };
   });
 
