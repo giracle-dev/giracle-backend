@@ -47,6 +47,7 @@ describe("auth", async () => {
       }),
     );
 
+    //console.log("auth.test :: sign-up : response", response);
     resultJson = await response.json();
     //console.log("auth.test :: sign-up : response", resultJson);
     expect(resultJson.message).toBe("User created");
@@ -157,6 +158,7 @@ describe("auth", async () => {
       }),
     );
 
+    //console.log("auth.test :: vrify-token : response", response);
     resultJson = await response.json();
     //console.log("auth.test :: vrify-token : response", resultJson);
     expect(resultJson.message).toBe("Token is valid");
