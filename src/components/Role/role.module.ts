@@ -64,7 +64,7 @@ export const role = new Elysia({ prefix: "/role" })
   )
   .get(
     "/:roleId",
-    async ({ params: { roleId }, _userId, error }) => {
+    async ({ params: { roleId }, error }) => {
       const role = await db.roleInfo.findUnique({
         where: {
           id: roleId
