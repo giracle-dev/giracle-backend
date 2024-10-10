@@ -52,6 +52,8 @@ model RoleLink {
   roleLinkedAt DateTime @default(now())
   userId       String
   user         User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model RoleInfo {
