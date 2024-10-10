@@ -3,38 +3,46 @@ import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
 
+//ユーザーIdをトークンに紐付けるためだけのMap
+const userIdPassing = new Map<string, string>();
+
 const CheckToken = new Elysia({ name: 'CheckToken' })
-  .derive({ as: "scoped"}, async ({ cookie: { token } }, enabled = false) => {
-    //無効化されているなら停止
-    if (!enabled) {
-      return {
-        _userId: ""
-      }
-    };
-    
-    console.log("CheckToken :: triggered");
+  .macro(
+    ({ onBeforeHandle }) => ({
+    async CheckToken(enabled = false) {
+      onBeforeHandle(async ({ cookie: { token }, headers }) => {
+        //console.log("CheckToken :: triggered enabled->", enabled);
+        //無効化されているなら停止
+        if (!enabled) {
+          return;
+        };
 
-    //クッキーが無いなら停止
-    if (token.value === undefined) {
-      throw error(401, "Token is invalid");
+        //クッキーが無いなら停止
+        if (token.value === undefined) {
+          throw error(401, "Token is invalid");
+        }
+
+        //トークンがDBにあるか確認
+        const tokenData = await db.token.findUnique({
+          where: {
+            token: token.value
+          }
+        });
+        //トークンが無いなら停止
+        if (tokenData === null) {
+          throw error(401, "Token is invalid");
+        }
+
+        userIdPassing.set(token.value, tokenData.userId);
+      });
     }
-
-    //トークンがDBにあるか確認
-    const tokenData = await db.token.findUnique({
-      where: {
-        token: token.value
-      }
-    });
-    //トークンが無いなら停止
-    if (tokenData === null) {
-      throw error(401, "Token is invalid");
-    }
-
+    })
+  )
+  .derive({ as: "scoped"}, async ({cookie: {token}}) => {
     return {
-      _userId: tokenData.userId
+      _userId: userIdPassing.get(token.value) ?? ''
     }
-  }
-);
+  });
 
 const compareRoleLevelToRole = new Elysia({ name: 'compareRoleLevelToRole' })
   .use(CheckToken)
@@ -71,7 +79,7 @@ const checkRoleTerm = new Elysia({ name: 'checkRoleTerm' })
   .macro(
     ({ onBeforeHandle }) => ({
     async checkRoleTerm(roleTerm: string) {
-      onBeforeHandle(async ({ _userId }) => {
+      onBeforeHandle(async ({cookie: token, _userId}) => {
         console.log("送信者のロールId->", _userId);
 
         //該当権限を持つロール付与情報を検索
