@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,8 +11,8 @@ model User {
   id               String    @id @default(uuid())
   name             String?   @unique
   selfIntroduction String
-  posts            Post[]
   password         Password?
+  posts            Post[]
   Token            Token[]
 }
 
@@ -23,16 +20,16 @@ model Password {
   id       Int    @id @default(autoincrement())
   password String
   salt     String
-  user     User   @relation(fields: [userId], references: [id])
   userId   String @unique
+  user     User   @relation(fields: [userId], references: [id])
 }
 
 model Token {
   id        Int      @id @default(autoincrement())
   token     String   @unique
-  user      User     @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
@@ -42,6 +39,6 @@ model Post {
   title     String
   content   String?
   published Boolean @default(false)
-  author    User    @relation(fields: [authorId], references: [id])
   authorId  String
+  author    User    @relation(fields: [authorId], references: [id])
 }
