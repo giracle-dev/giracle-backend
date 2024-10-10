@@ -29,7 +29,7 @@ model Password {
 
 model Token {
   id        Int      @id @default(autoincrement())
-  token     String
+  token     String   @unique
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime @default(now())
