@@ -20,6 +20,7 @@ describe("auth", async () => {
   //Prismaでuserデータにかかわるものをすべて削除
   await dbTest.token.deleteMany({});
   await dbTest.password.deleteMany({});
+  await dbTest.channel.deleteMany({});
   await dbTest.user.deleteMany({});
 
   let resultJson: { success: boolean; message: string };
