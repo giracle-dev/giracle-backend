@@ -1,9 +1,12 @@
 {
-  "name": "giracle-elysia",
+  "name": "giracle-backend",
   "version": "1.0.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts"
+  },
+  "prisma": {
+    "seed": "bun ./prisma/seeds.ts"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.1.1",

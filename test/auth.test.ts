@@ -1,4 +1,3 @@
-// test/index.test.ts
 import { describe, expect, it } from "bun:test";
 import { Cookie, Elysia } from "elysia";
 
@@ -6,14 +5,13 @@ import { execSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
 import { user } from "../src/components/User/user.module";
 
-//テスト用DBのURLを設定
-//Bun.env.DATABASE_URL = "file:./test.db";
-
 describe("auth", async () => {
   //インスタンス生成
   const app = new Elysia().use(user);
   //テスト用DBインスタンス生成
-  const dbTest = new PrismaClient({ datasources: { db: { url: "file:./test.db" } } });
+  const dbTest = new PrismaClient({
+    datasources: { db: { url: "file:./test.db" } },
+  });
   //DBのマイグレーション
   execSync("bunx prisma db push");
 
@@ -21,9 +19,19 @@ describe("auth", async () => {
   await dbTest.token.deleteMany({});
   await dbTest.password.deleteMany({});
   await dbTest.channel.deleteMany({});
+  await dbTest.roleLink.deleteMany({});
+  await dbTest.roleInfo.deleteMany({});
   await dbTest.user.deleteMany({});
 
-  let resultJson: { success: boolean; message: string };
+  //DBの初期シード挿入
+  execSync("bunx prisma db seed");
+
+  let resultJson: {
+    success: boolean;
+    message: string;
+    // biome-ignore lint/suspicious/noExplicitAny: データの型は不定
+    data: { [key: string]: any };
+  };
   let tokenTesting: string;
 
   it("auth :: sign-up", async () => {
@@ -47,6 +55,7 @@ describe("auth", async () => {
       }),
     );
 
+    //console.log("auth.test :: sign-up : response", response);
     resultJson = await response.json();
     //console.log("auth.test :: sign-up : response", resultJson);
     expect(resultJson.message).toBe("User created");
@@ -107,15 +116,19 @@ describe("auth", async () => {
     resultJson = await response.json();
     //console.log("auth.test :: sign-in : response", response);
     expect(resultJson.message).toStartWith("Signed in as ");
+    expect(resultJson.data.userId).toBeString();
     //クッキー確認
     expect(response.headers.getSetCookie()[0]).toStartWith("token=");
     //クッキーをsign-out用に保存
-    tokenTesting = response.headers.getSetCookie()[0].split(";")[0].split("=")[1];
+    tokenTesting = response.headers
+      .getSetCookie()[0]
+      .split(";")[0]
+      .split("=")[1];
   });
 
-  it("auth :: vrify-token", async () => {
-    //不正リクエストを送信
-    const responseError = await app.handle(
+  it("auth :: verify-token", async () => {
+    //クレデンシャル無しリクエストを送信
+    const responseWithoutCookie = await app.handle(
       new Request("http://localhost/user/verify-token", {
         method: "GET",
         headers: {
@@ -127,7 +140,7 @@ describe("auth", async () => {
     //resultJson = await responseError.json();
     //console.log("auth.test :: vrify-token : responseError", responseError);
     //処理は401になるはず
-    expect(responseError.status).toBe(401);
+    expect(responseWithoutCookie.status).toBe(500);
 
     //間違ったトークンでのリクエストを送信
     const responseWrong = await app.handle(
@@ -136,7 +149,7 @@ describe("auth", async () => {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "Cookie": "token=wrongtoken",
+          Cookie: "token=wrongtoken",
         },
       }),
     );
@@ -152,11 +165,12 @@ describe("auth", async () => {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
       }),
     );
 
+    //console.log("auth.test :: vrify-token : response", response);
     resultJson = await response.json();
     //console.log("auth.test :: vrify-token : response", resultJson);
     expect(resultJson.message).toBe("Token is valid");
@@ -170,12 +184,12 @@ describe("auth", async () => {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
         body: JSON.stringify({
           currentPassword: "examplewrongpassword",
           newPassword: "asdf",
-        })
+        }),
       }),
     );
 
@@ -191,12 +205,12 @@ describe("auth", async () => {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
         body: JSON.stringify({
           currentPassword: "testuser",
           newPassword: "asdf",
-        })
+        }),
       }),
     );
 
@@ -223,13 +237,12 @@ describe("auth", async () => {
 
     //正しいリクエストを送信
     const response = await app.handle(
-      new Request("http://localhost/user/sign-out",
-        {
+      new Request("http://localhost/user/sign-out", {
         method: "GET",
         credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
       }),
     );

@@ -1,14 +1,13 @@
 import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { t } from "elysia";
-import { userService } from "./user.service";
 import CheckToken from "../../Middlewares";
+import { userService } from "./user.service";
 
 const db = new PrismaClient();
 
 export const user = new Elysia({ prefix: "/user" })
   .use(userService)
-  .use(CheckToken)
   .put(
     "/sign-up",
     async ({ body: { username, password }, error }) => {
@@ -20,6 +19,14 @@ export const user = new Elysia({ prefix: "/user" })
           success: false,
           message: "User already exists",
         });
+      }
+
+      //初めてのユーザーかどうか
+      let flagFirstUser = false;
+      //ユーザー数を取得して最初ならtrue
+      const num = await db.user.count();
+      if (num === 1) {
+        flagFirstUser = true;
       }
 
       //ソルト生成、パスワードのハッシュ化
@@ -36,10 +43,13 @@ export const user = new Elysia({ prefix: "/user" })
               salt: salt,
             },
           },
+          RoleLink: {
+            create: {
+              roleId: flagFirstUser ? "HOST" : "MEMBER",
+            },
+          },
         },
       });
-
-      //store.user[username] = await Bun.password.hash(password);
 
       return {
         success: true,
@@ -110,6 +120,9 @@ export const user = new Elysia({ prefix: "/user" })
       return {
         success: true,
         message: `Signed in as ${username}`,
+        data: {
+          userId: user.id,
+        },
       };
     },
     {
@@ -117,9 +130,12 @@ export const user = new Elysia({ prefix: "/user" })
       cookie: t.Cookie({ token: t.Optional(t.String()) }),
     },
   )
+
+  .use(CheckToken)
+
   .post(
     "/change-password",
-    async ({ error, body:{currentPassword, newPassword}, _userId }) => {
+    async ({ error, body: { currentPassword, newPassword }, _userId }) => {
       //console.log("user.module :: /sign-in :: tokenGenerated", tokenGenerated);
       //ユーザー情報取得
       const userdata = await db.user.findFirst({
@@ -154,7 +170,9 @@ export const user = new Elysia({ prefix: "/user" })
           userId: userdata.id,
         },
         data: {
-          password: await Bun.password.hash(newPassword + userdata.password.salt),
+          password: await Bun.password.hash(
+            newPassword + userdata.password.salt,
+          ),
         },
       });
 
@@ -193,18 +211,15 @@ export const user = new Elysia({ prefix: "/user" })
       cookie: t.Cookie({ token: t.String() }),
     },
   )
-  .get(
-    "/verify-token",
-    ({ _userId, error }) => {
-      //もし空ならトークンが無効
-      if (_userId === "") {
-        throw error(401, "Token is invalid");
-      }
-
-      //トークンが有効
-      return {
-        success: true,
-        message: "Token is valid",
-      };
+  .get("/verify-token", ({ _userId, error }) => {
+    //もし空ならトークンが無効
+    if (_userId === "") {
+      throw error(401, "Token is invalid");
     }
-  );
+
+    //トークンが有効
+    return {
+      success: true,
+      message: "Token is valid",
+    };
+  });

@@ -9,7 +9,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   .use(CheckToken)
   .put(
     "/create",
-    async ({ body: { channelName, description }, _userId }) => {
+    async ({ body: { channelName, description = "" }, _userId }) => {
       const newChannel = await db.channel.create({
         data: {
           name: channelName,
@@ -18,16 +18,16 @@ export const channel = new Elysia({ prefix: "/channel" })
             connect: {
               id: _userId,
             },
-          }
-        }
+          },
+        },
       });
 
       return {
         success: true,
         message: "Channel created",
         data: {
-          channelId: newChannel.id
-        }
+          channelId: newChannel.id,
+        },
       };
     },
     {
@@ -35,7 +35,6 @@ export const channel = new Elysia({ prefix: "/channel" })
         channelName: t.String({ minLength: 1 }),
         description: t.Optional(t.String()),
       }),
-      _userId: t.String({ minLength: 2 }),
     },
   )
   .delete(
@@ -79,5 +78,4 @@ export const channel = new Elysia({ prefix: "/channel" })
         channelId: t.String(),
       }),
     },
-  )
-  ;
+  );
