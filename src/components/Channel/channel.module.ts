@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { t } from "elysia";
 import CheckToken from "../../Middlewares";
