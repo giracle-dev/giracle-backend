@@ -53,7 +53,7 @@ model RoleLink {
   userId       String
   user         User     @relation(fields: [userId], references: [id])
 
-  @@index([userId])
+  @@index([userId, roleId])
 }
 
 model RoleInfo {
