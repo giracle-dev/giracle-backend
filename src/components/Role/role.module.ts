@@ -85,10 +85,7 @@ export const role = new Elysia({ prefix: "/role" })
     async ({ body: { userId, roleId }, _userId }) => {
       //デフォルトのロールはリンク取り消し不可
       if (roleId === "MEMBER" || roleId === "HOST") {
-        return {
-          success: false,
-          message: "You cannot unlink this role",
-        };
+        throw error(400, "You cannot unlink default role");
       }
 
       //送信者のロールレベルが足りるか確認
