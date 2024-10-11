@@ -46,6 +46,13 @@ export const role = new Elysia({ prefix: "/role" })
   .delete(
     "/delete",
     async ({ body: { roleId }, _userId }) => {
+      //ユーザーのロール付与情報を全削除
+      await db.roleLink.deleteMany({
+        where: {
+          roleId,
+        },
+      });
+      //ロール情報を削除
       await db.roleInfo.delete({
         where: {
           id: roleId,
