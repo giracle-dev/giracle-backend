@@ -57,8 +57,8 @@ const checkRoleTerm = new Elysia({ name: 'checkRoleTerm' })
   .macro(
     ({ onBeforeHandle }) => ({
     async checkRoleTerm(roleTerm: string) {
-      onBeforeHandle(async ({cookie: token, _userId}) => {
-        console.log("送信者のロールId->", _userId);
+      onBeforeHandle(async ({_userId}) => {
+        //console.log("Middlewares :: checkRoleTerm : 送信者のユーザーId->", _userId);
 
         //管理者権限を持つユーザーなら問答無用で通す
         const isAdmin = await db.roleLink.findFirst({
