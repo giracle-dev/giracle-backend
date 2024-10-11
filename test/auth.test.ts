@@ -30,7 +30,12 @@ describe("auth", async () => {
   //DBの初期シード挿入
   execSync("bunx prisma db seed");
 
-  let resultJson: { success: boolean; message: string };
+  let resultJson: {
+    success: boolean;
+    message: string;
+    // biome-ignore lint/suspicious/noExplicitAny: データの型は不定
+    data: { [key: string]: any };
+  };
   let tokenTesting: string;
 
   it("auth :: sign-up", async () => {
@@ -115,6 +120,7 @@ describe("auth", async () => {
     resultJson = await response.json();
     //console.log("auth.test :: sign-in : response", response);
     expect(resultJson.message).toStartWith("Signed in as ");
+    expect(resultJson.data.userId).toBeString();
     //クッキー確認
     expect(response.headers.getSetCookie()[0]).toStartWith("token=");
     //クッキーをsign-out用に保存
