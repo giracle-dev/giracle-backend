@@ -4,6 +4,7 @@ import { Elysia } from "elysia";
 
 import { user } from "../src/components/User/user.module";
 import { channel } from "../src/components/Channel/channel.module";
+import { PrismaClient } from "@prisma/client";
 
 //テスト用DBのURLを設定
 //Bun.env.DATABASE_URL = "file:./test.db";
@@ -13,6 +14,11 @@ describe("channel", async () => {
   const app = new Elysia()
     .use(user)
     .use(channel);
+
+  // ----------------- テスト用DB整備 ---------------------------
+  const dbTest = new PrismaClient({ datasources: { db: { url: "file:./test.db" } } });
+  await dbTest.channel.deleteMany({});
+  // -----------------------------------------------------------
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   let resultJson: { success: boolean; message: string, data:{[key:string]: any} };

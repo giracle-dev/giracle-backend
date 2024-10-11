@@ -4,6 +4,7 @@ import { Elysia } from "elysia";
 
 import { user } from "../src/components/User/user.module";
 import { role } from "../src/components/Role/role.module";
+import { PrismaClient } from "@prisma/client";
 
 //テスト用DBのURLを設定
 //Bun.env.DATABASE_URL = "file:./test.db";
@@ -13,6 +14,12 @@ describe("role", async () => {
   const app = new Elysia()
     .use(user)
     .use(role);
+
+  // ----------------- テスト用DB整備 ---------------------------
+  const dbTest = new PrismaClient({ datasources: { db: { url: "file:./test.db" } } });
+  await dbTest.roleLink.deleteMany({});
+  await dbTest.roleInfo.deleteMany({});
+  // -----------------------------------------------------------
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   let resultJson: { success: boolean; message: string, data:{[key:string]: any} };
