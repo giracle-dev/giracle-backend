@@ -120,6 +120,9 @@ export const user = new Elysia({ prefix: "/user" })
       return {
         success: true,
         message: `Signed in as ${username}`,
+        data: {
+          userId: user.id,
+        }
       };
     },
     {
