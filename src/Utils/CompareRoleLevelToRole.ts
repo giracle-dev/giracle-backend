@@ -17,6 +17,9 @@ export default async function CompareRoleLevelToRole(
   _userId: string,
   _roleId: string,
 ): Promise<boolean> {
+  //HOSTロールに対する操作は許可しない
+  if (_roleId === "HOST") return false;
+
   const db = new PrismaClient();
   //送信者のユーザー情報を付与されたロールと同時に取得
   const userWithRoles = await db.user.findUnique({
@@ -33,6 +36,15 @@ export default async function CompareRoleLevelToRole(
   });
   //ユーザーが存在しない場合はfalseを返す
   if (userWithRoles === null) return false;
+
+  //対象のロール情報を取得
+  const role = await db.roleInfo.findUnique({
+    where: {
+      id: _roleId,
+    },
+  });
+  //対象ロールが見つからなかったらfalseを返す
+  if (role === null) return false;
 
   //送信者のロールレベル用変数
   let userRoleLevel = 0;
@@ -57,13 +69,7 @@ export default async function CompareRoleLevelToRole(
     }
   }
 
-  //対象のロール情報を取得
-  const role = await db.roleInfo.findUnique({
-    where: {
-      id: _roleId,
-    },
-  });
-  if (role === null) return false;
+
   //対象のロールのレベル用変数
   let targetRoleLevel = 0;
   //対象のロールのレベルを計算(高ければ格納)
