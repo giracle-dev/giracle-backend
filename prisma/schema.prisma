@@ -8,8 +8,8 @@ datasource db {
 }
 
 model User {
-  id               String     @id @default(uuid())
-  name             String?    @unique
+  id               String        @id @default(uuid())
+  name             String?       @unique
   selfIntroduction String
   password         Password?
   posts            Post[]
@@ -17,6 +17,7 @@ model User {
   Channel          Channel[]
   RoleInfo         RoleInfo[]
   RoleLink         RoleLink[]
+  ChannelJoin      ChannelJoin[]
 }
 
 model Password {
@@ -37,12 +38,22 @@ model Token {
   @@index([userId])
 }
 
+model ChannelJoin {
+  id              Int      @id @default(autoincrement())
+  channelJoinedAt DateTime @default(now())
+  channelId       String
+  channel         Channel  @relation(fields: [channelId], references: [id])
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+}
+
 model Channel {
-  id            String @id @default(uuid())
-  name          String @unique
+  id            String        @id @default(uuid())
+  name          String        @unique
   description   String
   createdUserId String
-  user          User   @relation(fields: [createdUserId], references: [id])
+  user          User          @relation(fields: [createdUserId], references: [id])
+  ChannelJoin   ChannelJoin[]
 }
 
 model RoleLink {
