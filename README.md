@@ -1,13 +1,17 @@
-# Elysia with Bun runtime
+# giracl-backend
 
-## Getting Started
-To get started with this template, simply paste this command into your terminal:
+## 必要パッケージのインストール
+Bunが必須です。Bunが入っているならこのリポジトリのディレクトリで次のコマンドを実行。
 ```bash
-bun create elysia ./elysia-example
+bun i
 ```
 
-## Development
-To start the development server run:
+## Development 開発用実行
+初回の実行ならDBのプッシュを行う。
+```bash
+bunx prisma db push
+```
+開発用に実行するなら
 ```bash
 bun run dev
 ```
