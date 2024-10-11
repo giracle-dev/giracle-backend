@@ -65,7 +65,7 @@ export const role = new Elysia({ prefix: "/role" })
           message: "Role already linked",
         };
       }
-      
+
       await db.roleLink.create({
         data: {
           userId, //指定のユーザーId
