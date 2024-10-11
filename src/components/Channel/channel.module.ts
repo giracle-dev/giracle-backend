@@ -63,6 +63,13 @@ export const channel = new Elysia({ prefix: "/channel" })
         };
       }
 
+      //チャンネル参加データを削除
+      await db.channelJoin.deleteMany({
+        where: {
+          channelId,
+        },
+      });
+
       await db.channel.delete({
         where: {
           id: channelId,
