@@ -1,15 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import Elysia, { t } from "elysia";
-import CheckToken, {
-  compareRoleLevelToRole,
-  checkRoleTerm,
-} from "../../Middlewares";
+import CheckToken, { checkRoleTerm } from "../../Middlewares";
+import CompareRoleLevelToRole from "../../Utils/CompareRoleLevelToRole";
 
 const db = new PrismaClient();
 
 export const role = new Elysia({ prefix: "/role" })
   .use(CheckToken)
-  //.use(compareRoleLevelToRole)
   .use(checkRoleTerm)
   .put(
     "/create",
@@ -45,10 +42,18 @@ export const role = new Elysia({ prefix: "/role" })
   )
   .post(
     "/link",
-    async ({ body: { userId, roleId } }) => {
+    async ({ body: { userId, roleId }, _userId }) => {
+      //送信者のロールレベルが足りるか確認
+      if (!(await CompareRoleLevelToRole(_userId, roleId))) {
+        return {
+          success: false,
+          message: "You cannot link this role",
+        };
+      }
+
       await db.roleLink.create({
         data: {
-          userId,
+          userId, //指定のユーザーId
           roleId,
         },
       });
@@ -69,6 +74,14 @@ export const role = new Elysia({ prefix: "/role" })
   .delete(
     "/delete",
     async ({ body: { roleId }, _userId }) => {
+      //送信者のロールレベルが足りるか確認
+      if (!(await CompareRoleLevelToRole(_userId, roleId))) {
+        return {
+          success: false,
+          message: "You cannot delete this role",
+        };
+      }
+
       //ユーザーのロール付与情報を全削除
       await db.roleLink.deleteMany({
         where: {

@@ -24,34 +24,6 @@ const CheckToken = new Elysia({ name: "CheckToken" })
     };
   });
 
-const compareRoleLevelToRole = new Elysia({ name: "compareRoleLevelToRole" })
-  .use(CheckToken)
-  .macro(({ onBeforeHandle }) => ({
-    async compareRoleLevelToRole(dat: { targetRoleId: string }, { _userId }) {
-      //ユーザーとロール情報取得
-      const userWithRoles = await db.user.findUnique({
-        where: {
-          id: _userId,
-        },
-        include: {
-          RoleLink: true,
-        },
-      });
-
-      const role = await db.roleInfo.findUnique({
-        where: {
-          id: dat.targetRoleId,
-        },
-      });
-
-      if (role === null) {
-        return error(404, "Role not found");
-      }
-
-      console.log("compareRoleLevelToRole :: triggered");
-    },
-  }));
-
 const checkRoleTerm = new Elysia({ name: "checkRoleTerm" })
   .use(CheckToken)
   .macro(({ onBeforeHandle }) => ({
@@ -91,4 +63,4 @@ const checkRoleTerm = new Elysia({ name: "checkRoleTerm" })
   }));
 
 export default CheckToken;
-export { compareRoleLevelToRole, checkRoleTerm };
+export { checkRoleTerm };
