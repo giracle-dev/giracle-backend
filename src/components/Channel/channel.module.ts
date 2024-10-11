@@ -81,6 +81,17 @@ export const channel = new Elysia({ prefix: "/channel" })
       }),
     }
   )
+  .get(
+    "/list",
+    async () => {
+      const channelList = await db.channel.findMany();
+
+      return {
+        message: "Channel list ready",
+        data: channelList
+      };
+    }
+  )
 
   .use(checkRoleTerm)
   .put(
