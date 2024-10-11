@@ -1,4 +1,4 @@
-# giracl-backend
+# giracle-backend
 
 ## 必要パッケージのインストール
 Bunが必須です。Bunが入っているならこのリポジトリのディレクトリで次のコマンドを実行。
