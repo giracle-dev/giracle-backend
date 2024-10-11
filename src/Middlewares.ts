@@ -1,40 +1,26 @@
-import { Elysia, error } from 'elysia'
+import { Elysia, error, t } from 'elysia'
 import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
 
 const CheckToken = new Elysia({ name: 'CheckToken' })
-  .derive({ as: "scoped"}, async ({ cookie: { token } }, enabled = false) => {
-    //無効化されているなら停止
-    if (!enabled) {
-      return {
-        _userId: ""
-      }
-    };
-    
-    console.log("CheckToken :: triggered");
+  .guard({
+    cookie: t.Object({token: t.String()})
+  })
+  .resolve({ as: "scoped"}, async ({cookie: {token}}) => {
+     //トークンがDBにあるか確認
+     const tokenData = await db.token.findUnique({
+        where: {
+          token: token.value
+        }
+      });
 
-    //クッキーが無いなら停止
-    if (token.value === undefined) {
-      throw error(401, "Token is invalid");
-    }
-
-    //トークンがDBにあるか確認
-    const tokenData = await db.token.findUnique({
-      where: {
-        token: token.value
-      }
-    });
-    //トークンが無いなら停止
-    if (tokenData === null) {
-      throw error(401, "Token is invalid");
-    }
+      if (tokenData === null) { return error(401, "Invalid token"); }
 
     return {
-      _userId: tokenData.userId
-    }
-  }
-);
+      _userId: tokenData?.userId
+    };
+  });
 
 const compareRoleLevelToRole = new Elysia({ name: 'compareRoleLevelToRole' })
   .use(CheckToken)
@@ -71,7 +57,7 @@ const checkRoleTerm = new Elysia({ name: 'checkRoleTerm' })
   .macro(
     ({ onBeforeHandle }) => ({
     async checkRoleTerm(roleTerm: string) {
-      onBeforeHandle(async ({ _userId }) => {
+      onBeforeHandle(async ({cookie: token, _userId}) => {
         console.log("送信者のロールId->", _userId);
 
         //該当権限を持つロール付与情報を検索

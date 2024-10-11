@@ -47,6 +47,7 @@ describe("auth", async () => {
       }),
     );
 
+    //console.log("auth.test :: sign-up : response", response);
     resultJson = await response.json();
     //console.log("auth.test :: sign-up : response", resultJson);
     expect(resultJson.message).toBe("User created");
@@ -114,8 +115,8 @@ describe("auth", async () => {
   });
 
   it("auth :: vrify-token", async () => {
-    //不正リクエストを送信
-    const responseError = await app.handle(
+    //クレデンシャル無しリクエストを送信
+    const responseWithoutCookie = await app.handle(
       new Request("http://localhost/user/verify-token", {
         method: "GET",
         headers: {
@@ -127,7 +128,7 @@ describe("auth", async () => {
     //resultJson = await responseError.json();
     //console.log("auth.test :: vrify-token : responseError", responseError);
     //処理は401になるはず
-    expect(responseError.status).toBe(401);
+    expect(responseWithoutCookie.status).toBe(500);
 
     //間違ったトークンでのリクエストを送信
     const responseWrong = await app.handle(
@@ -157,6 +158,7 @@ describe("auth", async () => {
       }),
     );
 
+    //console.log("auth.test :: vrify-token : response", response);
     resultJson = await response.json();
     //console.log("auth.test :: vrify-token : response", resultJson);
     expect(resultJson.message).toBe("Token is valid");

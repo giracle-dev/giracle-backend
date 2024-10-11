@@ -35,7 +35,6 @@ export const channel = new Elysia({ prefix: "/channel" })
         channelName: t.String({ minLength: 1 }),
         description: t.Optional(t.String()),
       }),
-      _userId: t.String({ minLength: 2 }),
     },
   )
   .delete(
