@@ -6,7 +6,7 @@ const db = new PrismaClient();
 
 export const role = new Elysia({ prefix: "/role" })
   .use(CheckToken)
-  .use(compareRoleLevelToRole)
+  //.use(compareRoleLevelToRole)
   .use(checkRoleTerm)
   .put(
     "/create",
