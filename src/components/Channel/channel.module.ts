@@ -1,11 +1,87 @@
 import { PrismaClient } from "@prisma/client";
-import Elysia, { t } from "elysia";
+import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 
 const db = new PrismaClient();
 
 export const channel = new Elysia({ prefix: "/channel" })
   .use(CheckToken)
+  .post(
+    "/join",
+    async ({ body: { channelId }, _userId }) => {
+      
+      //チャンネル参加データが存在するか確認
+      const channelJoined = await db.channelJoin.findFirst({
+        where: {
+          userId: _userId,
+          channelId,
+        },
+      });
+      //既に参加している
+      if (channelJoined !== null) {
+        throw error(400, "Already joined");
+      }
+
+      //チャンネルが存在するか確認
+      const channelData = await db.channel.findUnique({
+        where: {
+          id: channelId,
+        },
+      });
+      //チャンネルが存在しない
+      if (channelData === null) {
+        throw error(404, "Channel not found");
+      }
+
+      await db.channelJoin.create({
+        data: {
+          userId: _userId,
+          channelId,
+        },
+      });
+
+      return {
+        message: "Channel joined",
+      };
+    },
+    {
+      body: t.Object({
+        channelId: t.String({ minLength: 1 }),
+      }),
+    }
+  )
+  .post(
+    "/leave",
+    async ({ body: { channelId }, _userId }) => {
+      //チャンネル参加データが存在するか確認
+      const channelJoinData = await db.channelJoin.findFirst({
+        where: {
+          userId: _userId,
+          channelId
+        },
+      });
+      if (channelJoinData === null) {
+        throw error(400, "You are not joined this channel");
+      }
+
+      await db.channelJoin.deleteMany({
+        where: {
+          userId: _userId,
+          channelId,
+        },
+      });
+
+      return {
+        message: "Channel left",
+      };
+    },
+    {
+      body: t.Object({
+        channelId: t.String({ minLength: 1 }),
+      }),
+    }
+  )
+
   .use(checkRoleTerm)
   .put(
     "/create",
