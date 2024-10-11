@@ -86,6 +86,39 @@ export const role = new Elysia({ prefix: "/role" })
       checkRoleTerm: "manageRole",
     },
   )
+  .post(
+    "/unlink",
+    async ({ body: { userId, roleId }, _userId }) => {
+      //違う人のリンク取り消しなら送信者のロールレベルが足りるか確認
+      if (userId !== _userId) {
+        //送信者のロールレベルが足りるか確認
+        if (!(await CompareRoleLevelToRole(_userId, roleId))) {
+          return {
+            success: false,
+            message: "You cannot link this role",
+          };
+        }
+      }
+
+      await db.roleLink.deleteMany({
+        where: {
+          userId, //指定のユーザーId
+          roleId,
+        },
+      });
+
+      return {
+        success: true,
+        message: "Role unlinked",
+      };
+    },
+    {
+      body: t.Object({
+        userId: t.String({ notEmpty: true }),
+        roleId: t.String({ notEmpty: true }),
+      }),
+    },
+  )
   .delete(
     "/delete",
     async ({ body: { roleId }, _userId }) => {
