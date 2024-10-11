@@ -92,7 +92,7 @@ describe("role", async () => {
         }),
       }),
     );
-    console.log("role.test : link : responseError", responseError);
+    //console.log("role.test : link : responseError", responseError);
     //resultJson = await responseError.json();
     //console.log("role.test :: link : resultJson", resultJson);
     expect(responseError.ok).toBe(false);
@@ -112,7 +112,7 @@ describe("role", async () => {
         }),
       }),
     );
-    console.log("role.test : link : response", response);
+    //console.log("role.test : link : response", response);
     resultJson = await response.json();
     //console.log("role.test :: link : resultJson", resultJson);
     expect(resultJson.success).toBe(true);
