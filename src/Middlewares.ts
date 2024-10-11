@@ -1,63 +1,62 @@
-import { Elysia, error, t } from 'elysia'
 import { PrismaClient } from "@prisma/client";
+import { Elysia, error, t } from "elysia";
 
 const db = new PrismaClient();
 
-const CheckToken = new Elysia({ name: 'CheckToken' })
+const CheckToken = new Elysia({ name: "CheckToken" })
   .guard({
-    cookie: t.Object({token: t.String()})
+    cookie: t.Object({ token: t.String() }),
   })
-  .resolve({ as: "scoped"}, async ({cookie: {token}}) => {
-     //トークンがDBにあるか確認
-     const tokenData = await db.token.findUnique({
-        where: {
-          token: token.value
-        }
-      });
+  .resolve({ as: "scoped" }, async ({ cookie: { token } }) => {
+    //トークンがDBにあるか確認
+    const tokenData = await db.token.findUnique({
+      where: {
+        token: token.value,
+      },
+    });
 
-      if (tokenData === null) { return error(401, "Invalid token"); }
+    if (tokenData === null) {
+      return error(401, "Invalid token");
+    }
 
     return {
-      _userId: tokenData?.userId
+      _userId: tokenData?.userId,
     };
   });
 
-const compareRoleLevelToRole = new Elysia({ name: 'compareRoleLevelToRole' })
+const compareRoleLevelToRole = new Elysia({ name: "compareRoleLevelToRole" })
   .use(CheckToken)
-  .macro(
-    ({onBeforeHandle}) => ({
-      async compareRoleLevelToRole(dat:{targetRoleId: string}, { _userId }) {
-        //ユーザーとロール情報取得
-        const userWithRoles = await db.user.findUnique({
-          where: {
-            id: _userId
-          },
-          include: {
-            RoleLink: true
-          }
-        });
+  .macro(({ onBeforeHandle }) => ({
+    async compareRoleLevelToRole(dat: { targetRoleId: string }, { _userId }) {
+      //ユーザーとロール情報取得
+      const userWithRoles = await db.user.findUnique({
+        where: {
+          id: _userId,
+        },
+        include: {
+          RoleLink: true,
+        },
+      });
 
-        const role = await db.roleInfo.findUnique({
-          where: {
-            id: dat.targetRoleId
-          }
-        });
+      const role = await db.roleInfo.findUnique({
+        where: {
+          id: dat.targetRoleId,
+        },
+      });
 
-        if (role === null) {
-          return error(404, "Role not found");
-        }
-
-        console.log("compareRoleLevelToRole :: triggered");
+      if (role === null) {
+        return error(404, "Role not found");
       }
-    })
-  );
 
-const checkRoleTerm = new Elysia({ name: 'checkRoleTerm' })
+      console.log("compareRoleLevelToRole :: triggered");
+    },
+  }));
+
+const checkRoleTerm = new Elysia({ name: "checkRoleTerm" })
   .use(CheckToken)
-  .macro(
-    ({ onBeforeHandle }) => ({
+  .macro(({ onBeforeHandle }) => ({
     async checkRoleTerm(roleTerm: string) {
-      onBeforeHandle(async ({_userId}) => {
+      onBeforeHandle(async ({ _userId }) => {
         //console.log("Middlewares :: checkRoleTerm : 送信者のユーザーId->", _userId);
 
         //管理者権限を持つユーザーなら問答無用で通す
@@ -65,20 +64,22 @@ const checkRoleTerm = new Elysia({ name: 'checkRoleTerm' })
           where: {
             userId: _userId,
             role: {
-              manageServer: true
-            }
-          }
+              manageServer: true,
+            },
+          },
         });
-        if (isAdmin !== null) { return; }
+        if (isAdmin !== null) {
+          return;
+        }
 
         //該当権限を持つロール付与情報を検索
         const roleLink = await db.roleLink.findFirst({
           where: {
             userId: _userId,
             role: {
-              [roleTerm]: true
-            }
-          }
+              [roleTerm]: true,
+            },
+          },
         });
 
         //該当権限を持つロール付与情報が無いなら停止
@@ -86,9 +87,8 @@ const checkRoleTerm = new Elysia({ name: 'checkRoleTerm' })
           return error(401, "Role level not enough");
         }
       });
-    }
-    })
-  );
+    },
+  }));
 
 export default CheckToken;
 export { compareRoleLevelToRole, checkRoleTerm };

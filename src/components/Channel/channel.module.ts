@@ -18,16 +18,16 @@ export const channel = new Elysia({ prefix: "/channel" })
             connect: {
               id: _userId,
             },
-          }
-        }
+          },
+        },
       });
 
       return {
         success: true,
         message: "Channel created",
         data: {
-          channelId: newChannel.id
-        }
+          channelId: newChannel.id,
+        },
       };
     },
     {
@@ -78,5 +78,4 @@ export const channel = new Elysia({ prefix: "/channel" })
         channelId: t.String(),
       }),
     },
-  )
-  ;
+  );

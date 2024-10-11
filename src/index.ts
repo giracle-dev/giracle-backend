@@ -1,17 +1,17 @@
+import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { Elysia } from "elysia";
-import {cors} from "@elysiajs/cors";
 
-import { user } from "./components/User/user.module";
 import { channel } from "./components/Channel/channel.module";
 import { role } from "./components/Role/role.module";
+import { user } from "./components/User/user.module";
 
 export const app = new Elysia()
-  .use(cors(
-    {
+  .use(
+    cors({
       origin: Bun.env.CORS_ORIGIN,
-    }
-  ))
+    }),
+  )
   .use(swagger())
   .onError(({ error, code }) => {
     if (code === "NOT_FOUND") return "Not Found :(";

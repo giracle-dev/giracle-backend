@@ -2,21 +2,23 @@
 import { describe, expect, it } from "bun:test";
 import { Elysia } from "elysia";
 
-import { user } from "../src/components/User/user.module";
-import { role } from "../src/components/Role/role.module";
 import { PrismaClient } from "@prisma/client";
+import { role } from "../src/components/Role/role.module";
+import { user } from "../src/components/User/user.module";
 
 //テスト用DBのURLを設定
 //Bun.env.DATABASE_URL = "file:./test.db";
 
 describe("role", async () => {
   //インスタンス生成
-  const app = new Elysia()
-    .use(user)
-    .use(role);
+  const app = new Elysia().use(user).use(role);
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  let resultJson: { success: boolean; message: string, data:{[key:string]: any} };
+  let resultJson: {
+    success: boolean;
+    message: string;
+    data: { [key: string]: any };
+  };
   let createdRoleId: string;
 
   //ここでログインして処理
@@ -31,7 +33,10 @@ describe("role", async () => {
     }),
   );
   //console.log("channel.test :: sign-in : tokenRes->", await tokenRes.json());
-  const tokenTesting = tokenRes.headers.getSetCookie()[0].split(";")[0].split("=")[1];
+  const tokenTesting = tokenRes.headers
+    .getSetCookie()[0]
+    .split(";")[0]
+    .split("=")[1];
 
   it("role :: create", async () => {
     //不正リクエストを送信
@@ -39,9 +44,9 @@ describe("role", async () => {
       new Request("http://localhost/role/create", {
         method: "PUT",
         credentials: "include",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
       }),
     );
@@ -53,16 +58,16 @@ describe("role", async () => {
       new Request("http://localhost/role/create", {
         method: "PUT",
         credentials: "include",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
         body: JSON.stringify({
           roleName: "モデレーター",
           rolePower: {
             manageRole: true,
-            manageUser: true
-          }
+            manageUser: true,
+          },
         }),
       }),
     );
@@ -81,12 +86,12 @@ describe("role", async () => {
       new Request("http://localhost/role/delete", {
         method: "DELETE",
         credentials: "include",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
         body: JSON.stringify({
-          roleId: "存在しないロールId"
+          roleId: "存在しないロールId",
         }),
       }),
     );
@@ -98,12 +103,12 @@ describe("role", async () => {
       new Request("http://localhost/role/delete", {
         method: "DELETE",
         credentials: "include",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
         body: JSON.stringify({
-          roleId: createdRoleId
+          roleId: createdRoleId,
         }),
       }),
     );

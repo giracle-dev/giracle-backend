@@ -2,26 +2,30 @@
 import { describe, expect, it } from "bun:test";
 import { Elysia } from "elysia";
 
-import { user } from "../src/components/User/user.module";
-import { channel } from "../src/components/Channel/channel.module";
 import { PrismaClient } from "@prisma/client";
+import { channel } from "../src/components/Channel/channel.module";
+import { user } from "../src/components/User/user.module";
 
 //テスト用DBのURLを設定
 //Bun.env.DATABASE_URL = "file:./test.db";
 
 describe("channel", async () => {
   //インスタンス生成
-  const app = new Elysia()
-    .use(user)
-    .use(channel);
+  const app = new Elysia().use(user).use(channel);
 
   // ----------------- テスト用DB整備 ---------------------------
-  const dbTest = new PrismaClient({ datasources: { db: { url: "file:./test.db" } } });
+  const dbTest = new PrismaClient({
+    datasources: { db: { url: "file:./test.db" } },
+  });
   await dbTest.channel.deleteMany({});
   // -----------------------------------------------------------
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  let resultJson: { success: boolean; message: string, data:{[key:string]: any} };
+  let resultJson: {
+    success: boolean;
+    message: string;
+    data: { [key: string]: any };
+  };
   let createdChannelId: string;
 
   //ここでログインして処理
@@ -36,7 +40,10 @@ describe("channel", async () => {
     }),
   );
   //console.log("channel.test :: sign-in : tokenRes->", await tokenRes.json());
-  const tokenTesting = tokenRes.headers.getSetCookie()[0].split(";")[0].split("=")[1];
+  const tokenTesting = tokenRes.headers
+    .getSetCookie()[0]
+    .split(";")[0]
+    .split("=")[1];
 
   it("channel :: create", async () => {
     //不正リクエストを送信
@@ -44,11 +51,14 @@ describe("channel", async () => {
       new Request("http://localhost/channel/create", {
         method: "PUT",
         credentials: "include",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
-        body: JSON.stringify({ channelName: "", description: "これはテスト用のチャンネルです。" }),
+        body: JSON.stringify({
+          channelName: "",
+          description: "これはテスト用のチャンネルです。",
+        }),
       }),
     );
     expect(responseError.ok).toBe(false);
@@ -58,11 +68,14 @@ describe("channel", async () => {
       new Request("http://localhost/channel/create", {
         method: "PUT",
         credentials: "include",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
-        body: JSON.stringify({ channelName: "testChannel", description: "これはテスト用のチャンネルです。" }),
+        body: JSON.stringify({
+          channelName: "testChannel",
+          description: "これはテスト用のチャンネルです。",
+        }),
       }),
     );
     //console.log("channel.test : create : response", response);
@@ -81,11 +94,11 @@ describe("channel", async () => {
       new Request("http://localhost/channel/delete", {
         method: "PUT",
         credentials: "include",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
-        body: JSON.stringify({ channelId: "asdf"}),
+        body: JSON.stringify({ channelId: "asdf" }),
       }),
     );
     expect(responseError.ok).toBe(false);
@@ -95,9 +108,9 @@ describe("channel", async () => {
       new Request("http://localhost/channel/delete", {
         method: "DELETE",
         credentials: "include",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
         body: JSON.stringify({ channelId: createdChannelId }),
       }),

@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { t } from "elysia";
-import { userService } from "./user.service";
 import CheckToken from "../../Middlewares";
+import { userService } from "./user.service";
 
 const db = new PrismaClient();
 
@@ -46,8 +46,8 @@ export const user = new Elysia({ prefix: "/user" })
           RoleLink: {
             create: {
               roleId: flagFirstUser ? "HOST" : "MEMBER",
-            }
-          }
+            },
+          },
         },
       });
 
@@ -129,10 +129,10 @@ export const user = new Elysia({ prefix: "/user" })
   )
 
   .use(CheckToken)
-  
+
   .post(
     "/change-password",
-    async ({ error, body:{currentPassword, newPassword}, _userId }) => {
+    async ({ error, body: { currentPassword, newPassword }, _userId }) => {
       //console.log("user.module :: /sign-in :: tokenGenerated", tokenGenerated);
       //ユーザー情報取得
       const userdata = await db.user.findFirst({
@@ -167,7 +167,9 @@ export const user = new Elysia({ prefix: "/user" })
           userId: userdata.id,
         },
         data: {
-          password: await Bun.password.hash(newPassword + userdata.password.salt),
+          password: await Bun.password.hash(
+            newPassword + userdata.password.salt,
+          ),
         },
       });
 
@@ -206,18 +208,15 @@ export const user = new Elysia({ prefix: "/user" })
       cookie: t.Cookie({ token: t.String() }),
     },
   )
-  .get(
-    "/verify-token",
-    ({ _userId, error }) => {
-      //もし空ならトークンが無効
-      if (_userId === "") {
-        throw error(401, "Token is invalid");
-      }
+  .get("/verify-token", ({ _userId, error }) => {
+    //もし空ならトークンが無効
+    if (_userId === "") {
+      throw error(401, "Token is invalid");
+    }
 
-      //トークンが有効
-      return {
-        success: true,
-        message: "Token is valid",
-      };
-    },
-  );
+    //トークンが有効
+    return {
+      success: true,
+      message: "Token is valid",
+    };
+  });

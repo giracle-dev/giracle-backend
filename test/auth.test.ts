@@ -13,7 +13,9 @@ describe("auth", async () => {
   //インスタンス生成
   const app = new Elysia().use(user);
   //テスト用DBインスタンス生成
-  const dbTest = new PrismaClient({ datasources: { db: { url: "file:./test.db" } } });
+  const dbTest = new PrismaClient({
+    datasources: { db: { url: "file:./test.db" } },
+  });
   //DBのマイグレーション
   execSync("bunx prisma db push");
 
@@ -116,7 +118,10 @@ describe("auth", async () => {
     //クッキー確認
     expect(response.headers.getSetCookie()[0]).toStartWith("token=");
     //クッキーをsign-out用に保存
-    tokenTesting = response.headers.getSetCookie()[0].split(";")[0].split("=")[1];
+    tokenTesting = response.headers
+      .getSetCookie()[0]
+      .split(";")[0]
+      .split("=")[1];
   });
 
   it("auth :: vrify-token", async () => {
@@ -142,7 +147,7 @@ describe("auth", async () => {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "Cookie": "token=wrongtoken",
+          Cookie: "token=wrongtoken",
         },
       }),
     );
@@ -158,7 +163,7 @@ describe("auth", async () => {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
       }),
     );
@@ -177,12 +182,12 @@ describe("auth", async () => {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
         body: JSON.stringify({
           currentPassword: "examplewrongpassword",
           newPassword: "asdf",
-        })
+        }),
       }),
     );
 
@@ -198,12 +203,12 @@ describe("auth", async () => {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
         body: JSON.stringify({
           currentPassword: "testuser",
           newPassword: "asdf",
-        })
+        }),
       }),
     );
 
@@ -230,13 +235,12 @@ describe("auth", async () => {
 
     //正しいリクエストを送信
     const response = await app.handle(
-      new Request("http://localhost/user/sign-out",
-        {
+      new Request("http://localhost/user/sign-out", {
         method: "GET",
         credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
-          "Cookie": `token=${tokenTesting}`,
+          Cookie: `token=${tokenTesting}`,
         },
       }),
     );

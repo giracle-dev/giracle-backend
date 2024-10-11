@@ -1,6 +1,9 @@
-import Elysia, { t } from "elysia";
-import CheckToken, { compareRoleLevelToRole, checkRoleTerm } from "../../Middlewares";
 import { PrismaClient } from "@prisma/client";
+import Elysia, { t } from "elysia";
+import CheckToken, {
+  compareRoleLevelToRole,
+  checkRoleTerm,
+} from "../../Middlewares";
 
 const db = new PrismaClient();
 
@@ -15,16 +18,16 @@ export const role = new Elysia({ prefix: "/role" })
         data: {
           name: roleName,
           createdUserId: _userId,
-          ...rolePower
-        }
+          ...rolePower,
+        },
       });
 
       return {
         success: true,
         message: "Role created",
         data: {
-          roleId: newRole.id
-        }
+          roleId: newRole.id,
+        },
       };
     },
     {
@@ -35,7 +38,7 @@ export const role = new Elysia({ prefix: "/role" })
           manageChannel: t.Optional(t.Boolean()),
           manageRole: t.Optional(t.Boolean()),
           manageUser: t.Optional(t.Boolean()),
-        })
+        }),
       }),
       checkRoleTerm: "manageRole",
     },
@@ -45,29 +48,29 @@ export const role = new Elysia({ prefix: "/role" })
     async ({ body: { roleId }, _userId }) => {
       await db.roleInfo.delete({
         where: {
-          id: roleId
-        }
+          id: roleId,
+        },
       });
 
       return {
         success: true,
-        message: "Role deleted"
-      }
+        message: "Role deleted",
+      };
     },
     {
       body: t.Object({
         roleId: t.String({ notEmpty: true }),
       }),
       checkRoleTerm: "manageRole",
-    }
+    },
   )
   .get(
     "/:roleId",
     async ({ params: { roleId }, error }) => {
       const role = await db.roleInfo.findUnique({
         where: {
-          id: roleId
-        }
+          id: roleId,
+        },
       });
 
       //ロールが存在しない
@@ -78,12 +81,12 @@ export const role = new Elysia({ prefix: "/role" })
       return {
         success: true,
         message: "Role info",
-        data: role
-      }
+        data: role,
+      };
     },
     {
       params: t.Object({
         roleId: t.String({ notEmpty: true }),
       }),
-    }
+    },
   );
