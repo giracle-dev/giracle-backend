@@ -196,6 +196,24 @@ describe("channel", async () => {
     expect(responseAgain.status).toBe(400);
   });
 
+  it("channel :: get", async () => {
+    //正しいリクエストを送信
+    const response = await app.handle(
+      new Request("http://localhost/channel/list", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        }
+      }),
+    );
+    resultJson = await response.json();
+    console.log("channel.test : get : response", resultJson);
+    expect(resultJson.message).toBe("Channel list ready");
+    expect(resultJson.data[0].name).toBe("testChannel");
+  });
+
   it("channel :: delete", async () => {
     //不正リクエストを送信
     const responseError = await app.handle(
