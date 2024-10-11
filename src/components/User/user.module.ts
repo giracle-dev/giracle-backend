@@ -21,6 +21,14 @@ export const user = new Elysia({ prefix: "/user" })
         });
       }
 
+      //初めてのユーザーかどうか
+      let flagFirstUser = false;
+      //ユーザー数を取得して最初ならtrue
+      const num = await db.user.count();
+      if (num === 1) {
+        flagFirstUser = true;
+      }
+
       //ソルト生成、パスワードのハッシュ化
       const salt = crypto.randomBytes(16).toString("hex");
       const passwordHashed = await Bun.password.hash(password + salt);
@@ -35,10 +43,13 @@ export const user = new Elysia({ prefix: "/user" })
               salt: salt,
             },
           },
+          RoleLink: {
+            create: {
+              roleId: flagFirstUser ? "HOST" : "MEMBER",
+            }
+          }
         },
       });
-
-      //store.user[username] = await Bun.password.hash(password);
 
       return {
         success: true,
