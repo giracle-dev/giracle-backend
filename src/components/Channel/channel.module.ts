@@ -1,11 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import Elysia, { t } from "elysia";
-import CheckToken from "../../Middlewares";
+import CheckToken, { checkRoleTerm } from "../../Middlewares";
 
 const db = new PrismaClient();
 
 export const channel = new Elysia({ prefix: "/channel" })
   .use(CheckToken)
+  .use(checkRoleTerm)
   .put(
     "/create",
     async ({ body: { channelName, description = "" }, _userId }) => {
@@ -34,6 +35,7 @@ export const channel = new Elysia({ prefix: "/channel" })
         channelName: t.String({ minLength: 1 }),
         description: t.Optional(t.String()),
       }),
+      checkRoleTerm: "manageChannel",
     },
   )
   .delete(
@@ -76,5 +78,6 @@ export const channel = new Elysia({ prefix: "/channel" })
       body: t.Object({
         channelId: t.String(),
       }),
+      checkRoleTerm: "manageChannel",
     },
   );
