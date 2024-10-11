@@ -37,7 +37,6 @@ export const role = new Elysia({ prefix: "/role" })
           manageUser: t.Optional(t.Boolean()),
         })
       }),
-      _userId: t.String({ minLength: 2 }),
       checkRoleTerm: "manageRole",
     },
   )
