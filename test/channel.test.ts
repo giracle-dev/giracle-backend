@@ -59,6 +59,7 @@ describe("channel", async () => {
         body: JSON.stringify({ channelName: "testChannel", description: "これはテスト用のチャンネルです。" }),
       }),
     );
+    //console.log("channel.test : create : response", response);
     resultJson = await response.json();
     //console.log("auth.test :: sign-up : response", resultJson);
     expect(resultJson.message).toBe("Channel created");
