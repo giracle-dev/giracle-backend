@@ -32,6 +32,7 @@ describe("role", async () => {
       }),
     }),
   );
+  const userIdForTesting = (await tokenRes.json()).data.userId as string;
   //console.log("channel.test :: sign-in : tokenRes->", await tokenRes.json());
   const tokenTesting = tokenRes.headers
     .getSetCookie()[0]
@@ -71,13 +72,56 @@ describe("role", async () => {
         }),
       }),
     );
-    console.log("role.test : create : response", response);
+    //console.log("role.test : create : response", response);
     resultJson = await response.json();
-    console.log("role.test :: create : resultJson", resultJson);
+    //console.log("role.test :: create : resultJson", resultJson);
     expect(resultJson.success).toBe(true);
     expect(resultJson.data.roleId).toBeString();
 
     createdRoleId = resultJson.data.roleId;
+  });
+
+  it("role :: link", async () => {
+    //リクエストを送信
+    const responseError = await app.handle(
+      new Request("http://localhost/role/link", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          roleId: "存在しないロールId",
+          userId: userIdForTesting //自分
+        }),
+      }),
+    );
+    console.log("role.test : link : responseError", responseError);
+    //resultJson = await responseError.json();
+    //console.log("role.test :: link : resultJson", resultJson);
+    expect(responseError.ok).toBe(false);
+
+    //リクエストを送信
+    const response = await app.handle(
+      new Request("http://localhost/role/link", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          roleId: createdRoleId,
+          userId: userIdForTesting //自分
+        }),
+      }),
+    );
+    console.log("role.test : link : response", response);
+    resultJson = await response.json();
+    //console.log("role.test :: link : resultJson", resultJson);
+    expect(resultJson.success).toBe(true);
+    expect(resultJson.message).toBe("Role linked");
   });
 
   it("role :: delete", async () => {

@@ -43,6 +43,29 @@ export const role = new Elysia({ prefix: "/role" })
       checkRoleTerm: "manageRole",
     },
   )
+  .post(
+    "/link",
+    async ({ body: { userId, roleId } }) => {
+      await db.roleLink.create({
+        data: {
+          userId,
+          roleId,
+        },
+      });
+
+      return {
+        success: true,
+        message: "Role linked",
+      };
+    },
+    {
+      body: t.Object({
+        userId: t.String({ notEmpty: true }),
+        roleId: t.String({ notEmpty: true }),
+      }),
+      checkRoleTerm: "manageRole",
+    }
+  )
   .delete(
     "/delete",
     async ({ body: { roleId }, _userId }) => {
