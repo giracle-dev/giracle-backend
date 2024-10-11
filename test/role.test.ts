@@ -1,13 +1,8 @@
-// test/index.test.ts
 import { describe, expect, it } from "bun:test";
 import { Elysia } from "elysia";
 
-import { PrismaClient } from "@prisma/client";
 import { role } from "../src/components/Role/role.module";
 import { user } from "../src/components/User/user.module";
-
-//テスト用DBのURLを設定
-//Bun.env.DATABASE_URL = "file:./test.db";
 
 describe("role", async () => {
   //インスタンス生成
