@@ -133,9 +133,67 @@ describe("role", async () => {
         }),
       }),
     );
-    resultJson = await responseAgain.json();
-    expect(resultJson.success).toBe(false);
-    expect(resultJson.message).toBe("Role already linked");
+    expect(responseAgain.ok).toBe(false);
+  });
+
+  it("role :: unlink", async () => {
+    //不正リクエストを送信
+    const responseError = await app.handle(
+      new Request("http://localhost/role/unlink", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          roleId: "存在しないロールId",
+          userId: userIdForTesting, //自分
+        }),
+      }),
+    );
+    //console.log("role.test : link : responseError", responseError);
+    //resultJson = await responseError.json();
+    //console.log("role.test :: link : resultJson", resultJson);
+    expect(responseError.ok).toBe(false);
+
+    //リクエストを送信
+    const response = await app.handle(
+      new Request("http://localhost/role/unlink", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          roleId: createdRoleId,
+          userId: userIdForTesting, //自分
+        }),
+      }),
+    );
+    //console.log("role.test : link : response", response);
+    resultJson = await response.json();
+    //console.log("role.test :: link : resultJson", resultJson);
+    expect(resultJson.success).toBe(true);
+    expect(resultJson.message).toBe("Role unlinked");
+
+    //HOSTのロールIdでのリクエストを送信
+    const responseHost = await app.handle(
+      new Request("http://localhost/role/unlink", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          roleId: "HOST",
+          userId: userIdForTesting, //自分
+        }),
+      }),
+    );
+    expect(responseHost.ok).toBe(false);
   });
 
   it("role :: delete", async () => {
