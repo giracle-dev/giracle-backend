@@ -13,10 +13,10 @@ describe("role", async () => {
   //インスタンス生成
   const app = new Elysia().use(user).use(role);
 
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   let resultJson: {
     success: boolean;
     message: string;
+    // biome-ignore lint/suspicious/noExplicitAny: データの型は不定
     data: { [key: string]: any };
   };
   let createdRoleId: string;

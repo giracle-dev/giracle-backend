@@ -20,10 +20,10 @@ describe("channel", async () => {
   await dbTest.channel.deleteMany({});
   // -----------------------------------------------------------
 
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   let resultJson: {
     success: boolean;
     message: string;
+    // biome-ignore lint/suspicious/noExplicitAny: データの型は不定
     data: { [key: string]: any };
   };
   let createdChannelId: string;
