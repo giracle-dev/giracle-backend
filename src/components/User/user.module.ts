@@ -122,7 +122,7 @@ export const user = new Elysia({ prefix: "/user" })
         message: `Signed in as ${username}`,
         data: {
           userId: user.id,
-        }
+        },
       };
     },
     {

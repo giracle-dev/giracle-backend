@@ -88,7 +88,7 @@ describe("role", async () => {
         },
         body: JSON.stringify({
           roleId: "存在しないロールId",
-          userId: userIdForTesting //自分
+          userId: userIdForTesting, //自分
         }),
       }),
     );
@@ -108,7 +108,7 @@ describe("role", async () => {
         },
         body: JSON.stringify({
           roleId: createdRoleId,
-          userId: userIdForTesting //自分
+          userId: userIdForTesting, //自分
         }),
       }),
     );

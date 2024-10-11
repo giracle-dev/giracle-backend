@@ -64,7 +64,7 @@ export const role = new Elysia({ prefix: "/role" })
         roleId: t.String({ notEmpty: true }),
       }),
       checkRoleTerm: "manageRole",
-    }
+    },
   )
   .delete(
     "/delete",
