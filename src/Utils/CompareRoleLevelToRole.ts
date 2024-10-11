@@ -69,7 +69,6 @@ export default async function CompareRoleLevelToRole(
     }
   }
 
-
   //対象のロールのレベル用変数
   let targetRoleLevel = 0;
   //対象のロールのレベルを計算(高ければ格納)
