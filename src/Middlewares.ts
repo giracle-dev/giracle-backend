@@ -60,6 +60,17 @@ const checkRoleTerm = new Elysia({ name: 'checkRoleTerm' })
       onBeforeHandle(async ({cookie: token, _userId}) => {
         console.log("送信者のロールId->", _userId);
 
+        //管理者権限を持つユーザーなら問答無用で通す
+        const isAdmin = await db.roleLink.findFirst({
+          where: {
+            userId: _userId,
+            role: {
+              manageServer: true
+            }
+          }
+        });
+        if (isAdmin !== null) { return; }
+
         //該当権限を持つロール付与情報を検索
         const roleLink = await db.roleLink.findFirst({
           where: {
