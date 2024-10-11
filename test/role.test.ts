@@ -15,12 +15,6 @@ describe("role", async () => {
     .use(user)
     .use(role);
 
-  // ----------------- テスト用DB整備 ---------------------------
-  const dbTest = new PrismaClient({ datasources: { db: { url: "file:./test.db" } } });
-  await dbTest.roleLink.deleteMany({});
-  await dbTest.roleInfo.deleteMany({});
-  // -----------------------------------------------------------
-
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   let resultJson: { success: boolean; message: string, data:{[key:string]: any} };
   let createdRoleId: string;
