@@ -84,6 +84,118 @@ describe("channel", async () => {
     createdChannelId = resultJson.data.channelId;
   });
 
+  it("channel :: join", async () => {
+    //不正リクエストを送信
+    const responseError = await app.handle(
+      new Request("http://localhost/channel/join", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          channelId: "asdf",
+        }),
+      }),
+    );
+    console.log("channel.test : join : responseError", responseError);
+    expect(responseError.ok).toBe(false);
+    expect(responseError.status).toBe(404);
+
+    //正しいリクエストを送信
+    const response = await app.handle(
+      new Request("http://localhost/channel/join", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          channelId: createdChannelId,
+        }),
+      }),
+    );
+    //console.log("channel.test : create : response", response);
+    resultJson = await response.json();
+    //console.log("auth.test :: sign-up : response", resultJson);
+    expect(resultJson.message).toBe("Channel joined");
+
+    //また参加しようとしているリクエストを送信
+    const responseAgain = await app.handle(
+      new Request("http://localhost/channel/join", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          channelId: createdChannelId,
+        }),
+      }),
+    );
+    expect(responseAgain.ok).toBe(false);
+    expect(responseAgain.status).toBe(400);
+  });
+
+  it("channel :: leave", async () => {
+    //不正リクエストを送信
+    const responseError = await app.handle(
+      new Request("http://localhost/channel/leave", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          channelId: "asdf",
+        }),
+      }),
+    );
+    console.log("channel.test : leave : responseError", responseError);
+    expect(responseError.ok).toBe(false);
+    expect(responseError.status).toBe(400);
+
+    //正しいリクエストを送信
+    const response = await app.handle(
+      new Request("http://localhost/channel/leave", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          channelId: createdChannelId,
+        }),
+      }),
+    );
+    //console.log("channel.test : create : response", response);
+    resultJson = await response.json();
+    //console.log("auth.test :: sign-up : response", resultJson);
+    expect(resultJson.message).toBe("Channel left");
+
+    //また脱退しようとしているリクエストを送信
+    const responseAgain = await app.handle(
+      new Request("http://localhost/channel/leave", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          channelId: createdChannelId,
+        }),
+      }),
+    );
+    expect(responseAgain.ok).toBe(false);
+    expect(responseAgain.status).toBe(400);
+  });
+
   it("channel :: delete", async () => {
     //不正リクエストを送信
     const responseError = await app.handle(

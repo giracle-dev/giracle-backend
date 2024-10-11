@@ -18,6 +18,7 @@ describe("auth", async () => {
   //Prismaでuserデータにかかわるものをすべて削除
   await dbTest.token.deleteMany({});
   await dbTest.password.deleteMany({});
+  await dbTest.channelJoin.deleteMany({});
   await dbTest.channel.deleteMany({});
   await dbTest.roleLink.deleteMany({});
   await dbTest.roleInfo.deleteMany({});
