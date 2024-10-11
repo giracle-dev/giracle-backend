@@ -126,7 +126,7 @@ describe("auth", async () => {
       .split("=")[1];
   });
 
-  it("auth :: vrify-token", async () => {
+  it("auth :: verify-token", async () => {
     //クレデンシャル無しリクエストを送信
     const responseWithoutCookie = await app.handle(
       new Request("http://localhost/user/verify-token", {
