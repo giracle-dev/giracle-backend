@@ -83,15 +83,17 @@ export const role = new Elysia({ prefix: "/role" })
   .post(
     "/unlink",
     async ({ body: { userId, roleId }, _userId }) => {
-      //違う人のリンク取り消しなら送信者のロールレベルが足りるか確認
-      if (userId !== _userId) {
-        //送信者のロールレベルが足りるか確認
-        if (!(await CompareRoleLevelToRole(_userId, roleId))) {
-          return {
-            success: false,
-            message: "You cannot link this role",
-          };
-        }
+      //デフォルトのロールはリンク取り消し不可
+      if (roleId === "MEMBER" || roleId === "HOST") {
+        return {
+          success: false,
+          message: "You cannot unlink this role",
+        };
+      }
+
+      //送信者のロールレベルが足りるか確認
+      if (!(await CompareRoleLevelToRole(_userId, roleId))) {
+        throw error(400, "Role level not enough or role not found");
       }
 
       await db.roleLink.deleteMany({
