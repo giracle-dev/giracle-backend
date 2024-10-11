@@ -25,6 +25,9 @@ describe("auth", async () => {
   await dbTest.roleInfo.deleteMany({});
   await dbTest.user.deleteMany({});
 
+  //DBの初期シード挿入
+  execSync("bunx prisma db seed");
+
   let resultJson: { success: boolean; message: string };
   let tokenTesting: string;
 
