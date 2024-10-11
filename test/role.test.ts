@@ -117,6 +117,25 @@ describe("role", async () => {
     //console.log("role.test :: link : resultJson", resultJson);
     expect(resultJson.success).toBe(true);
     expect(resultJson.message).toBe("Role linked");
+
+    //重複するロールIdでのリクエストを送信
+    const responseAgain = await app.handle(
+      new Request("http://localhost/role/link", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          roleId: createdRoleId,
+          userId: userIdForTesting, //自分
+        }),
+      }),
+    );
+    resultJson = await responseAgain.json();
+    expect(resultJson.success).toBe(false);
+    expect(resultJson.message).toBe("Role already linked");
   });
 
   it("role :: delete", async () => {

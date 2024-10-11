@@ -51,6 +51,21 @@ export const role = new Elysia({ prefix: "/role" })
         };
       }
 
+      //リンク済みか確認
+      const checkRoleLinked = await db.roleLink.findFirst({
+        where: {
+          userId, //指定のユーザーId
+          roleId,
+        },
+      });
+      //リンク済みならエラー
+      if (checkRoleLinked !== null) {
+        return {
+          success: false,
+          message: "Role already linked",
+        };
+      }
+      
       await db.roleLink.create({
         data: {
           userId, //指定のユーザーId
