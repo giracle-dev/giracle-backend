@@ -12,9 +12,6 @@ export const wsHandler = new Elysia()
         signal: t.String({ minLength: 1 }),
         data: t.Any(),
       }),
-      cookie: t.Object({
-        token: t.String({ minLength: 1 }),
-      }),
 
       message(ws, message) {
         if (message.signal === "ping") {
