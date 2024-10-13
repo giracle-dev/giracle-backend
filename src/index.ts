@@ -5,6 +5,7 @@ import { Elysia } from "elysia";
 import { channel } from "./components/Channel/channel.module";
 import { role } from "./components/Role/role.module";
 import { user } from "./components/User/user.module";
+import { wsHandler } from "./ws";
 
 export const app = new Elysia()
   .use(
@@ -17,6 +18,7 @@ export const app = new Elysia()
     if (code === "NOT_FOUND") return "Not Found :(";
     console.error(error);
   })
+  .use(wsHandler)
   .use(user)
   .use(channel)
   .use(role)

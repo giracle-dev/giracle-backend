@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
-import Elysia, { t } from "elysia";
+import Elysia, { error, t } from "elysia";
 import CheckToken from "../../Middlewares";
 import { userService } from "./user.service";
 
@@ -114,7 +114,7 @@ export const user = new Elysia({ prefix: "/user" })
       //console.log("user.module :: /sign-in :: tokenGenerated", tokenGenerated);
       //クッキーに格納
       token.value = tokenGenerated.token;
-      token.httpOnly = true;
+      token.sameSite = "lax";
       token.expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 15); //15日間有効
 
       return {
@@ -221,5 +221,45 @@ export const user = new Elysia({ prefix: "/user" })
     return {
       success: true,
       message: "Token is valid",
+      data: {
+        userId: _userId
+      }
     };
-  });
+  })
+  .get(
+    "/info/:id",
+    async ({ params: { id } }) => {
+      const user = await db.user.findFirst({
+        where: {
+          id: id,
+        },
+        include: {
+          RoleLink: {
+            select: {
+              roleId: true,
+              roleLinkedAt: true,
+              role: {
+                select: {
+                  name: true,
+                },
+              }
+            },
+          },
+        },
+      });
+      //ユーザーが存在しない場合
+      if (!user) {
+        return error(404, "User not found");
+      }
+
+      return {
+        message: "User info",
+        data: user
+      };
+    },
+    {
+      params: t.Object({
+        id: t.String({ minLength: 1 }),
+      }),
+    }
+  )
