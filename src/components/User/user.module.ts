@@ -221,5 +221,8 @@ export const user = new Elysia({ prefix: "/user" })
     return {
       success: true,
       message: "Token is valid",
+      data: {
+        userId: _userId
+      }
     };
   });
