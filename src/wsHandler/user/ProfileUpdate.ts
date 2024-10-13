@@ -32,7 +32,8 @@ export default async function ProfileUpdate (
     });
     if (!userDataUpdation) throw new Error("ProfileUpdate :: User not found");
 
-    console.log("ProfileUpdate :: 適用するデータ->", _data);
+    //console.log("ProfileUpdate :: 適用するデータ->", _data);
+
     //データ更新
     const userUpdated = await db.user.update({
       where: {
