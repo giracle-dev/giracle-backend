@@ -14,6 +14,7 @@ export const wsHandler = new Elysia()
       }),
 
       message(ws, message) {
+        console.log("ws :: メッセージ受信 ::", message);
         if (message.signal === "ping") {
           ws.send("pong");
         }
@@ -24,6 +25,7 @@ export const wsHandler = new Elysia()
       async open(ws) {
         const token = ws.data.cookie.token.value;
         if (!token) {
+          console.log("ws :: WS接続 :: token not valid");
           ws.close();
           return;
         }
@@ -44,12 +46,14 @@ export const wsHandler = new Elysia()
           }
         });
         if (!user) {
+          console.log("ws :: WS接続 :: user not found");
           ws.close();
           return
         }
 
         //ハンドラのリンク
         ws.subscribe(user.id);
+        ws.subscribe("GLOBAL");
         //チャンネル用ハンドラのリンク
         for (const channelData of user.ChannelJoin) {
           ws.subscribe(`channel::${channelData.id}`);
