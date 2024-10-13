@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
-import Elysia, { t } from "elysia";
+import Elysia, { error, t } from "elysia";
 import CheckToken from "../../Middlewares";
 import { userService } from "./user.service";
 
@@ -247,6 +247,10 @@ export const user = new Elysia({ prefix: "/user" })
           },
         },
       });
+      //ユーザーが存在しない場合
+      if (!user) {
+        return error(404, "User not found");
+      }
 
       return {
         message: "User info",
