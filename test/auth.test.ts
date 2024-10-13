@@ -34,6 +34,7 @@ describe("auth", async () => {
     data: { [key: string]: any };
   };
   let tokenTesting: string;
+  let userIdTesting: string;
 
   it("auth :: sign-up", async () => {
     //不正リクエストを送信
@@ -118,6 +119,8 @@ describe("auth", async () => {
     //console.log("auth.test :: sign-in : response", response);
     expect(resultJson.message).toStartWith("Signed in as ");
     expect(resultJson.data.userId).toBeString();
+    //userIdを保存
+    userIdTesting = resultJson.data.userId;
     //クッキー確認
     expect(response.headers.getSetCookie()[0]).toStartWith("token=");
     //クッキーをsign-out用に保存
@@ -175,6 +178,42 @@ describe("auth", async () => {
     resultJson = await response.json();
     //console.log("auth.test :: vrify-token : response", resultJson);
     expect(resultJson.message).toBe("Token is valid");
+  });
+
+  it("auth :: info", async () => {
+    //間違ったトークンでのリクエストを送信
+    const responseWrong = await app.handle(
+      new Request("http://localhost/user/info/", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+      }),
+    );
+
+    //console.log("auth.test :: vrify-token : responseError", responseWrong);
+    //認証エラーになるはずだから401
+    expect(responseWrong.status).toBe(404);
+
+    //正しいリクエストを送信
+    const response = await app.handle(
+      new Request("http://localhost/user/info/" + userIdTesting, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+      }),
+    );
+
+    //console.log("auth.test :: vrify-token : response", response);
+    resultJson = await response.json();
+    //console.log("auth.test :: vrify-token : response", resultJson);
+    expect(resultJson.message).toBe("User info");
+    expect(resultJson.data.name).toBe("testuser");
   });
 
   it("auth :: change-password", async () => {
