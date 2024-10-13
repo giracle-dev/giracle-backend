@@ -225,4 +225,27 @@ export const user = new Elysia({ prefix: "/user" })
         userId: _userId
       }
     };
-  });
+  })
+  .get(
+    "/info/:id",
+    async ({ params: { id } }) => {
+      const user = await db.user.findFirst({
+        where: {
+          id: id,
+        },
+        include: {
+          RoleLink: true,
+        },
+      });
+
+      return {
+        message: "User info",
+        data: user
+      };
+    },
+    {
+      params: t.Object({
+        id: t.String({ minLength: 1 }),
+      }),
+    }
+  )
