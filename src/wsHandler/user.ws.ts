@@ -9,8 +9,12 @@ export default async function UserHandler(
   
   //signalｎ内容によって処理を分岐
   switch (signal) {
+
+    //プロフィール更新
     case "user::profileUpdate":
       ProfileUpdate(ws, data);
       break;
+
+      
   }
 }
