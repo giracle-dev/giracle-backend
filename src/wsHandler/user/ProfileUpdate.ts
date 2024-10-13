@@ -9,32 +9,34 @@ import { z } from "zod";
  */
 export default async function ProfileUpdate (
   ws: ElysiaWS<any, any, any>,
-  data: {name?:string, description?:string},
+  data: {name?:string, selfIntroduction?:string},
 ) {
   try {
 
     const dataSchema = z.object({
       name: z.optional(z.string()),
-      description: z.optional(z.string()),
+      selfIntroduction: z.optional(z.string()),
     });
 
     const _data = dataSchema.parse(data)
     const db = new PrismaClient();
 
-    //データの更新用オブジェクト
-    const dataNew: {name?:string, description?:string} = {};
-    //更新するデータを格納
-    if (_data.name) dataNew["name"] = _data.name;
-    if (_data.description) dataNew["description"] = _data.description;
-
-    //データ更新
-    const userUpdated = await db.user.updateMany({
+    const userDataUpdation = await db.user.findFirst({
       where: {
         Token: {
           some: {
             token: ws.data.cookie.token.value,
           },
-        }
+        },
+      },
+    });
+    if (!userDataUpdation) throw new Error("ProfileUpdate :: User not found");
+
+    console.log("ProfileUpdate :: 適用するデータ->", _data);
+    //データ更新
+    const userUpdated = await db.user.update({
+      where: {
+        id: userDataUpdation.id,
       },
       data: _data,
     });
