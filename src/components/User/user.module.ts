@@ -114,7 +114,7 @@ export const user = new Elysia({ prefix: "/user" })
       //console.log("user.module :: /sign-in :: tokenGenerated", tokenGenerated);
       //クッキーに格納
       token.value = tokenGenerated.token;
-      token.httpOnly = true;
+      token.sameSite = "lax";
       token.expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 15); //15日間有効
 
       return {
