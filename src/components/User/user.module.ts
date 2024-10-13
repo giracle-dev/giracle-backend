@@ -234,7 +234,17 @@ export const user = new Elysia({ prefix: "/user" })
           id: id,
         },
         include: {
-          RoleLink: true,
+          RoleLink: {
+            select: {
+              roleId: true,
+              roleLinkedAt: true,
+              role: {
+                select: {
+                  name: true,
+                },
+              }
+            },
+          },
         },
       });
 
