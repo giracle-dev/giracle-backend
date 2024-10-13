@@ -42,8 +42,14 @@ export default async function ProfileUpdate (
       data: _data,
     });
 
+    
     ws.send({
-      signal: "user::profileUpdate::success",
+      signal: "user::profileUpdate",
+      data: userUpdated
+    });
+    
+    ws.publish("GLOBAL", {
+      signal: "user::profileUpdate",
       data: userUpdated
     });
 
