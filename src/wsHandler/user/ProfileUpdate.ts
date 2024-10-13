@@ -42,7 +42,6 @@ export default async function ProfileUpdate (
       data: _data,
     });
 
-    
     ws.send({
       signal: "user::profileUpdate",
       data: userUpdated
