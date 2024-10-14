@@ -20,6 +20,7 @@ export const wsHandler = new Elysia()
           ws.send("pong");
         }
 
+        //シグナル名に合わせた処理分岐
         if (message.signal.startsWith("user")) UserHandler(ws, message.signal, message.data);
         if (message.signal.startsWith("channel")) ChannelHandler(ws, message.signal, message.data);
       },
