@@ -18,6 +18,7 @@ model User {
   RoleInfo         RoleInfo[]
   RoleLink         RoleLink[]
   ChannelJoin      ChannelJoin[]
+  Message          Message[]
 }
 
 model Password {
@@ -39,23 +40,37 @@ model Token {
 }
 
 model ChannelJoin {
-  id              Int      @id @default(autoincrement())
   channelJoinedAt DateTime @default(now())
   channelId       String
   channel         Channel  @relation(fields: [channelId], references: [id])
   userId          String
   user            User     @relation(fields: [userId], references: [id])
 
-  @@index([userId, channelId])
+  @@id([userId, channelId])
 }
 
 model Channel {
   id            String        @id @default(uuid())
   name          String        @unique
   description   String
+  isArchived    Boolean       @default(false)
   createdUserId String
   user          User          @relation(fields: [createdUserId], references: [id])
   ChannelJoin   ChannelJoin[]
+  Message       Message[]
+}
+
+model Message {
+  id              String   @id @default(uuid())
+  content         String
+  isSystemMessage Boolean  @default(false)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  channelId       String
+  channel         Channel  @relation(fields: [channelId], references: [id])
+  createdAt       DateTime @default(now())
+
+  @@index([channelId, userId])
 }
 
 model RoleLink {

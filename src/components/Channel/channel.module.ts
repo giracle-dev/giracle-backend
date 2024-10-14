@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Message, PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 
@@ -90,6 +90,68 @@ export const channel = new Elysia({ prefix: "/channel" })
         message: "Channel list ready",
         data: channelList
       };
+    }
+  )
+  .get(
+    "/get-history/:channelId",
+    async ({ params:{ channelId }, body: { messageIdFrom, fetchDirection, fetchLength } }) => {
+      let messageDataFrom: Message | null = null;
+      //基準位置になるメッセージIdが指定されているなら
+      if (!messageIdFrom) {
+        //取得
+        messageDataFrom = await db.message.findUnique({
+          where: {
+            id: messageIdFrom
+          }
+        });
+        //無ければエラー
+        if (!messageDataFrom) {
+          return error(404, "MessageId position not found");
+        }
+      }
+
+      //基準のメッセージIdがあるなら時間を取得、取得設定として設定
+      let optionDate: {createdAt: {lte: Date}} | null = null;
+      if (messageDataFrom !== null) { 
+        optionDate = {
+          createdAt: {
+            lte: messageDataFrom.createdAt
+          }
+        };
+      }
+
+      //履歴の取得する長さを指定
+      let takingLength = 30;
+      //bodyで指名されているなら検査して格納
+      if (fetchLength !== undefined) {
+        if (fetchLength <= 30) takingLength = fetchLength;
+      }
+
+      //履歴を取得する
+      const history = await db.message.findMany({
+        where: {
+          channelId: channelId,
+          ...optionDate
+        },
+        take: takingLength,
+        orderBy: { id: 'desc' }
+      });
+
+
+      return {
+        message: "History fetched.",
+        data: history
+      };
+    },
+    {
+      params: t.Object({
+        channelId: t.String()
+      }),
+      body: t.Object({
+        messageIdFrom: t.Optional(t.String()),
+        fetchLength: t.Optional(t.Number()),
+        fetchDirection: t.Union([t.Literal('older'), t.Literal('newer')])
+      })
     }
   )
 
