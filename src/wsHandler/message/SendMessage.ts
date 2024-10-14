@@ -52,7 +52,7 @@ export default async function SendMessage (
       data: messageData
     });
     
-    ws.publish("GLOBAL", {
+    ws.publish(`channel::${_data.channelId}`, {
       signal: "message::SendMessage",
       data: messageData
     });
