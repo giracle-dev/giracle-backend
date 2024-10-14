@@ -10,7 +10,7 @@ export default async function MessageHandler(
   //signalｎ内容によって処理を分岐
   switch (signal) {
 
-    //プロフィール更新
+    //メッセージの送信
     case "message::SendMessage":
       SendMessage(ws, data);
       break;
