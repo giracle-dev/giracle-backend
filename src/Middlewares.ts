@@ -5,9 +5,17 @@ const db = new PrismaClient();
 
 const CheckToken = new Elysia({ name: "CheckToken" })
   .guard({
-    cookie: t.Object({ token: t.String() }),
+    cookie: t.Object(
+      { token: t.String({ minLength: 1}) },
+      { error: "Cookie for token is not valid." }
+    ),
   })
   .resolve({ as: "scoped" }, async ({ cookie: { token } }) => {
+    //そもそもCookieが無いならエラー
+    if (token.value === undefined) {
+      return error(401, "Invalid token");
+    }
+
     //トークンがDBにあるか確認
     const tokenData = await db.token.findUnique({
       where: {
