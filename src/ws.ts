@@ -1,6 +1,7 @@
 import Elysia, { t } from "elysia";
 import { PrismaClient } from "@prisma/client";
 import UserHandler from "./wsHandler/user.ws";
+import ChannelHandler from "./wsHandler/channel.ws";
 
 /**
  * WebSocket用 ハンドラ
@@ -20,6 +21,7 @@ export const wsHandler = new Elysia()
         }
 
         if (message.signal.startsWith("user")) UserHandler(ws, message.signal, message.data);
+        if (message.signal.startsWith("channel")) ChannelHandler(ws, message.signal, message.data);
       },
 
       async open(ws) {
