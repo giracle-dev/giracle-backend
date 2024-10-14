@@ -53,6 +53,7 @@ model Channel {
   id            String        @id @default(uuid())
   name          String        @unique
   description   String
+  isArchived    Boolean
   createdUserId String
   user          User          @relation(fields: [createdUserId], references: [id])
   ChannelJoin   ChannelJoin[]
