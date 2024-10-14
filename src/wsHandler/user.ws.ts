@@ -1,4 +1,4 @@
-import { ElysiaWS } from "elysia/dist/ws";
+import type { ElysiaWS } from "elysia/dist/ws";
 import ProfileUpdate from "./user/ProfileUpdate";
 
 export default async function UserHandler(

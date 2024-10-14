@@ -1,4 +1,4 @@
-import { ElysiaWS } from "elysia/dist/ws";
+import type { ElysiaWS } from "elysia/dist/ws";
 import JoinChannel from "./channel/JoinChannel";
 import LeaveChannel from "./channel/LeaveChannel";
 

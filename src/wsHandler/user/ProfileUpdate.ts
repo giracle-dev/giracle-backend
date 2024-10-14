@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { ElysiaWS } from "elysia/dist/ws";
+import type { ElysiaWS } from "elysia/dist/ws";
 import { z } from "zod";
 
 /**
