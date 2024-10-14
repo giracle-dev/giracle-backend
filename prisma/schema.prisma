@@ -18,6 +18,7 @@ model User {
   RoleInfo         RoleInfo[]
   RoleLink         RoleLink[]
   ChannelJoin      ChannelJoin[]
+  Message          Message[]
 }
 
 model Password {
@@ -57,6 +58,20 @@ model Channel {
   createdUserId String
   user          User          @relation(fields: [createdUserId], references: [id])
   ChannelJoin   ChannelJoin[]
+  Message       Message[]
+}
+
+model Message {
+  id              String   @id @default(uuid())
+  content         String
+  isSystemMessage Boolean  @default(false)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  channelId       String
+  channel         Channel  @relation(fields: [channelId], references: [id])
+  createdAt       DateTime @default(now())
+
+  @@index([channelId, userId])
 }
 
 model RoleLink {
