@@ -58,7 +58,7 @@ export const wsHandler = new Elysia()
         ws.subscribe("GLOBAL");
         //チャンネル用ハンドラのリンク
         for (const channelData of user.ChannelJoin) {
-          ws.subscribe(`channel::${channelData.id}`);
+          ws.subscribe(`channel::${channelData.channelId}`);
         }
 
         ws.send("connect complted");
