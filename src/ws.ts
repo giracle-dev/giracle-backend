@@ -41,6 +41,10 @@ export const wsHandler = new Elysia()
         const token = ws.data.cookie.token.value;
         if (!token) {
           console.log("ws :: WS接続 :: token not valid");
+          ws.send({
+            signal: "ERROR",
+            data: "token not valid",
+          });
           ws.close();
           return;
         }
@@ -62,6 +66,10 @@ export const wsHandler = new Elysia()
         });
         if (!user) {
           console.log("ws :: WS接続 :: user not found");
+          ws.send({
+            signal: "ERROR",
+            data: "token not valid",
+          });
           ws.close();
           return
         }
