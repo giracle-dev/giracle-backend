@@ -40,14 +40,13 @@ model Token {
 }
 
 model ChannelJoin {
-  id              Int      @id @default(autoincrement())
   channelJoinedAt DateTime @default(now())
   channelId       String
   channel         Channel  @relation(fields: [channelId], references: [id])
   userId          String
   user            User     @relation(fields: [userId], references: [id])
 
-  @@index([userId, channelId])
+  @@id([userId, channelId])
 }
 
 model Channel {
