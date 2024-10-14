@@ -8,7 +8,7 @@ import { z } from "zod";
  * @param data 
  */
 export default async function UpdateChannel (
-  ws: ElysiaWS,
+  ws: ElysiaWS<any, any, any>,
   data: {
     channelId: string
     name: string,
