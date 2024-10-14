@@ -22,9 +22,19 @@ export const wsHandler = new Elysia()
         }
 
         //シグナル名に合わせた処理分岐
-        if (message.signal.startsWith("user")) UserHandler(ws, message.signal, message.data);
-        if (message.signal.startsWith("channel")) ChannelHandler(ws, message.signal, message.data);
-        if (message.signal.startsWith("message")) MessageHandler(ws, message.signal, message.data);
+        switch (true) {
+          case message.signal.startsWith("user"):
+            UserHandler(ws, message.signal, message.data);
+            break;
+          case message.signal.startsWith("channel"):
+            ChannelHandler(ws, message.signal, message.data);
+            break;
+          case message.signal.startsWith("message"):
+            MessageHandler(ws, message.signal, message.data);
+            break;
+          default:
+            console.log("ws :: 未知のシグナル ::", message);
+        }
       },
 
       async open(ws) {
