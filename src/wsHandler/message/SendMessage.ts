@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import type { ElysiaWS } from "elysia/dist/ws";
 import { z } from "zod";
+import { user } from "../../components/User/user.module";
 
 /**
  * メッセージを送信する
@@ -28,12 +29,32 @@ export default async function SendMessage (
     const tokenData = await db.token.findUnique({
       where: {
         token: ws.data.cookie.token.value
+      },
+      include: {
+        user: {
+          include: {
+            ChannelJoin: {
+              where: {
+                channelId: _data.channelId
+              }
+            }
+          }
+        }
       }
     });
+    //トークンデータが取得できない場合
     if (!tokenData) {
       ws.send({
         signal: "message::SendMessage",
         data: "ERROR :: Internal error"
+      });
+      return;
+    }
+    //チャンネルに参加していない場合
+    if (tokenData.user.ChannelJoin.length === 0) {
+      ws.send({
+        signal: "message::SendMessage",
+        data: "ERROR :: You are not joined this channel"
       });
       return;
     }
