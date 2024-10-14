@@ -215,7 +215,19 @@ export const user = new Elysia({ prefix: "/user" })
         userId: _userId
       }
     };
-  })
+  },
+  {
+    response: {
+      200: t.Object({
+        message: t.Literal("Token is valid"),
+        data: t.Object({
+          userId: t.String()
+        })
+      }),
+      401: t.Literal("Token is invalid")
+    }
+  }
+  )
   .get(
     "/info/:id",
     async ({ params: { id } }) => {
