@@ -16,7 +16,6 @@ export const user = new Elysia({ prefix: "/user" })
       });
       if (user) {
         return error(400, {
-          success: false,
           message: "User already exists",
         });
       }
@@ -52,7 +51,6 @@ export const user = new Elysia({ prefix: "/user" })
       });
 
       return {
-        success: true,
         message: "User created",
       };
     },
@@ -74,14 +72,12 @@ export const user = new Elysia({ prefix: "/user" })
       //ユーザーが存在しない場合
       if (!user) {
         return error(400, {
-          success: false,
           message: "Auth info is incorrect",
         });
       }
       //パスワードが設定されていない場合
       if (!user.password) {
         return error(400, {
-          success: false,
           message: "Interlal error",
         });
       }
@@ -95,7 +91,6 @@ export const user = new Elysia({ prefix: "/user" })
       //パスワードが一致しない場合
       if (!passwordCheckResult) {
         return error(400, {
-          success: false,
           message: "Auth info is incorrect",
         });
       }
@@ -118,7 +113,6 @@ export const user = new Elysia({ prefix: "/user" })
       token.expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 15); //15日間有効
 
       return {
-        success: true,
         message: `Signed in as ${username}`,
         data: {
           userId: user.id,
@@ -159,7 +153,6 @@ export const user = new Elysia({ prefix: "/user" })
       //パスワードが一致しない場合
       if (!passwordCheckResult) {
         return error(401, {
-          success: false,
           message: "Current password is incorrect",
         });
       }
@@ -177,7 +170,6 @@ export const user = new Elysia({ prefix: "/user" })
       });
 
       return {
-        success: true,
         message: "Password changed",
       };
     },
@@ -203,7 +195,6 @@ export const user = new Elysia({ prefix: "/user" })
       token.remove();
 
       return {
-        success: true,
         message: "Signed out",
       };
     },
@@ -219,13 +210,24 @@ export const user = new Elysia({ prefix: "/user" })
 
     //トークンが有効
     return {
-      success: true,
       message: "Token is valid",
       data: {
         userId: _userId
       }
     };
-  })
+  },
+  {
+    response: {
+      200: t.Object({
+        message: t.Literal("Token is valid"),
+        data: t.Object({
+          userId: t.String()
+        })
+      }),
+      401: t.Literal("Token is invalid")
+    }
+  }
+  )
   .get(
     "/info/:id",
     async ({ params: { id } }) => {

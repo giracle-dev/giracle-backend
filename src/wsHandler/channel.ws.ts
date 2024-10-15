@@ -1,6 +1,7 @@
-import { ElysiaWS } from "elysia/dist/ws";
+import type { ElysiaWS } from "elysia/dist/ws";
 import JoinChannel from "./channel/JoinChannel";
 import LeaveChannel from "./channel/LeaveChannel";
+import UpdateChannel from "./channel/UpdateChannel";
 
 export default async function ChannelHandler(
   ws: ElysiaWS<any, any, any>,
@@ -19,6 +20,11 @@ export default async function ChannelHandler(
     //チャンネルから脱退する
     case "channel::LeaveChannel":
       LeaveChannel(ws, data);
+      break;
+
+    //チャンネル情報を更新する
+    case "channel::UpdateChannel":
+      UpdateChannel(ws, data);
       break;
 
       

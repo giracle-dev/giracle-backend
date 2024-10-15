@@ -2,6 +2,7 @@ import Elysia, { t } from "elysia";
 import { PrismaClient } from "@prisma/client";
 import UserHandler from "./wsHandler/user.ws";
 import ChannelHandler from "./wsHandler/channel.ws";
+import MessageHandler from "./wsHandler/message.ws";
 
 /**
  * WebSocket用 ハンドラ
@@ -20,14 +21,30 @@ export const wsHandler = new Elysia()
           ws.send("pong");
         }
 
-        if (message.signal.startsWith("user")) UserHandler(ws, message.signal, message.data);
-        if (message.signal.startsWith("channel")) ChannelHandler(ws, message.signal, message.data);
+        //シグナル名に合わせた処理分岐
+        switch (true) {
+          case message.signal.startsWith("user"):
+            UserHandler(ws, message.signal, message.data);
+            break;
+          case message.signal.startsWith("channel"):
+            ChannelHandler(ws, message.signal, message.data);
+            break;
+          case message.signal.startsWith("message"):
+            MessageHandler(ws, message.signal, message.data);
+            break;
+          default:
+            console.log("ws :: 未知のシグナル ::", message);
+        }
       },
 
       async open(ws) {
         const token = ws.data.cookie.token.value;
         if (!token) {
           console.log("ws :: WS接続 :: token not valid");
+          ws.send({
+            signal: "ERROR",
+            data: "token not valid",
+          });
           ws.close();
           return;
         }
@@ -49,6 +66,10 @@ export const wsHandler = new Elysia()
         });
         if (!user) {
           console.log("ws :: WS接続 :: user not found");
+          ws.send({
+            signal: "ERROR",
+            data: "token not valid",
+          });
           ws.close();
           return
         }

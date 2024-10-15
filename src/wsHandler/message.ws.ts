@@ -1,7 +1,7 @@
 import type { ElysiaWS } from "elysia/dist/ws";
-import ProfileUpdate from "./user/ProfileUpdate";
+import SendMessage from "./message/SendMessage";
 
-export default async function UserHandler(
+export default async function MessageHandler(
   ws: ElysiaWS<any, any, any>,
   signal: string,
   data: any,
@@ -10,9 +10,9 @@ export default async function UserHandler(
   //signalｎ内容によって処理を分岐
   switch (signal) {
 
-    //プロフィール更新
-    case "user::profileUpdate":
-      ProfileUpdate(ws, data);
+    //メッセージの送信
+    case "message::SendMessage":
+      SendMessage(ws, data);
       break;
 
       
