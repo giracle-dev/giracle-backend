@@ -199,7 +199,7 @@ describe("auth", async () => {
 
     //正しいリクエストを送信
     const response = await app.handle(
-      new Request("http://localhost/user/info/" + userIdTesting, {
+      new Request(`http://localhost/user/info/${userIdTesting}`, {
         method: "GET",
         credentials: "include",
         headers: {
