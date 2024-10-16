@@ -137,9 +137,8 @@ export const channel = new Elysia({ prefix: "/channel" })
         orderBy: { id: 'desc' }
       });
 
-
       return {
-        message: "History fetched.",
+        message: "History fetched",
         data: history
       };
     },
