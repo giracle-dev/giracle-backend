@@ -225,9 +225,48 @@ describe("channel", async () => {
       }),
     );
     resultJson = await response.json();
-    console.log("channel.test : get : response", resultJson);
+    console.log("channel.test : get list : response", resultJson);
     expect(resultJson.message).toBe("Channel list ready");
     expect(resultJson.data[0].name).toBe("testChannel");
+  });
+
+  it("channel :: get history", async () => {
+    //正しいリクエストを送信
+    const response = await app.handle(
+      new Request(`http://localhost/channel/get-history/${createdChannelId}`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+      }),
+    );
+    //console.log("channel.test : get-history : response", response);
+    resultJson = await response.json();
+    //console.log("channel.test : get-history : response", resultJson);
+    expect(resultJson.message).toBe("History fetched");
+
+    const messageTimeForTesting: string = resultJson.data[1].createdAt;
+
+    //正しいPart2、時間を指定しての取得
+    const responseWithTime = await app.handle(
+      new Request(`http://localhost/channel/get-history/${createdChannelId}`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          messageTimeFrom: messageTimeForTesting,
+        })
+      }),
+    );
+    //console.log("channel.test : get-history : responseWithTime", responseWithTime);
+    resultJson = await responseWithTime.json();
+    //console.log("channel.test : get-history : responseWithTime json", resultJson);
+    expect(resultJson.data.length).toBe(1);
   });
 
   it("channel :: delete", async () => {
