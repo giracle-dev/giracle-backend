@@ -12,7 +12,8 @@ export default async function UpdateChannel (
   data: {
     channelId: string
     name: string,
-    description: string
+    description: string,
+    isArchive?: boolean
   },
 ) {
   try {
@@ -21,10 +22,17 @@ export default async function UpdateChannel (
       channelId: z.string(),
       name: z.string(),
       description: z.string(),
+      isArchived: z.optional(z.boolean())
     });
 
     const _data = dataSchema.parse(data);
     const db = new PrismaClient();
+
+    //アーカイブの指定があるなら適用
+    const optionArchived = _data.isArchived ?
+      { isArchived: _data.isArchived }
+      :
+      null;
 
     //チャンネルデータを更新する
     const channelDataUpdated = await db.channel.update({
@@ -33,7 +41,8 @@ export default async function UpdateChannel (
       },
       data: {
         name: _data.name,
-        description: _data.description
+        description: _data.description,
+        ...optionArchived //アーカイブ指定があるなら適用
       }
     });
 
