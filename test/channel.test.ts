@@ -213,7 +213,7 @@ describe("channel", async () => {
     expect(responseAgain.status).toBe(400);
   });
 
-  it("channel :: get", async () => {
+  it("channel :: get list", async () => {
     //正しいリクエストを送信
     const response = await app.handle(
       new Request("http://localhost/channel/list", {
