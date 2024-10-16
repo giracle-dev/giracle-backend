@@ -1,4 +1,4 @@
-import { Message, PrismaClient } from "@prisma/client";
+import { type Message, PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 
@@ -94,11 +94,13 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .get(
     "/get-history/:channelId",
-    async ({ params:{ channelId }, body: { messageIdFrom, fetchDirection, fetchLength } }) => {
+    async ({ params:{ channelId }, body: {
+      messageIdFrom, fetchDirection, fetchLength, messageTimeFrom
+    } }) => {
       let messageDataFrom: Message | null = null;
       //基準位置になるメッセージIdが指定されているなら
-      if (!messageIdFrom) {
-        //取得
+      if (messageIdFrom !== undefined) {
+        //取得、格納
         messageDataFrom = await db.message.findUnique({
           where: {
             id: messageIdFrom
@@ -109,32 +111,52 @@ export const channel = new Elysia({ prefix: "/channel" })
           return error(404, "MessageId position not found");
         }
       }
+      //基準位置になるメッセージ時間が指定されているなら
+      if (messageTimeFrom !== undefined) {
+        //取得、格納
+        messageDataFrom = await db.message.findFirst({
+          where: {
+            createdAt: new Date(messageTimeFrom)
+          }
+        });
+        //無ければエラー
+        if (!messageDataFrom)
+          return error(404, "MessageTime position not found");
+
+        console.log("/channel/get-history : messageDataFrom", messageDataFrom);
+      }
 
       //基準のメッセージIdがあるなら時間を取得、取得設定として設定
-      let optionDate: {createdAt: {lte: Date}} | null = null;
-      if (messageDataFrom !== null) { 
-        optionDate = {
-          createdAt: {
-            lte: messageDataFrom.createdAt
-          }
-        };
+      let optionDate: {createdAt: {lte: Date} | {gte: Date}} | null = null;
+      if (messageDataFrom !== null) {
+        //取得時間方向に合わせて設定を指定
+        if (fetchDirection === 'older') {
+          //古い方向に取得する場合
+          optionDate = {
+            createdAt: {
+              lte: new Date(messageDataFrom.createdAt),
+            }
+          };
+        } else {
+          //新しい方向に取得する場合
+          optionDate = {
+            createdAt: {
+              gte: new Date(messageDataFrom.createdAt),
+            }
+          };
+        }
       }
 
-      //履歴の取得する長さを指定
-      let takingLength = 30;
-      //bodyで指名されているなら検査して格納
-      if (fetchLength !== undefined) {
-        if (fetchLength <= 30) takingLength = fetchLength;
-      }
+      console.log("/channel/get-history : messageTimeFrom,messageDataFrom", messageTimeFrom, messageDataFrom);
 
       //履歴を取得する
       const history = await db.message.findMany({
         where: {
           channelId: channelId,
-          ...optionDate
+          ...optionDate,
         },
-        take: takingLength,
-        orderBy: { id: 'desc' }
+        take: fetchLength,
+        orderBy: { createdAt: 'desc' }
       });
 
       return {
@@ -148,7 +170,8 @@ export const channel = new Elysia({ prefix: "/channel" })
       }),
       body: t.Object({
         messageIdFrom: t.Optional(t.String()),
-        fetchLength: t.Optional(t.Number({ default: 30 })),
+        messageTimeFrom: t.Optional(t.String()),
+        fetchLength: t.Optional(t.Number({ default: 30, maximum: 30 })),
         fetchDirection: t.Union([t.Literal('older'), t.Literal('newer')], {default: 'older'})
       })
     }
