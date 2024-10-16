@@ -94,9 +94,10 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .post(
     "/get-history/:channelId",
-    async ({ params:{ channelId }, body: {
-      messageIdFrom, fetchDirection, fetchLength, messageTimeFrom
-    } }) => {
+    async ({ params: { channelId }, body }) => {
+      //パラメータ指定の取得
+      const { messageIdFrom, fetchDirection, fetchLength, messageTimeFrom } = body || {};
+
       let messageDataFrom: Message | null = null;
       //基準位置になるメッセージIdが指定されているなら
       if (messageIdFrom !== undefined) {
@@ -108,7 +109,7 @@ export const channel = new Elysia({ prefix: "/channel" })
         });
         //無ければエラー
         if (!messageDataFrom) {
-          return error(404, "MessageId position not found");
+          return error(404, "Message cursor position not found");
         }
       }
       //基準位置になるメッセージ時間が指定されているなら
@@ -121,9 +122,8 @@ export const channel = new Elysia({ prefix: "/channel" })
         });
         //無ければエラー
         if (!messageDataFrom)
-          return error(404, "MessageTime position not found");
+          return error(404, "Message cursor position not found");
 
-        console.log("/channel/get-history : messageDataFrom", messageDataFrom);
       }
 
       //基準のメッセージIdがあるなら時間を取得、取得設定として設定
@@ -146,8 +146,6 @@ export const channel = new Elysia({ prefix: "/channel" })
           };
         }
       }
-
-      console.log("/channel/get-history : messageTimeFrom,messageDataFrom", messageTimeFrom, messageDataFrom);
 
       //履歴を取得する
       const history = await db.message.findMany({
@@ -175,7 +173,14 @@ export const channel = new Elysia({ prefix: "/channel" })
           fetchLength: t.Number({ default: 30, maximum: 30 }),
           fetchDirection: t.Union([t.Literal('older'), t.Literal('newer')], {default: 'older'})
         })
-      )
+      ),
+      response: {
+        200: t.Object({
+          message: t.Literal("History fetched"),
+          data: t.Array(t.Object({}))
+        }),
+        404: t.Literal("Message cursor position not found"),
+      }
     }
   )
 
