@@ -17,7 +17,6 @@ describe("channel", async () => {
   // -----------------------------------------------------------
 
   let resultJson: {
-    success: boolean;
     message: string;
     // biome-ignore lint/suspicious/noExplicitAny: データの型は不定
     data: { [key: string]: any };
