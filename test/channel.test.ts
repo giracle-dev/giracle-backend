@@ -225,12 +225,48 @@ describe("channel", async () => {
       }),
     );
     resultJson = await response.json();
-    console.log("channel.test : get list : response", resultJson);
+    //console.log("channel.test : get list : response", resultJson);
     expect(resultJson.message).toBe("Channel list ready");
     expect(resultJson.data[0].name).toBe("testChannel");
   });
 
   it("channel :: get history", async () => {
+    //不正リクエストを送信
+    const responseError = await app.handle(
+      new Request(`http://localhost/channel/get-history/${createdChannelId}`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          messageTimeFrom: "ErrorTimeString",
+        })
+      }),
+    );
+    //console.log("channel.test : get-history : response", response);
+    expect(responseError.ok).toBe(false);
+    expect(responseError.status).toBe(500);
+
+    //不正リクエストを送信
+    const responseUnknwown = await app.handle(
+      new Request(`http://localhost/channel/get-history/${createdChannelId}`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          messageTimeFrom: "2024-8-1",
+        })
+      }),
+    );
+    //console.log("channel.test : get-history : response", response);
+    expect(responseUnknwown.ok).toBe(false);
+    expect(responseUnknwown.status).toBe(404);
+    
     //正しいリクエストを送信
     const response = await app.handle(
       new Request(`http://localhost/channel/get-history/${createdChannelId}`, {
