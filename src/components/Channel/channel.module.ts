@@ -92,7 +92,7 @@ export const channel = new Elysia({ prefix: "/channel" })
       };
     }
   )
-  .get(
+  .post(
     "/get-history/:channelId",
     async ({ params:{ channelId }, body: {
       messageIdFrom, fetchDirection, fetchLength, messageTimeFrom
@@ -168,12 +168,14 @@ export const channel = new Elysia({ prefix: "/channel" })
       params: t.Object({
         channelId: t.String()
       }),
-      body: t.Object({
-        messageIdFrom: t.Optional(t.String()),
-        messageTimeFrom: t.Optional(t.String()),
-        fetchLength: t.Optional(t.Number({ default: 30, maximum: 30 })),
-        fetchDirection: t.Union([t.Literal('older'), t.Literal('newer')], {default: 'older'})
-      })
+      body: t.Optional(
+        t.Object({
+          messageIdFrom: t.Optional(t.String()),
+          messageTimeFrom: t.Optional(t.String()),
+          fetchLength: t.Number({ default: 30, maximum: 30 }),
+          fetchDirection: t.Union([t.Literal('older'), t.Literal('newer')], {default: 'older'})
+        })
+      )
     }
   )
 
