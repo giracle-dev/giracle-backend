@@ -174,13 +174,6 @@ export const channel = new Elysia({ prefix: "/channel" })
           fetchDirection: t.Union([t.Literal('older'), t.Literal('newer')], {default: 'older'})
         })
       ),
-      response: {
-        200: t.Object({
-          message: t.Literal("History fetched"),
-          data: t.Array(t.Object({}))
-        }),
-        404: t.Literal("Message cursor position not found"),
-      }
     }
   )
 
