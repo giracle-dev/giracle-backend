@@ -226,13 +226,12 @@ export const channel = new Elysia({ prefix: "/channel" })
         };
       }
 
-      //チャンネルの作成者でない
-      if (channel.createdUserId !== _userId) {
-        return {
-          success: false,
-          message: "You are not the creator of this channel",
-        };
-      }
+      //メッセージデータを削除
+      await db.message.deleteMany({
+        where: {
+          channelId,
+        },
+      });
 
       //チャンネル参加データを削除
       await db.channelJoin.deleteMany({
