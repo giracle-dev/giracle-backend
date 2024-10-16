@@ -9,7 +9,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   .post(
     "/join",
     async ({ body: { channelId }, _userId }) => {
-      
+
       //チャンネル参加データが存在するか確認
       const channelJoined = await db.channelJoin.findFirst({
         where: {
@@ -83,8 +83,15 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .get(
     "/list",
-    async () => {
+    async ({ server }) => {
       const channelList = await db.channel.findMany();
+
+      //DEBUG :: 全体に通知
+      server?.publish("GLOBAL", JSON.stringify({
+        signal: "channel::Listとるテスト",
+        data: "asdf"
+      }));
+      console.log("/channel/list :: 送信したつもり");
 
       return {
         message: "Channel list ready",
