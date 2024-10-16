@@ -11,20 +11,34 @@ export default async function UpdateChannel (
   ws: ElysiaWS<any, any, any>,
   data: {
     channelId: string
-    name: string,
-    description: string
+    name?: string,
+    description?: string,
+    isArchived?: boolean
   },
 ) {
   try {
 
     const dataSchema = z.object({
       channelId: z.string(),
-      name: z.string(),
-      description: z.string(),
+      name: z.optional(z.string()),
+      description: z.optional(z.string()),
+      isArchived: z.optional(z.boolean())
     });
 
     const _data = dataSchema.parse(data);
     const db = new PrismaClient();
+
+    //適用するデータ群のJSON
+    const updatingValues: {
+      name?: string,
+      description?: string,
+      isArchived?: boolean
+    } = {};
+
+    //渡されたデータを調べて適用するデータを格納
+    if (_data.name) updatingValues.name = _data.name;
+    if (_data.description) updatingValues.description = _data.description;
+    if (_data.isArchived !== undefined) updatingValues.isArchived = _data.isArchived;
 
     //チャンネルデータを更新する
     const channelDataUpdated = await db.channel.update({
@@ -32,8 +46,7 @@ export default async function UpdateChannel (
         id: _data.channelId
       },
       data: {
-        name: _data.name,
-        description: _data.description
+        ...updatingValues
       }
     });
 
