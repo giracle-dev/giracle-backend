@@ -13,6 +13,7 @@ describe("channel", async () => {
   const dbTest = new PrismaClient({
     datasources: { db: { url: "file:./test.db" } },
   });
+  await dbTest.message.deleteMany({});
   await dbTest.channel.deleteMany({});
   // -----------------------------------------------------------
 
@@ -90,15 +91,13 @@ describe("channel", async () => {
         userId: "SYSTEM",
       },
     });
-    setTimeout(async () => {
-      await dbTest.message.create({
-        data: {
-          content: "これは２個目",
-          channelId: createdChannelId,
-          userId: "SYSTEM",
-        },
-      });
-    }, 50)
+    await dbTest.message.create({
+      data: {
+        content: "これは２個目",
+        channelId: createdChannelId,
+        userId: "SYSTEM",
+      },
+    });
   });
 
   it("channel :: join", async () => {
