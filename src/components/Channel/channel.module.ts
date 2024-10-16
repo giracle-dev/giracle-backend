@@ -1,4 +1,4 @@
-import { Message, PrismaClient } from "@prisma/client";
+import { type Message, PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 
@@ -92,13 +92,16 @@ export const channel = new Elysia({ prefix: "/channel" })
       };
     }
   )
-  .get(
+  .post(
     "/get-history/:channelId",
-    async ({ params:{ channelId }, body: { messageIdFrom, fetchDirection, fetchLength } }) => {
+    async ({ params: { channelId }, body }) => {
+      //パラメータ指定の取得
+      const { messageIdFrom, fetchDirection, fetchLength, messageTimeFrom } = body || {};
+
       let messageDataFrom: Message | null = null;
       //基準位置になるメッセージIdが指定されているなら
-      if (!messageIdFrom) {
-        //取得
+      if (messageIdFrom !== undefined) {
+        //取得、格納
         messageDataFrom = await db.message.findUnique({
           where: {
             id: messageIdFrom
@@ -106,40 +109,56 @@ export const channel = new Elysia({ prefix: "/channel" })
         });
         //無ければエラー
         if (!messageDataFrom) {
-          return error(404, "MessageId position not found");
+          return error(404, "Message cursor position not found");
         }
+      }
+      //基準位置になるメッセージ時間が指定されているなら
+      if (messageTimeFrom !== undefined) {
+        //取得、格納
+        messageDataFrom = await db.message.findFirst({
+          where: {
+            createdAt: new Date(messageTimeFrom)
+          }
+        });
+        //無ければエラー
+        if (!messageDataFrom)
+          return error(404, "Message cursor position not found");
+
       }
 
       //基準のメッセージIdがあるなら時間を取得、取得設定として設定
-      let optionDate: {createdAt: {lte: Date}} | null = null;
-      if (messageDataFrom !== null) { 
-        optionDate = {
-          createdAt: {
-            lte: messageDataFrom.createdAt
-          }
-        };
-      }
-
-      //履歴の取得する長さを指定
-      let takingLength = 30;
-      //bodyで指名されているなら検査して格納
-      if (fetchLength !== undefined) {
-        if (fetchLength <= 30) takingLength = fetchLength;
+      let optionDate: {createdAt: {lte: Date} | {gte: Date}} | null = null;
+      if (messageDataFrom !== null) {
+        //取得時間方向に合わせて設定を指定
+        if (fetchDirection === 'older') {
+          //古い方向に取得する場合
+          optionDate = {
+            createdAt: {
+              lte: new Date(messageDataFrom.createdAt),
+            }
+          };
+        } else {
+          //新しい方向に取得する場合
+          optionDate = {
+            createdAt: {
+              gte: new Date(messageDataFrom.createdAt),
+            }
+          };
+        }
       }
 
       //履歴を取得する
       const history = await db.message.findMany({
         where: {
           channelId: channelId,
-          ...optionDate
+          ...optionDate,
         },
-        take: takingLength,
-        orderBy: { id: 'desc' }
+        take: fetchLength,
+        orderBy: { createdAt: 'desc' }
       });
 
-
       return {
-        message: "History fetched.",
+        message: "History fetched",
         data: history
       };
     },
@@ -147,11 +166,14 @@ export const channel = new Elysia({ prefix: "/channel" })
       params: t.Object({
         channelId: t.String()
       }),
-      body: t.Object({
-        messageIdFrom: t.Optional(t.String()),
-        fetchLength: t.Optional(t.Number()),
-        fetchDirection: t.Union([t.Literal('older'), t.Literal('newer')])
-      })
+      body: t.Optional(
+        t.Object({
+          messageIdFrom: t.Optional(t.String()),
+          messageTimeFrom: t.Optional(t.String()),
+          fetchLength: t.Number({ default: 30, maximum: 30 }),
+          fetchDirection: t.Union([t.Literal('older'), t.Literal('newer')], {default: 'older'})
+        })
+      ),
     }
   )
 
@@ -204,13 +226,12 @@ export const channel = new Elysia({ prefix: "/channel" })
         };
       }
 
-      //チャンネルの作成者でない
-      if (channel.createdUserId !== _userId) {
-        return {
-          success: false,
-          message: "You are not the creator of this channel",
-        };
-      }
+      //メッセージデータを削除
+      await db.message.deleteMany({
+        where: {
+          channelId,
+        },
+      });
 
       //チャンネル参加データを削除
       await db.channelJoin.deleteMany({

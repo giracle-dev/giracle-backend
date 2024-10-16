@@ -19,6 +19,7 @@ describe("auth", async () => {
   await dbTest.token.deleteMany({});
   await dbTest.password.deleteMany({});
   await dbTest.channelJoin.deleteMany({});
+  await dbTest.message.deleteMany({});
   await dbTest.channel.deleteMany({});
   await dbTest.roleLink.deleteMany({});
   await dbTest.roleInfo.deleteMany({});
@@ -144,7 +145,7 @@ describe("auth", async () => {
     //resultJson = await responseError.json();
     //console.log("auth.test :: vrify-token : responseError", responseError);
     //処理は401になるはず
-    expect(responseWithoutCookie.status).toBe(500);
+    expect(responseWithoutCookie.status).toBe(401);
 
     //間違ったトークンでのリクエストを送信
     const responseWrong = await app.handle(
@@ -235,7 +236,6 @@ describe("auth", async () => {
 
     resultJson = await responseWrong.json();
     //console.log("auth.test :: change-password : resultJson", resultJson);
-    expect(resultJson.success).toBe(false);
     expect(resultJson.message).toBe("Current password is incorrect");
 
     //リクエストを送信
