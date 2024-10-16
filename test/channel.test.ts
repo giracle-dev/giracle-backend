@@ -81,6 +81,24 @@ describe("channel", async () => {
 
     //作成したチャンネルIDを保存
     createdChannelId = resultJson.data.channelId;
+
+    //テスト用のサンプル履歴をここで作る
+    await dbTest.message.create({
+      data: {
+        content: "これはテスト用のメッセージです。",
+        channelId: createdChannelId,
+        userId: "SYSTEM",
+      },
+    });
+    setTimeout(async () => {
+      await dbTest.message.create({
+        data: {
+          content: "これは２個目",
+          channelId: createdChannelId,
+          userId: "SYSTEM",
+        },
+      });
+    }, 50)
   });
 
   it("channel :: join", async () => {
