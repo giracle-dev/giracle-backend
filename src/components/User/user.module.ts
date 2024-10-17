@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken from "../../Middlewares";
 import { userService } from "./user.service";
+import { app } from "../..";
 
 const db = new PrismaClient();
 
@@ -180,6 +181,55 @@ export const user = new Elysia({ prefix: "/user" })
       }),
       cookie: t.Cookie({ token: t.String() }),
     },
+  )
+  .post(
+    "/profile-update",
+    async ({ body: {name, selfIntroduction}, _userId }) => {
+      //ユーザー情報取得
+      const user = await db.user.findUnique({
+        where: {
+          id: _userId,
+        },
+      });
+      //ユーザーが存在しない場合
+      if (!user) {
+        return error(404, "User not found");
+      }
+
+      // 更新データの準備
+      const updatingValue: { name?: string; selfIntroduction?: string } = {};
+      if (name !== undefined) {
+        updatingValue.name = name;
+      }
+      if (selfIntroduction !== undefined) {
+        updatingValue.selfIntroduction = selfIntroduction;
+      }
+
+      //データ更新
+      const userUpdated = await db.user.update({
+        where: {
+          id: user.id,
+        },
+        data: updatingValue,
+      });
+    
+      //WSで全体へ通知
+      app.server?.publish("GLOBAL", JSON.stringify({
+        signal: "user::ProfileUpdate",
+        data: userUpdated,
+      }));
+
+      return {
+        message: "Profile updated",
+        data: userUpdated
+      };
+    },
+    {
+      body: t.Object({
+        name: t.Optional(t.String()),
+        selfIntroduction: t.Optional(t.String()),
+      }),
+    }
   )
   .get(
     "/sign-out",
