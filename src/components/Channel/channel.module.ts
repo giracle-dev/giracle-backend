@@ -67,13 +67,19 @@ export const channel = new Elysia({ prefix: "/channel" })
           })
         }),
         400: t.Literal("Already joined"),
-        404: t.Literal("Channel not found")
+        404: t.Literal("Channel not found"),
+        "ws": t.Object({
+          signal: t.Literal("channel::JoinChannel"),
+          data: t.Object({
+            channelId: t.String()
+          })
+        })
       }
     }
   )
   .post(
     "/leave",
-    async ({ body: { channelId }, _userId }) => {
+    async ({ body: { channelId }, _userId, server }) => {
       //チャンネル参加データが存在するか確認
       const channelJoinData = await db.channelJoin.findFirst({
         where: {
@@ -92,6 +98,14 @@ export const channel = new Elysia({ prefix: "/channel" })
         },
       });
 
+      //WSで通知
+      server?.publish(`user::${_userId}`, JSON.stringify({
+        signal: "channel::LeaveChannel",
+        data: {
+          channelId
+        }
+      }));
+
       return {
         message: "Channel left",
       };
@@ -100,6 +114,18 @@ export const channel = new Elysia({ prefix: "/channel" })
       body: t.Object({
         channelId: t.String({ minLength: 1 }),
       }),
+      response: {
+        200: t.Object({
+          message: t.Literal("Channel left"),
+        }),
+        400: t.Literal("You are not joined this channel"),
+        "ws": t.Object({
+          signal: t.Literal("channel::LeaveChannel"),
+          data: t.Object({
+            channelId: t.String()
+          })
+        })
+      }
     }
   )
   .get(
