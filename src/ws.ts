@@ -12,7 +12,6 @@ export const wsHandler = new Elysia()
       }),
 
       async open(ws) {
-        console.log("ws :: WS接続 :: ぱらめーた", ws.data.query.token);
         //トークンを取得して有効か調べる
         const token = ws.data.cookie.token.value || ws.data.query.token;
         if (!token) {
