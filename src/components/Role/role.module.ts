@@ -37,6 +37,10 @@ export const role = new Elysia({ prefix: "/role" })
           manageUser: t.Optional(t.Boolean()),
         }),
       }),
+      detail: {
+        description: "ロールを作成します",
+        tags: ["Role"],
+      },
       checkRoleTerm: "manageRole",
     },
   )
@@ -77,6 +81,10 @@ export const role = new Elysia({ prefix: "/role" })
         userId: t.String({ notEmpty: true }),
         roleId: t.String({ notEmpty: true }),
       }),
+      detail: {
+        description: "ユーザーにロールを付与します",
+        tags: ["Role"],
+      },
       checkRoleTerm: "manageRole",
     },
   )
@@ -110,6 +118,10 @@ export const role = new Elysia({ prefix: "/role" })
         userId: t.String({ notEmpty: true }),
         roleId: t.String({ notEmpty: true }),
       }),
+      detail: {
+        description: "ユーザーからロールを剥奪します",
+        tags: ["Role"],
+      },
     },
   )
   .delete(
@@ -142,6 +154,10 @@ export const role = new Elysia({ prefix: "/role" })
       body: t.Object({
         roleId: t.String({ notEmpty: true }),
       }),
+      detail: {
+        description: "ロールを削除します",
+        tags: ["Role"],
+      },
       checkRoleTerm: "manageRole",
     },
   )
@@ -169,5 +185,9 @@ export const role = new Elysia({ prefix: "/role" })
       params: t.Object({
         roleId: t.String({ notEmpty: true }),
       }),
+      detail: {
+        description: "ロール情報を取得します",
+        tags: ["Role"],
+      },
     },
   );

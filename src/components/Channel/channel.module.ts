@@ -59,6 +59,10 @@ export const channel = new Elysia({ prefix: "/channel" })
       body: t.Object({
         channelId: t.String({ minLength: 1 }),
       }),
+      detail: {
+        description: "チャンネルに参加します",
+        tags: ["Channel"],
+      },
       response: {
         200: t.Object({
           message: t.Literal("Channel joined"),
@@ -114,6 +118,10 @@ export const channel = new Elysia({ prefix: "/channel" })
       body: t.Object({
         channelId: t.String({ minLength: 1 }),
       }),
+      detail: {
+        description: "チャンネルから退出します",
+        tags: ["Channel"],
+      },
       response: {
         200: t.Object({
           message: t.Literal("Channel left"),
@@ -144,6 +152,12 @@ export const channel = new Elysia({ prefix: "/channel" })
         message: "Channel list ready",
         data: channelList
       };
+    },
+    {
+      detail: {
+        description: "チャンネル一覧を取得します",
+        tags: ["Channel"],
+      },
     }
   )
   .post(
@@ -228,6 +242,10 @@ export const channel = new Elysia({ prefix: "/channel" })
           fetchDirection: t.Union([t.Literal('older'), t.Literal('newer')], {default: 'older'})
         })
       ),
+      detail: {
+        description: "チャンネルのメッセージ履歴を取得します",
+        tags: ["Channel"],
+      },
     }
   )
 
@@ -276,6 +294,10 @@ export const channel = new Elysia({ prefix: "/channel" })
         description: t.Optional(t.String()),
         isArchived: t.Optional(t.Boolean())
       }),
+      detail: {
+        description: "チャンネル情報を更新します",
+        tags: ["Channel"],
+      },
     }
   )
   .put(
@@ -306,6 +328,10 @@ export const channel = new Elysia({ prefix: "/channel" })
         channelName: t.String({ minLength: 1 }),
         description: t.Optional(t.String()),
       }),
+      detail: {
+        description: "チャンネルを作成します",
+        tags: ["Channel"],
+      },
       checkRoleTerm: "manageChannel",
     },
   )
@@ -355,6 +381,10 @@ export const channel = new Elysia({ prefix: "/channel" })
       body: t.Object({
         channelId: t.String(),
       }),
+      detail: {
+        description: "チャンネルを削除します",
+        tags: ["Channel"],
+      },
       checkRoleTerm: "manageChannel",
     },
   );

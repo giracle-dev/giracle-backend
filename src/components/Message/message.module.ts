@@ -43,5 +43,9 @@ export const message = new Elysia({ prefix: "/message" })
         channelId: t.String({ minLength: 1 }),
         message: t.String({ minLength: 1 }),
       }),
+      detail: {
+        description: "メッセージを送信します",
+        tags: ["Message"],
+      }
     }
   )
