@@ -72,12 +72,6 @@ export const channel = new Elysia({ prefix: "/channel" })
         }),
         400: t.Literal("Already joined"),
         404: t.Literal("Channel not found"),
-        "ws": t.Object({
-          signal: t.Literal("channel::JoinChannel"),
-          data: t.Object({
-            channelId: t.String()
-          })
-        })
       }
     }
   )
@@ -127,12 +121,6 @@ export const channel = new Elysia({ prefix: "/channel" })
           message: t.Literal("Channel left"),
         }),
         400: t.Literal("You are not joined this channel"),
-        "ws": t.Object({
-          signal: t.Literal("channel::LeaveChannel"),
-          data: t.Object({
-            channelId: t.String()
-          })
-        })
       }
     }
   )
