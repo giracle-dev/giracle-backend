@@ -1,7 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { Cookie, Elysia } from "elysia";
+import { Elysia } from "elysia";
 
-import { execSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
 import { user } from "../src/components/User/user.module";
 import { wsHandler } from "../src/ws";
