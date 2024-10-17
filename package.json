@@ -13,7 +13,7 @@
     "@elysiajs/swagger": "^1.1.5",
     "@prisma/client": "5.20.0",
     "elysia": "latest",
-    "prisma": "^5.21.0",
+    "prisma": "^5.21.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
