@@ -83,7 +83,7 @@ export const wsHandler = new Elysia()
         }
 
         //ハンドラのリンク
-        ws.subscribe(user.id);
+        ws.subscribe(`user::${user.id}`);
         ws.subscribe("GLOBAL");
         //チャンネル用ハンドラのリンク
         for (const channelData of user.ChannelJoin) {
