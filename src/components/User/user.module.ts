@@ -3,7 +3,6 @@ import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken from "../../Middlewares";
 import { userService } from "./user.service";
-import { app } from "../..";
 
 const db = new PrismaClient();
 
@@ -184,7 +183,7 @@ export const user = new Elysia({ prefix: "/user" })
   )
   .post(
     "/profile-update",
-    async ({ body: {name, selfIntroduction}, _userId }) => {
+    async ({ body: {name, selfIntroduction}, _userId, server }) => {
       //ユーザー情報取得
       const user = await db.user.findUnique({
         where: {
@@ -214,7 +213,7 @@ export const user = new Elysia({ prefix: "/user" })
       });
     
       //WSで全体へ通知
-      app.server?.publish("GLOBAL", JSON.stringify({
+      server?.publish("GLOBAL", JSON.stringify({
         signal: "user::ProfileUpdate",
         data: userUpdated,
       }));
