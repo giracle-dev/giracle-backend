@@ -73,13 +73,13 @@ model Message {
 }
 
 model RoleLink {
-  id           Int      @id @default(autoincrement())
   roleId       String
   role         RoleInfo @relation(fields: [roleId], references: [id])
   roleLinkedAt DateTime @default(now())
   userId       String
   user         User     @relation(fields: [userId], references: [id])
 
+  @@id([userId, roleId])
   @@index([userId, roleId])
 }
 
