@@ -8,7 +8,7 @@ export const wsHandler = new Elysia()
   .ws("/ws",
     {
       query: t.Object({
-        token: t.String({ minLength: 1 }),
+        token: t.Optional(t.String({ minLength: 1 })),
       }),
 
       async open(ws) {
