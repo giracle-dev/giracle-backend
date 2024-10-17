@@ -8,7 +8,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   .use(CheckToken)
   .post(
     "/join",
-    async ({ body: { channelId }, _userId }) => {
+    async ({ body: { channelId }, _userId, server }) => {
 
       //チャンネル参加データが存在するか確認
       const channelJoined = await db.channelJoin.findFirst({
@@ -40,14 +40,35 @@ export const channel = new Elysia({ prefix: "/channel" })
         },
       });
 
+      //WSで通知
+      server?.publish(`user::${_userId}`, JSON.stringify({
+        signal: "channel::JoinChannel",
+        data: {
+          channelId
+        }
+      }));
+
       return {
         message: "Channel joined",
+        data: {
+          channelId,
+        }
       };
     },
     {
       body: t.Object({
         channelId: t.String({ minLength: 1 }),
       }),
+      response: {
+        200: t.Object({
+          message: t.Literal("Channel joined"),
+          data: t.Object({
+            channelId: t.String()
+          })
+        }),
+        400: t.Literal("Already joined"),
+        404: t.Literal("Channel not found")
+      }
     }
   )
   .post(
