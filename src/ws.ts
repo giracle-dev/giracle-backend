@@ -10,38 +10,9 @@ import MessageHandler from "./wsHandler/message.ws";
 export const wsHandler = new Elysia()
   .ws("/ws",
     {
-      body: t.Optional(t.Object({
-        signal: t.String({ minLength: 1 }),
-        data: t.Any(),
-      })),
       query: t.Object({
         token: t.String({ minLength: 1 }),
       }),
-
-      message(ws, message) {
-        if (message?.signal === undefined) {
-          return;
-        }
-        console.log("ws :: メッセージ受信 ::", message);
-        if (message?.signal === "ping") {
-          ws.send("pong");
-        }
-
-        //シグナル名に合わせた処理分岐
-        switch (true) {
-          case message.signal.startsWith("user"):
-            UserHandler(ws, message?.signal, message.data);
-            break;
-          case message.signal.startsWith("channel"):
-            ChannelHandler(ws, message.signal, message.data);
-            break;
-          case message.signal.startsWith("message"):
-            MessageHandler(ws, message.signal, message.data);
-            break;
-          default:
-            console.log("ws :: 未知のシグナル ::", message);
-        }
-      },
 
       async open(ws) {
         console.log("ws :: WS接続 :: ぱらめーた", ws.data.query.token);
