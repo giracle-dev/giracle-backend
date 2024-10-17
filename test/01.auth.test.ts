@@ -13,7 +13,7 @@ describe("auth", async () => {
     datasources: { db: { url: "file:./test.db" } },
   });
   //DBのマイグレーション
-  execSync("bunx prisma db push");
+  execSync("bunx prisma db push --accept-data-loss");
 
   //Prismaでuserデータにかかわるものをすべて削除
   await dbTest.token.deleteMany({});
