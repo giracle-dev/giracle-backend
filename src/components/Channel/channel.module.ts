@@ -232,6 +232,52 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
 
   .use(checkRoleTerm)
+  .post(
+    "/update",
+    async ({ body: {name, description, isArchived, channelId}, server }) => {
+      //適用するデータ群のJSON
+      const updatingValues: {
+        name?: string,
+        description?: string,
+        isArchived?: boolean
+      } = {};
+
+        //渡されたデータを調べて適用するデータを格納
+      if (name) updatingValues.name = name;
+      if (description) updatingValues.description = description;
+      if (isArchived !== undefined) updatingValues.isArchived = isArchived;
+
+      //チャンネルデータを更新する
+      const channelDataUpdated = await db.channel.update({
+        where: {
+          id: channelId
+        },
+        data: {
+          ...updatingValues
+        }
+      });
+
+      //WSで通知
+      server?.publish("GLOBAL", JSON.stringify({
+        signal: "channel::UpdateChannel",
+        data: channelDataUpdated
+      }));
+
+      return {
+        message: "Channel updated",
+        data: channelDataUpdated
+      }
+
+    },
+    {
+      body: t.Object({
+        channelId: t.String({ minLength: 1 }),
+        name: t.Optional(t.String()),
+        description: t.Optional(t.String()),
+        isArchived: t.Optional(t.Boolean())
+      }),
+    }
+  )
   .put(
     "/create",
     async ({ body: { channelName, description = "" }, _userId }) => {
