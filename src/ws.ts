@@ -1,8 +1,5 @@
 import Elysia, { t } from "elysia";
 import { PrismaClient } from "@prisma/client";
-import UserHandler from "./wsHandler/user.ws";
-import ChannelHandler from "./wsHandler/channel.ws";
-import MessageHandler from "./wsHandler/message.ws";
 
 /**
  * WebSocket用 ハンドラ
