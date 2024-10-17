@@ -6,6 +6,7 @@ import { channel } from "./components/Channel/channel.module";
 import { role } from "./components/Role/role.module";
 import { user } from "./components/User/user.module";
 import { wsHandler } from "./ws";
+import { message } from "./components/Message/message.module";
 
 export const app = new Elysia()
   .use(
@@ -22,6 +23,7 @@ export const app = new Elysia()
   .use(user)
   .use(channel)
   .use(role)
+  .use(message)
   .listen(3000);
 
 console.log("Server running at http://localhost:3000");
