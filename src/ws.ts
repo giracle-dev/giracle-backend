@@ -82,8 +82,6 @@ export const wsHandler = new Elysia()
           ws.subscribe(`channel::${channelData.channelId}`);
         }
 
-        ws.send("connect complted");
-
         console.log("index :: 新しいWS接続");
       },
       close(ws) {
