@@ -78,7 +78,6 @@ describe("server", async () => {
           cookie: `token=${tokenTesting}`,
         },
         body: JSON.stringify({
-          RegisterAvailable: false,
           MessageMaxLength: 1234
         }),
       }),
@@ -87,7 +86,6 @@ describe("server", async () => {
     resultJson = await response.json();
     //console.log("server.test :: change-info : resultJson->", resultJson);
     expect(resultJson.message).toBe("Server config updated");
-    expect(resultJson.data.RegisterAvailable).toBe(false);
     expect(resultJson.data.RegisterInviteOnly).toBe(true);
     expect(resultJson.data.MessageMaxLength).toBe(1234);
   });
