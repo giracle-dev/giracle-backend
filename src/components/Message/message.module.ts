@@ -6,6 +6,30 @@ const db = new PrismaClient();
 
 export const message = new Elysia({ prefix: "/message" })
   .use(CheckToken)
+  .get(
+    "/get",
+    async ({ body: {messageId} }) => {
+      const messageData = await db.message.findUnique({
+        where: {
+          id: messageId
+        }
+      });
+      //メッセージが見つからなければエラー
+      if (messageData === null) {
+        return error(404, "Message not found");
+      }
+
+      return {
+        message: "Fetched message",
+        data: messageData
+      };
+    },
+    {
+      body: t.Object({
+        messageId: t.String()
+      })
+    }
+  )
   .use(urlPreviewControl)
   .post(
     "/send",
@@ -54,4 +78,4 @@ export const message = new Elysia({ prefix: "/message" })
       },
       bindUrlPreview: true
     }
-  )
+  );
