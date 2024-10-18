@@ -8,10 +8,17 @@ export const server = new Elysia({ prefix: "/server" })
   .get(
     "/config",
     async () => {
+      //サーバーの情報取得
       const config = await db.serverConfig.findFirst();
+      //最初のユーザーになるかどうか
+      const firstUser = await db.user.findFirst({
+        skip: 1
+      });
+      const isFirstUser = firstUser === null;
+
       return {
         message: "Server config fetched",
-        data: { ...config, id: undefined } // idは返さない,
+        data: { ...config, isFirstUser, id: undefined } // idは返さない,
       };
     },
     {
