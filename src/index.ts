@@ -10,6 +10,7 @@ import { message } from "./components/Message/message.module";
 
 //アイコン用のディレクトリ作成
 import { mkdir } from "node:fs/promises";
+import { server } from "./components/Server/server.module";
 await mkdir("./STORAGE", { recursive: true });
 await mkdir("./STORAGE/icon", { recursive: true });
 
@@ -29,6 +30,7 @@ export const app = new Elysia()
   .use(channel)
   .use(role)
   .use(message)
+  .use(server)
   .listen(3000);
 
 console.log("Server running at http://localhost:3000");
