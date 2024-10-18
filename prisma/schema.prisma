@@ -12,7 +12,6 @@ model User {
   name             String?       @unique
   selfIntroduction String
   password         Password?
-  posts            Post[]
   Token            Token[]
   Channel          Channel[]
   RoleInfo         RoleInfo[]
@@ -74,13 +73,13 @@ model Message {
 }
 
 model RoleLink {
-  id           Int      @id @default(autoincrement())
   roleId       String
   role         RoleInfo @relation(fields: [roleId], references: [id])
   roleLinkedAt DateTime @default(now())
   userId       String
   user         User     @relation(fields: [userId], references: [id])
 
+  @@id([userId, roleId])
   @@index([userId, roleId])
 }
 
@@ -98,13 +97,4 @@ model RoleInfo {
   manageRole    Boolean @default(false)
 
   RoleLink RoleLink[]
-}
-
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  authorId  String
-  author    User    @relation(fields: [authorId], references: [id])
 }

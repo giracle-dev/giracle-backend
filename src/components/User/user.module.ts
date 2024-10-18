@@ -56,6 +56,10 @@ export const user = new Elysia({ prefix: "/user" })
     },
     {
       body: "signIn",
+      detail: {
+        description: "ユーザーの新規登録",
+        tags: ["User"],
+      },
     },
   )
   .post(
@@ -122,6 +126,10 @@ export const user = new Elysia({ prefix: "/user" })
     {
       body: "signIn",
       cookie: t.Cookie({ token: t.Optional(t.String()) }),
+      detail: {
+        description: "ユーザーのサインイン",
+        tags: ["User"],
+      },
     },
   )
 
@@ -179,7 +187,64 @@ export const user = new Elysia({ prefix: "/user" })
         newPassword: t.String({ minLength: 4 }),
       }),
       cookie: t.Cookie({ token: t.String() }),
+      detail: {
+        description: "パスワードの変更",
+        tags: ["User"],
+      },
     },
+  )
+  .post(
+    "/profile-update",
+    async ({ body: {name, selfIntroduction}, _userId, server }) => {
+      //ユーザー情報取得
+      const user = await db.user.findUnique({
+        where: {
+          id: _userId,
+        },
+      });
+      //ユーザーが存在しない場合
+      if (!user) {
+        return error(404, "User not found");
+      }
+
+      // 更新データの準備
+      const updatingValue: { name?: string; selfIntroduction?: string } = {};
+      if (name !== undefined) {
+        updatingValue.name = name;
+      }
+      if (selfIntroduction !== undefined) {
+        updatingValue.selfIntroduction = selfIntroduction;
+      }
+
+      //データ更新
+      const userUpdated = await db.user.update({
+        where: {
+          id: user.id,
+        },
+        data: updatingValue,
+      });
+    
+      //WSで全体へ通知
+      server?.publish("GLOBAL", JSON.stringify({
+        signal: "user::ProfileUpdate",
+        data: userUpdated,
+      }));
+
+      return {
+        message: "Profile updated",
+        data: userUpdated
+      };
+    },
+    {
+      body: t.Object({
+        name: t.Optional(t.String()),
+        selfIntroduction: t.Optional(t.String()),
+      }),
+      detail: {
+        description: "プロフィールの更新",
+        tags: ["User"],
+      },
+    }
   )
   .get(
     "/sign-out",
@@ -200,6 +265,10 @@ export const user = new Elysia({ prefix: "/user" })
     },
     {
       cookie: t.Cookie({ token: t.String() }),
+      detail: {
+        description: "ユーザーのサインアウト",
+        tags: ["User"],
+      },
     },
   )
   .get("/verify-token", ({ _userId, error }) => {
@@ -217,6 +286,10 @@ export const user = new Elysia({ prefix: "/user" })
     };
   },
   {
+    detail: {
+      description: "トークンの検証",
+      tags: ["User"],
+    },
     response: {
       200: t.Object({
         message: t.Literal("Token is valid"),
@@ -263,5 +336,9 @@ export const user = new Elysia({ prefix: "/user" })
       params: t.Object({
         id: t.String({ minLength: 1 }),
       }),
+      detail: {
+        description: "ユーザー情報を取得します",
+        tags: ["User"],
+      },
     }
   )
