@@ -111,3 +111,13 @@ model RoleInfo {
 
   RoleLink RoleLink[]
 }
+
+model ServerConfig {
+  id            Int    @id @default(autoincrement())
+  name          String
+  introduction String
+
+  RegisterAvailable  Boolean @default(true)
+  RegisterInviteOnly Boolean @default(true)
+  MessageMaxLength Int @default(3000)
+}
