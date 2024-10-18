@@ -41,13 +41,6 @@ export const channel = new Elysia({ prefix: "/channel" })
         },
       });
 
-      //WSで通知
-      server?.publish(`user::${_userId}`, JSON.stringify({
-        signal: "channel::JoinChannel",
-        data: {
-          channelId
-        }
-      }));
       //WS登録させる
       userWSInstance.get(_userId)?.subscribe(`channel::${channelId}`);
 
