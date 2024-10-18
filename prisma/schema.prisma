@@ -114,12 +114,13 @@ model RoleInfo {
 }
 
 model Invitation {
-  id            Int     @id @default(autoincrement())
-  isActive      Boolean @default(false)
-  inviteCode    String  @unique
+  id            Int      @id @default(autoincrement())
+  isActive      Boolean  @default(false)
+  inviteCode    String   @unique
   createdUserId String
-  user          User    @relation(fields: [createdUserId], references: [id])
-  usedCount     Int     @default(0)
+  expireDate    DateTime @default(dbgenerated("(datetime('now', '+1 day'))"))
+  user          User     @relation(fields: [createdUserId], references: [id])
+  usedCount     Int      @default(0)
 }
 
 model ServerConfig {
