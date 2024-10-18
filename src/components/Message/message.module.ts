@@ -1,11 +1,12 @@
 import Elysia, { error, t } from "elysia";
-import CheckToken from "../../Middlewares";
+import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
 
 export const message = new Elysia({ prefix: "/message" })
   .use(CheckToken)
+  .use(urlPreviewControl)
   .post(
     "/send",
     async ({ body: { channelId, message }, _userId, server }) => {
@@ -50,6 +51,7 @@ export const message = new Elysia({ prefix: "/message" })
       detail: {
         description: "メッセージを送信します",
         tags: ["Message"],
-      }
+      },
+      bindUrlPreview: true
     }
   )

@@ -309,15 +309,14 @@ export const user = new Elysia({ prefix: "/user" })
           id: id,
         },
         include: {
+          ChannelJoin: {
+            select: {
+              channelId: true
+            }
+          },
           RoleLink: {
             select: {
               roleId: true,
-              roleLinkedAt: true,
-              role: {
-                select: {
-                  name: true,
-                },
-              }
             },
           },
         },
