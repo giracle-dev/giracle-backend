@@ -70,5 +70,20 @@ const checkRoleTerm = new Elysia({ name: "checkRoleTerm" })
     },
   }));
 
+//URLプレビューを操作するミドルウェア
+const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
+  .macro(({ onAfterHandle }) => {
+    return {
+      async bindUrlPreview(isEnabled = false) {
+        onAfterHandle(async ({ response }) => {
+          //URLプレビューが無効なら何もしない
+          if (!isEnabled) return;
+
+          console.log("Middleware :: urlPreviewControl : URLプレビューします");
+        });
+      }
+    }
+  });
+
 export default CheckToken;
-export { checkRoleTerm };
+export { checkRoleTerm, urlPreviewControl };
