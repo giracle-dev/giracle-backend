@@ -72,6 +72,25 @@ const checkRoleTerm = new Elysia({ name: "checkRoleTerm" })
 
 //URLプレビューを操作するミドルウェア
 const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
+  .guard({
+    body: t.Object({
+      channelId: t.String({ minLength: 1 }),
+      message: t.String({ minLength: 1 }),
+    }),
+    response: t.Object({
+      message: t.Literal("Message sent"),
+      data: t.Object({
+        messageSaved: t.Object({
+          id: t.String({ minLength: 1 }),
+          channelId: t.String({ minLength: 1 }),
+          userId: t.String({ minLength: 1 }),
+          content: t.String({ minLength: 1 }),
+          createdAt: t.String({ minLength: 1 }),
+          updatedAt: t.String({ minLength: 1 }),
+        }),
+      }),
+    }),
+  })
   .macro(({ onAfterHandle }) => {
     return {
       async bindUrlPreview(isEnabled = false) {
