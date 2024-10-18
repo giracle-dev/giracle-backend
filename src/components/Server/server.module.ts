@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
 
-export const message = new Elysia({ prefix: "/server" })
+export const server = new Elysia({ prefix: "/server" })
   .get(
     "/config",
     async () => {
