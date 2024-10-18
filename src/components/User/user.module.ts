@@ -190,6 +190,10 @@ export const user = new Elysia({ prefix: "/user" })
       params: t.Object({
         userId: t.String({ minLength: 1 }),
       }),
+      detail: {
+        description: "ユーザーのアイコン画像を取得します",
+        tags: ["User"],
+      },
     }
   )
   .post(
@@ -212,6 +216,10 @@ export const user = new Elysia({ prefix: "/user" })
       body: t.Object({
         icon: t.File()
       }),
+      detail: {
+        description: "ユーザーのアイコン画像を変更します",
+        tags: ["User"],
+      },
     }
   )
   .post(
