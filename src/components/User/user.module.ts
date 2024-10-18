@@ -135,6 +135,24 @@ export const user = new Elysia({ prefix: "/user" })
 
   .use(CheckToken)
 
+  .get(
+    "/icon/:userId",
+    async ({ params:{userId} }) => {
+      //アイコン読み取り
+      const iconFile = Bun.file(`./STORAGE/icon/${userId}.png`);
+      //アイコンが存在しない場合はデフォルトアイコンを返す
+      if (!await iconFile.exists()) {
+        return Bun.file("./STORAGE/icon/default.png");
+      }
+
+      return iconFile;
+    },
+    {
+      params: t.Object({
+        userId: t.String({ minLength: 1 }),
+      }),
+    }
+  )
   .post(
     "/change-password",
     async ({ error, body: { currentPassword, newPassword }, _userId }) => {
