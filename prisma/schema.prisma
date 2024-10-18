@@ -59,15 +59,28 @@ model Channel {
   Message       Message[]
 }
 
+model MessageUrlPreview {
+  id          Int     @id @default(autoincrement())
+  url         String
+  type        String
+  messageId   String
+  message     Message @relation(fields: [messageId], references: [id])
+  title       String
+  description String?
+  faviconLink String?
+  imageLink   String?
+}
+
 model Message {
-  id              String   @id @default(uuid())
-  content         String
-  isSystemMessage Boolean  @default(false)
-  userId          String
-  user            User     @relation(fields: [userId], references: [id])
-  channelId       String
-  channel         Channel  @relation(fields: [channelId], references: [id])
-  createdAt       DateTime @default(now())
+  id                String              @id @default(uuid())
+  content           String
+  isSystemMessage   Boolean             @default(false)
+  userId            String
+  user              User                @relation(fields: [userId], references: [id])
+  channelId         String
+  channel           Channel             @relation(fields: [channelId], references: [id])
+  createdAt         DateTime            @default(now())
+  MessageUrlPreview MessageUrlPreview[]
 
   @@index([channelId, userId])
 }
