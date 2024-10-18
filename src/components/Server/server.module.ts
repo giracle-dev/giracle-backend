@@ -26,7 +26,7 @@ export const server = new Elysia({ prefix: "/server" })
   .post(
     "/change-info",
     async ({ body: {name, introduction} }) => {
-      const serverinfoUpdated = await db.serverConfig.updateMany({
+      await db.serverConfig.updateMany({
         data: {
           name,
           introduction,
