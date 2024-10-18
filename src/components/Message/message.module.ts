@@ -52,6 +52,6 @@ export const message = new Elysia({ prefix: "/message" })
         description: "メッセージを送信します",
         tags: ["Message"],
       },
-      bindUrlPreview: true,
+      bindUrlPreview: true
     }
   )
