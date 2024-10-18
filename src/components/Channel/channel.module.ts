@@ -1,6 +1,7 @@
 import { type Message, PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
+import { userWSInstance } from "../../ws";
 
 const db = new PrismaClient();
 
@@ -47,6 +48,8 @@ export const channel = new Elysia({ prefix: "/channel" })
           channelId
         }
       }));
+      //WS登録させる
+      userWSInstance.get(_userId)?.subscribe(`channel::${channelId}`);
 
       return {
         message: "Channel joined",
@@ -103,6 +106,9 @@ export const channel = new Elysia({ prefix: "/channel" })
           channelId
         }
       }));
+
+      //WS登録させる
+      userWSInstance.get(_userId)?.unsubscribe(`channel::${channelId}`);
 
       return {
         message: "Channel left",
