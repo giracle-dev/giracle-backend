@@ -26,15 +26,21 @@ export const server = new Elysia({ prefix: "/server" })
   .post(
     "/change-info",
     async ({ body: {name, introduction} }) => {
-      await db.serverConfig.update({
-        where: {
-          id: 1,
-        },
+      const serverinfoUpdated = await db.serverConfig.updateMany({
         data: {
           name,
           introduction,
         },
       });
+
+      //ここでデータ取得
+      const serverinfo = await db.serverConfig.findFirst();
+      if (serverinfo === null) return error(500, "Server config not found");
+
+      return {
+        message: "Server config updated",
+        data: { ...serverinfo, id: undefined } // idは返さない
+      };
     },
     {
       body: t.Object({
