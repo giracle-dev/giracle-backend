@@ -1,6 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 async function main() {
+  const ServerConfig = await prisma.serverConfig.create({
+    data: {
+      name: "Giracle",
+      introduction: "みんなで楽しめるチャットサーバー。",
+    },
+  });
   const SYSTEM = await prisma.user.create({
     data: {
       id: "SYSTEM",
