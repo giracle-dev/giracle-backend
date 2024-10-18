@@ -209,4 +209,24 @@ describe("server", async () => {
     });
   });
 
+  it("server :: delete invites", async () => {
+    //招待を削除するリクエスト
+    await app.handle(
+      new Request("http://localhost/server/delete-invite", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          inviteId: inviteIdTesting
+        }),
+      }),
+    ).then(async (res) => {
+      const result = await res.json();
+      //console.log("server.test :: delete-invites : result->", result);
+      expect(result.message).toBe("Server invite deleted");
+    });
+  });
+
 });
