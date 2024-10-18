@@ -44,11 +44,12 @@ export const server = new Elysia({ prefix: "/server" })
   )
   .put(
     "/create-invite",
-    async ({ body: {inviteCode}, _userId }) => {
+    async ({ body: {inviteCode, expireDate}, _userId }) => {
       const newInvite = await db.invitation.create({
         data: {
           inviteCode,
           createdUserId: _userId,
+          expireDate
         },
       });
 
@@ -60,6 +61,7 @@ export const server = new Elysia({ prefix: "/server" })
     {
       body: t.Object({
         inviteCode: t.String({ minLength: 1 }),
+        expireDate: t.Optional(t.Date()),
       }),
       detail: {
         description: "サーバーの招待コードを作成します",
@@ -90,6 +92,35 @@ export const server = new Elysia({ prefix: "/server" })
       }),
       detail: {
         description: "サーバーの招待コードを作成します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageServer"
+    }
+  )
+  .post(
+    "/update-invite",
+    async ({ body: {inviteId, isActive} }) => {
+      const inviteDataNow = await db.invitation.update({
+        where: {
+          id: inviteId
+        },
+        data: {
+          isActive
+        }
+      });
+
+      return {
+        message: "Server invite updated",
+        data: inviteDataNow
+      };
+    },
+    {
+      body: t.Object({
+        inviteId: t.Number(),
+        isActive: t.Boolean(),
+      }),
+      detail: {
+        description: "サーバーの招待コードの状態を更新します",
         tags: ["Server"],
       },
       checkRoleTerm: "manageServer"
