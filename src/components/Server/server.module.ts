@@ -25,7 +25,7 @@ export const server = new Elysia({ prefix: "/server" })
   .use(checkRoleTerm)
   .post(
     "/change-info",
-    async ({ body: {name, introduction} }) => {
+    async ({ body: {name, introduction}, server }) => {
       await db.serverConfig.updateMany({
         data: {
           name,
@@ -36,6 +36,12 @@ export const server = new Elysia({ prefix: "/server" })
       //ここでデータ取得
       const serverinfo = await db.serverConfig.findFirst();
       if (serverinfo === null) return error(500, "Server config not found");
+
+      //WSで全体へ通知
+      server?.publish("GLOBAL", JSON.stringify({
+        signal: "server::ConfigUpdate",
+        data: { ...serverinfo, id: undefined },
+      }));
 
       return {
         message: "Server config updated",
