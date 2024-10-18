@@ -204,7 +204,7 @@ describe("server", async () => {
       }),
     ).then(async (res) => {
       const result = await res.json();
-      console.log("server.test :: check-invite-count : result->", result);
+      //console.log("server.test :: check-invite-count : result->", result);
       expect(result.data[0].usedCount).toBe(2); //auth.testとここで使ったので２回
     });
   });
