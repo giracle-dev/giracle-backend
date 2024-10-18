@@ -96,7 +96,6 @@ const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
     return {
       async bindUrlPreview(isEnabled: boolean) {
         onAfterResponse(async ({ body, server, response, error }) => {
-          console.log("Middleware :: urlPreviewControl : error->", error);
           //URLプレビューが無効あるいはエラーのレスポンスなら何もしない
           if (!isEnabled || error !== undefined) return;
           //メッセージId取り出し
