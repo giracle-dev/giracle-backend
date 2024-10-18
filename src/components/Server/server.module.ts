@@ -23,6 +23,24 @@ export const server = new Elysia({ prefix: "/server" })
   )
 
   .use(checkRoleTerm)
+  .get(
+    "/get-invite",
+    async () => {
+      const invites = await db.invitation.findMany();
+
+      return {
+        message: "Server invites fetched",
+        data: invites,
+      };
+    },
+    {
+      detail: {
+        description: "サーバーの招待コード情報を取得します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageServer"
+    }
+  )
   .post(
     "/change-info",
     async ({ body: {name, introduction}, server }) => {
