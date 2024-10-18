@@ -23,11 +23,20 @@ describe("auth", async () => {
   await dbTest.channel.deleteMany({});
   await dbTest.roleLink.deleteMany({});
   await dbTest.roleInfo.deleteMany({});
+  await dbTest.invitation.deleteMany({});
   await dbTest.user.deleteMany({});
   await dbTest.serverConfig.deleteMany({});
 
   //DBの初期シード挿入
   execSync("bunx prisma db seed");
+  //テスト用の招待コードをここで作成しておく
+  await dbTest.invitation.create({
+    data: {
+      inviteCode: "testinvite",
+      createdUserId: "SYSTEM",
+      isActive: true
+    },
+  });
 
   let resultJson: {
     success: boolean;
@@ -64,12 +73,16 @@ describe("auth", async () => {
     //console.log("auth.test :: sign-up : response", resultJson);
     expect(resultJson.message).toBe("User created");
 
-    //正しいリクエストを送信
+    //同じユーザー名でのリクエストを送信
     const responseSameUsername = await app.handle(
       new Request("http://localhost/user/sign-up", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: "testuser", password: "testuser" }),
+        body: JSON.stringify({
+          username: "testuser",
+          password: "testuser",
+          inviteCode: "testinvite"
+        }),
       }),
     );
 

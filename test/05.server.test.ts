@@ -30,6 +30,8 @@ describe("server", async () => {
     .split(";")[0]
     .split("=")[1];
 
+  let inviteIdTesting = 0;
+
   it("server :: fetch config", async () => {
     const response = await app.handle(
       new Request("http://localhost/server/config", {
@@ -78,7 +80,6 @@ describe("server", async () => {
           cookie: `token=${tokenTesting}`,
         },
         body: JSON.stringify({
-          RegisterAvailable: false,
           MessageMaxLength: 1234
         }),
       }),
@@ -87,9 +88,145 @@ describe("server", async () => {
     resultJson = await response.json();
     //console.log("server.test :: change-info : resultJson->", resultJson);
     expect(resultJson.message).toBe("Server config updated");
-    expect(resultJson.data.RegisterAvailable).toBe(false);
     expect(resultJson.data.RegisterInviteOnly).toBe(true);
     expect(resultJson.data.MessageMaxLength).toBe(1234);
+  });
+
+  it("server :: create invite", async () => {
+    const response = await app.handle(
+      new Request("http://localhost/server/create-invite", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          inviteCode: "招待作成のテスト"
+        }),
+      }),
+    );
+    //console.log("server.test :: create invite : response->", response);
+    resultJson = await response.json();
+    //console.log("server.test :: create invite : resultJson->", resultJson);
+    expect(resultJson.message).toBe("Server invite created");
+    expect(resultJson.data.inviteCode).toBe("招待作成のテスト");
+  });
+
+  it("server :: fetch invites", async () => {
+    const response = await app.handle(
+      new Request("http://localhost/server/get-invite", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `token=${tokenTesting}`,
+        }
+      }),
+    );
+    //console.log("server.test :: fetch invites : response->", response);
+    resultJson = await response.json();
+    //console.log("server.test :: fetch invites : resultJson->", resultJson);
+    expect(resultJson.message).toBe("Server invites fetched");
+    expect(resultJson.data[0].inviteCode).toBe("testinvite");
+    //後で使うためのinviteIdを取得
+    inviteIdTesting = resultJson.data[1].id;
+  });
+
+  it("server :: enable invites", async () => {
+    //招待を有効にするリクエスト
+    await app.handle(
+      new Request("http://localhost/server/update-invite", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          inviteId: inviteIdTesting,
+          isActive: true
+        }),
+      }),
+    ).then(async (res) => {
+      const result = await res.json();
+      console.log("server.test :: enable-invites : result->", result);
+      expect(result.message).toBe("Server invite updated");
+      expect(result.data.isActive).toBe(true);
+    });
+  });
+
+  it("server :: test register with invite", async () => {
+    //不正な招待コードでのリクエスト
+    const responseError = await app.handle(
+      new Request("http://localhost/user/sign-up", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          username: "testuser2",
+          password: "testuser2",
+          inviteCode: "errorcode"
+        }),
+      }),
+    );
+    //console.log("server.test :: test register-with-invite : responseError->", response);
+    expect(responseError.status).toBe(400);
+
+    //正常なリクエスト
+    const response = await app.handle(
+      new Request("http://localhost/user/sign-up", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          username: "testuser2",
+          password: "testuser2",
+          inviteCode: "testinvite"
+        }),
+      }),
+    );
+    //console.log("server.test :: test register-with-invite : response->", response);
+    resultJson = await response.json();
+    //console.log("server.test :: test register-with-invite : resultJson->", resultJson);
+    expect(resultJson.message).toBe("User created");
+  });
+
+  it("sever :: check invite count", async () => {
+    await app.handle(
+      new Request("http://localhost/server/get-invite", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `token=${tokenTesting}`,
+        },
+      }),
+    ).then(async (res) => {
+      const result = await res.json();
+      //console.log("server.test :: check-invite-count : result->", result);
+      expect(result.data[0].usedCount).toBe(2); //auth.testとここで使ったので２回
+    });
+  });
+
+  it("server :: delete invites", async () => {
+    //招待を削除するリクエスト
+    await app.handle(
+      new Request("http://localhost/server/delete-invite", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          inviteId: inviteIdTesting
+        }),
+      }),
+    ).then(async (res) => {
+      const result = await res.json();
+      //console.log("server.test :: delete-invites : result->", result);
+      expect(result.message).toBe("Server invite deleted");
+    });
   });
 
 });

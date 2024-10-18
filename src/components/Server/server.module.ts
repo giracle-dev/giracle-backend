@@ -1,5 +1,5 @@
 import Elysia, { error, t } from "elysia";
-import { checkRoleTerm } from "../../Middlewares";
+import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
@@ -22,7 +22,110 @@ export const server = new Elysia({ prefix: "/server" })
     }
   )
 
+  .use(CheckToken)
   .use(checkRoleTerm)
+  .get(
+    "/get-invite",
+    async () => {
+      const invites = await db.invitation.findMany();
+
+      return {
+        message: "Server invites fetched",
+        data: invites,
+      };
+    },
+    {
+      detail: {
+        description: "サーバーの招待コード情報を取得します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageServer"
+    }
+  )
+  .put(
+    "/create-invite",
+    async ({ body: {inviteCode, expireDate}, _userId }) => {
+      const newInvite = await db.invitation.create({
+        data: {
+          inviteCode,
+          createdUserId: _userId,
+          expireDate
+        },
+      });
+
+      return {
+        message: "Server invite created",
+        data: newInvite,
+      };
+    },
+    {
+      body: t.Object({
+        inviteCode: t.String({ minLength: 1 }),
+        expireDate: t.Optional(t.Date()),
+      }),
+      detail: {
+        description: "サーバーの招待コードを作成します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageServer"
+    }
+  )
+  .delete(
+    "/delete-invite",
+    async ({ body: {inviteId} }) => {
+      await db.invitation.delete({
+        where: {
+          id: inviteId
+        }
+      });
+
+      return {
+        message: "Server invite deleted",
+        data: {
+          id: inviteId
+        }
+      };
+    },
+    {
+      body: t.Object({
+        inviteId: t.Number(),
+      }),
+      detail: {
+        description: "サーバーの招待コードを作成します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageServer"
+    }
+  )
+  .post(
+    "/update-invite",
+    async ({ body: {inviteId, isActive} }) => {
+      const inviteDataNow = await db.invitation.update({
+        where: {
+          id: inviteId
+        },
+        data: {
+          isActive
+        }
+      });
+
+      return {
+        message: "Server invite updated",
+        data: inviteDataNow
+      };
+    },
+    {
+      body: t.Object({
+        inviteId: t.Number(),
+        isActive: t.Boolean(),
+      }),
+      detail: {
+        description: "サーバーの招待コードの状態を更新します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageServer"
+    }
+  )
   .post(
     "/change-info",
     async ({ body: {name, introduction}, server }) => {

@@ -18,6 +18,7 @@ model User {
   RoleLink         RoleLink[]
   ChannelJoin      ChannelJoin[]
   Message          Message[]
+  Invitation       Invitation[]
 }
 
 model Password {
@@ -110,6 +111,16 @@ model RoleInfo {
   manageRole    Boolean @default(false)
 
   RoleLink RoleLink[]
+}
+
+model Invitation {
+  id            Int      @id @default(autoincrement())
+  isActive      Boolean  @default(false)
+  inviteCode    String   @unique
+  createdUserId String
+  expireDate    DateTime @default(dbgenerated("(datetime('now', '+1 day'))"))
+  user          User     @relation(fields: [createdUserId], references: [id])
+  usedCount     Int      @default(0)
 }
 
 model ServerConfig {

@@ -10,7 +10,50 @@ export const user = new Elysia({ prefix: "/user" })
   .use(userService)
   .put(
     "/sign-up",
-    async ({ body: { username, password }, error }) => {
+    async ({ body: { username, password, inviteCode }, error }) => {
+      //初めてのユーザーかどうか
+      let flagFirstUser = false;
+      //ユーザー数を取得して最初ならtrue
+      const num = await db.user.count();
+      if (num === 1) {
+        flagFirstUser = true;
+      }
+
+      //最初のユーザーなら招待条件を確認しない
+      if (!flagFirstUser) {
+        //サーバーの設定を取得して招待関連の条件を確認
+        const serverConfig = await db.serverConfig.findFirst();
+        if (!serverConfig?.RegisterAvailable) {
+          return error(400, {
+            message: "Registration is disabled",
+          });
+        }
+        if (serverConfig?.RegisterInviteOnly) {
+          if (inviteCode === undefined) {
+            return error(400, {
+              message: "Invite code is invalid"
+            });
+          }
+          //招待コードが有効か確認
+          const Invite = await db.invitation.findUnique({
+            where: { inviteCode: inviteCode },
+          });
+          //招待コードが無効な場合
+          if (Invite === null || !Invite.isActive) {
+            return error(400, {
+              message: "Invite code is invalid"
+            });
+          }
+          //使用回数を加算
+          await db.invitation.update({
+            where: { inviteCode: inviteCode },
+            data: {
+              usedCount: Invite.usedCount + 1
+            }
+          });
+        }
+      }
+
       const user = await db.user.findUnique({
         where: { name: username },
       });
@@ -18,14 +61,6 @@ export const user = new Elysia({ prefix: "/user" })
         return error(400, {
           message: "User already exists",
         });
-      }
-
-      //初めてのユーザーかどうか
-      let flagFirstUser = false;
-      //ユーザー数を取得して最初ならtrue
-      const num = await db.user.count();
-      if (num === 1) {
-        flagFirstUser = true;
       }
 
       //ソルト生成、パスワードのハッシュ化
@@ -55,7 +90,11 @@ export const user = new Elysia({ prefix: "/user" })
       };
     },
     {
-      body: "signIn",
+      body: t.Object({
+        username: t.String({ minLength: 1 }),
+        password: t.String({ minLength: 4 }),
+        inviteCode: t.Optional(t.String({ minLength: 1 })),
+      }),
       detail: {
         description: "ユーザーの新規登録",
         tags: ["User"],
@@ -151,6 +190,10 @@ export const user = new Elysia({ prefix: "/user" })
       params: t.Object({
         userId: t.String({ minLength: 1 }),
       }),
+      detail: {
+        description: "ユーザーのアイコン画像を取得します",
+        tags: ["User"],
+      },
     }
   )
   .post(
@@ -173,6 +216,10 @@ export const user = new Elysia({ prefix: "/user" })
       body: t.Object({
         icon: t.File()
       }),
+      detail: {
+        description: "ユーザーのアイコン画像を変更します",
+        tags: ["User"],
+      },
     }
   )
   .post(
