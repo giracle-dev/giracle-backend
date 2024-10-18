@@ -1,5 +1,5 @@
 import Elysia, { error, t } from "elysia";
-import CheckToken, { checkRoleTerm, urlPreviewControl } from "../../Middlewares";
+import { checkRoleTerm } from "../../Middlewares";
 import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
