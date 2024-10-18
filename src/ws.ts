@@ -7,9 +7,19 @@ import { PrismaClient } from "@prisma/client";
 export const wsHandler = new Elysia()
   .ws("/ws",
     {
+      body: t.Object({
+        signal: t.Literal("subscribeChannel"),
+        channelId: t.String({ minLength: 1 }),
+      }),
       query: t.Object({
         token: t.Optional(t.String({ minLength: 1 })),
       }),
+
+      message(ws, data) {
+        console.log("ws :: message : メッセージ受信", data);
+        
+        ws.subscribe(`channel::${data.channelId}`);
+      },
 
       async open(ws) {
         //トークンを取得して有効か調べる
