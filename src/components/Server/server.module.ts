@@ -54,6 +54,45 @@ export const server = new Elysia({ prefix: "/server" })
         introduction: t.String({ minLength: 1 }),
       }),
       detail: {
+        description: "サーバーの基本情報を変更します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageServer"
+    }
+  )
+  .post(
+    "/change-config",
+    async ({ body: {RegisterAvailable, RegisterInviteOnly, MessageMaxLength}, server }) => {
+      await db.serverConfig.updateMany({
+        data: {
+          RegisterAvailable,
+          RegisterInviteOnly,
+          MessageMaxLength,
+        },
+      });
+
+      //ここでデータ取得
+      const serverinfo = await db.serverConfig.findFirst();
+      if (serverinfo === null) return error(500, "Server config not found");
+
+      //WSで全体へ通知
+      server?.publish("GLOBAL", JSON.stringify({
+        signal: "server::ConfigUpdate",
+        data: { ...serverinfo, id: undefined },
+      }));
+
+      return {
+        message: "Server config updated",
+        data: { ...serverinfo, id: undefined } // idは返さない
+      };
+    },
+    {
+      body: t.Object({
+        RegisterAvailable: t.Optional(t.Boolean()),
+        RegisterInviteOnly: t.Optional(t.Boolean()),
+        MessageMaxLength: t.Optional(t.Number()),
+      }),
+      detail: {
         description: "サーバーの設定を変更します",
         tags: ["Server"],
       },
