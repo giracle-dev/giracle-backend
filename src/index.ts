@@ -8,6 +8,11 @@ import { user } from "./components/User/user.module";
 import { wsHandler } from "./ws";
 import { message } from "./components/Message/message.module";
 
+//アイコン用のディレクトリ作成
+import { mkdir } from "node:fs/promises";
+await mkdir("./STORAGE", { recursive: true });
+await mkdir("./STORAGE/icon", { recursive: true });
+
 export const app = new Elysia()
   .use(
     cors({
