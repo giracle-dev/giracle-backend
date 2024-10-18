@@ -11,7 +11,7 @@ export const server = new Elysia({ prefix: "/server" })
       const config = await db.serverConfig.findFirst();
       return {
         message: "Server config fetched",
-        data: config,
+        data: { ...config, id: undefined } // idは返さない,
       };
     },
     {
