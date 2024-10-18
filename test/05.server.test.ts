@@ -64,9 +64,32 @@ describe("server", async () => {
     //console.log("server.test :: change-info : response->", response);
     resultJson = await response.json();
     //console.log("server.test :: change-info : resultJson->", resultJson);
-    expect(resultJson.message).toBe("Server config updated");
+    expect(resultJson.message).toBe("Server info updated");
     expect(resultJson.data.introduction).toBe("Test changing server info.");
     expect(resultJson.data.id).toBe(undefined);
+  });
+
+  it("server :: update config", async () => {
+    const response = await app.handle(
+      new Request("http://localhost/server/change-config", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          RegisterAvailable: false,
+          MessageMaxLength: 1234
+        }),
+      }),
+    );
+    //console.log("server.test :: change-info : response->", response);
+    resultJson = await response.json();
+    //console.log("server.test :: change-info : resultJson->", resultJson);
+    expect(resultJson.message).toBe("Server config updated");
+    expect(resultJson.data.RegisterAvailable).toBe(false);
+    expect(resultJson.data.RegisterInviteOnly).toBe(true);
+    expect(resultJson.data.MessageMaxLength).toBe(1234);
   });
 
 });
