@@ -1,7 +1,10 @@
 import Elysia, { t } from "elysia";
 import { PrismaClient } from "@prisma/client";
+import type { ElysiaWS } from "elysia/dist/ws";
 
 const db = new PrismaClient();
+//ユーザーごとのWSインスタンス管理
+export const userWSInstance = new Map<string, ElysiaWS<any, any, any>>();
 
 /**
  * WebSocket用 ハンドラ
@@ -16,42 +19,6 @@ export const wsHandler = new Elysia()
       query: t.Object({
         token: t.Optional(t.String({ minLength: 1 })),
       }),
-
-      async message(ws, body) {
-        //トークン取得
-        const token = ws.data.cookie.token.value || ws.data.query.token;
-        if (!token) {
-          ws.send({
-            signal: "ERROR",
-            data: "token not valid",
-          });
-          return;
-        };
-
-        const user = await db.user.findFirst({
-          where: {
-            Token: {
-              some: {
-                token: token,
-              },
-            },
-          },
-          include: {
-            ChannelJoin: true,
-          }
-        });
-        if (!user) {
-          //console.log("ws :: WS接続 :: user not found");
-          ws.send({
-            signal: "ERROR",
-            data: "token not valid",
-          });
-          ws.close();
-          return
-        }
-        
-        ws.subscribe(`channel::${body.data}`);
-      },
 
       async open(ws) {
         //トークンを取得して有効か調べる
@@ -95,6 +62,9 @@ export const wsHandler = new Elysia()
         for (const channelData of user.ChannelJoin) {
           ws.subscribe(`channel::${channelData.channelId}`);
         }
+
+        //このユーザーWSインスタンス保存
+        userWSInstance.set(user.id, ws);
 
         console.log("index :: 新しいWS接続");
       },
