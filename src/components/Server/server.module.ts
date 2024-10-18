@@ -1,5 +1,5 @@
 import Elysia, { error, t } from "elysia";
-import { checkRoleTerm } from "../../Middlewares";
+import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
@@ -22,6 +22,7 @@ export const server = new Elysia({ prefix: "/server" })
     }
   )
 
+  .use(CheckToken)
   .use(checkRoleTerm)
   .get(
     "/get-invite",
@@ -36,6 +37,59 @@ export const server = new Elysia({ prefix: "/server" })
     {
       detail: {
         description: "サーバーの招待コード情報を取得します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageServer"
+    }
+  )
+  .put(
+    "/create-invite",
+    async ({ body: {inviteCode}, _userId }) => {
+      const newInvite = await db.invitation.create({
+        data: {
+          inviteCode,
+          createdUserId: _userId,
+        },
+      });
+
+      return {
+        message: "Server invite created",
+        data: newInvite,
+      };
+    },
+    {
+      body: t.Object({
+        inviteCode: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "サーバーの招待コードを作成します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageServer"
+    }
+  )
+  .delete(
+    "/delete-invite",
+    async ({ body: {inviteId} }) => {
+      await db.invitation.delete({
+        where: {
+          id: inviteId
+        }
+      });
+
+      return {
+        message: "Server invite deleted",
+        data: {
+          id: inviteId
+        }
+      };
+    },
+    {
+      body: t.Object({
+        inviteId: t.Number(),
+      }),
+      detail: {
+        description: "サーバーの招待コードを作成します",
         tags: ["Server"],
       },
       checkRoleTerm: "manageServer"
