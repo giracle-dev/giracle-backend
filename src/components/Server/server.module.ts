@@ -10,9 +10,8 @@ export const server = new Elysia({ prefix: "/server" })
     async () => {
       const config = await db.serverConfig.findFirst();
       return {
-        data: {
-          config,
-        },
+        message: "Server config fetched",
+        data: config,
       };
     },
     {
