@@ -44,7 +44,7 @@ export const server = new Elysia({ prefix: "/server" })
       }));
 
       return {
-        message: "Server config updated",
+        message: "Server info updated",
         data: { ...serverinfo, id: undefined } // idは返さない
       };
     },
@@ -78,7 +78,7 @@ export const server = new Elysia({ prefix: "/server" })
       //WSで全体へ通知
       server?.publish("GLOBAL", JSON.stringify({
         signal: "server::ConfigUpdate",
-        data: { ...serverinfo, id: undefined },
+        data: { ...serverinfo, id: undefined }, // idは返さない
       }));
 
       return {
