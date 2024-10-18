@@ -7,8 +7,8 @@ const db = new PrismaClient();
 export const message = new Elysia({ prefix: "/message" })
   .use(CheckToken)
   .get(
-    "/get",
-    async ({ body: {messageId} }) => {
+    "/get/:messageId",
+    async ({ query: {messageId} }) => {
       const messageData = await db.message.findUnique({
         where: {
           id: messageId
@@ -25,8 +25,8 @@ export const message = new Elysia({ prefix: "/message" })
       };
     },
     {
-      body: t.Object({
-        messageId: t.String()
+      query: t.Object({
+        messageId: t.String({ minLength: 1 })
       })
     }
   )
