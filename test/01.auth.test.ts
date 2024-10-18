@@ -24,6 +24,7 @@ describe("auth", async () => {
   await dbTest.roleLink.deleteMany({});
   await dbTest.roleInfo.deleteMany({});
   await dbTest.user.deleteMany({});
+  await dbTest.serverConfig.deleteMany({});
 
   //DBの初期シード挿入
   execSync("bunx prisma db seed");
