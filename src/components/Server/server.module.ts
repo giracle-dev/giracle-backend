@@ -21,7 +21,7 @@ export const server = new Elysia({ prefix: "/server" })
       },
     }
   )
-  .use(CheckToken)
+
   .use(checkRoleTerm)
   .post(
     "/change-info",
