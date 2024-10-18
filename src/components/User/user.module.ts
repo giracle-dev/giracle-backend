@@ -154,6 +154,28 @@ export const user = new Elysia({ prefix: "/user" })
     }
   )
   .post(
+    "/change-icon",
+    async ({ body: {icon}, _userId }) => {
+      if (icon.size > 8 * 1024 * 1024) {
+        return error(400, "File size is too large");
+      }
+      if (icon.type !== "image/png" && icon.type !== "image/gif" && icon.type !== "image/jpeg") {
+        return error(400, "File type is invalid");
+      }
+
+      //アイコンを保存
+      Bun.write(`./STORAGE/icon/${_userId}.png`, icon);
+      return {
+        message: "Icon changed",
+      };
+    },
+    {
+      body: t.Object({
+        icon: t.File()
+      }),
+    }
+  )
+  .post(
     "/change-password",
     async ({ error, body: { currentPassword, newPassword }, _userId }) => {
       //console.log("user.module :: /sign-in :: tokenGenerated", tokenGenerated);
