@@ -21,20 +21,24 @@ export const message = new Elysia({ prefix: "/message" })
         throw error(400, "You are not joined this channel");
       }
 
-      //WSで通知
-      server?.publish(`channel::${channelId}`, JSON.stringify({
-        signal: "message::SendMessage",
+      const messageSaved = await db.message.create({
         data: {
           channelId,
           userId: _userId,
-          message,
+          content: message,
         }
+      })
+
+      //WSで通知
+      server?.publish(`channel::${channelId}`, JSON.stringify({
+        signal: "message::SendMessage",
+        data: messageSaved
       }));
 
       return {
         message: "Message sent",
         data: {
-          message,
+          messageSaved,
         }
       }
     },
