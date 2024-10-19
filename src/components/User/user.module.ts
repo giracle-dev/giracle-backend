@@ -324,7 +324,7 @@ export const user = new Elysia({ prefix: "/user" })
     },
     {
       body: t.Object({
-        name: t.Optional(t.String()),
+        name: t.Optional(t.String({ minLength: 1 })),
         selfIntroduction: t.Optional(t.String()),
       }),
       detail: {
