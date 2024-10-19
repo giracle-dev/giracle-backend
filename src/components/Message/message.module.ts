@@ -28,6 +28,10 @@ export const message = new Elysia({ prefix: "/message" })
       query: t.Object({
         messageId: t.String({ minLength: 1 }),
       }),
+      detail: {
+        description: "メッセージを単体で取得します",
+        tags: ["Message"],
+      },
     },
   )
   .use(urlPreviewControl)
