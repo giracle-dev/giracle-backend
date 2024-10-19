@@ -282,8 +282,10 @@ describe("channel", async () => {
     resultJson = await response.json();
     //console.log("channel.test : get-history : response", resultJson);
     expect(resultJson.message).toBe("History fetched");
+    expect(resultJson.data.atTop).toBe(true);
+    expect(resultJson.data.atEnd).toBe(true);
 
-    const messageTimeForTesting: string = resultJson.data[1].createdAt;
+    const messageTimeForTesting: string = resultJson.data.history[1].createdAt;
 
     //正しいPart2、時間を指定しての取得
     const responseWithTime = await app.handle(
@@ -302,7 +304,9 @@ describe("channel", async () => {
     //console.log("channel.test : get-history : responseWithTime", responseWithTime);
     resultJson = await responseWithTime.json();
     //console.log("channel.test : get-history : responseWithTime json", resultJson);
-    expect(resultJson.data.length).toBe(1);
+    expect(resultJson.data.history.length).toBe(1);
+    expect(resultJson.data.atTop).toBe(true);
+    expect(resultJson.data.atEnd).toBe(false);
   });
 
   it("channel :: delete", async () => {
