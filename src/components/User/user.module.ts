@@ -186,7 +186,7 @@ export const user = new Elysia({ prefix: "/user" })
       if (await iconFileGif.exists()) {
         return iconFileGif;
       }
-      const iconFileJpeg = Bun.file(`./STORAGE/icon/${userId}.jpg`);
+      const iconFileJpeg = Bun.file(`./STORAGE/icon/${userId}.jpeg`);
       if (await iconFileJpeg.exists()) {
         return iconFileJpeg;
       }
