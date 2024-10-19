@@ -542,5 +542,11 @@ export const user = new Elysia({ prefix: "/user" })
         message: "User list",
         data: users,
       };
+    },
+    {
+      detail: {
+        description: "ユーザーの情報を一覧で取得します",
+        tags: ["User"],
+      },
     }
   );
