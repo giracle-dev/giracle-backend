@@ -46,6 +46,8 @@ model ChannelViewableRole {
   role      RoleInfo @relation(fields: [roleId], references: [id])
 
   @@id([channelId, roleId])
+  @@index([roleId])
+  @@index([channelId])
 }
 
 model ChannelJoin {
@@ -95,7 +97,8 @@ model Message {
   createdAt         DateTime            @default(now())
   MessageUrlPreview MessageUrlPreview[]
 
-  @@index([channelId, userId])
+  @@index([channelId])
+  @@index([userId])
 }
 
 model RoleLink {
@@ -106,7 +109,8 @@ model RoleLink {
   user         User     @relation(fields: [userId], references: [id])
 
   @@id([userId, roleId])
-  @@index([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
 }
 
 model RoleInfo {
