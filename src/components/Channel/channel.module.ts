@@ -117,8 +117,29 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .get(
     "/list",
-    async ({ server }) => {
-      const channelList = await db.channel.findMany();
+    async ({ _userId }) => {
+      //複数条件のもとでチャンネルリストを取得
+      const channelList = await db.channel.findMany({
+        where: {
+          OR: [
+            { //ロール閲覧制限がない
+              ChannelViewableRole: {
+                none: {}
+              }
+            },
+            { //自分が作成した
+              createdUserId: _userId,
+            },
+            { //参加している
+              ChannelJoin: {
+                some: {
+                  userId: _userId,
+                },
+              },
+            },
+          ],
+        }
+      });
 
       return {
         message: "Channel list ready",
