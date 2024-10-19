@@ -1,6 +1,6 @@
+import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
-import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
 
@@ -8,11 +8,11 @@ export const message = new Elysia({ prefix: "/message" })
   .use(CheckToken)
   .get(
     "/get/:messageId",
-    async ({ query: {messageId} }) => {
+    async ({ query: { messageId } }) => {
       const messageData = await db.message.findUnique({
         where: {
-          id: messageId
-        }
+          id: messageId,
+        },
       });
       //メッセージが見つからなければエラー
       if (messageData === null) {
@@ -21,14 +21,14 @@ export const message = new Elysia({ prefix: "/message" })
 
       return {
         message: "Fetched message",
-        data: messageData
+        data: messageData,
       };
     },
     {
       query: t.Object({
-        messageId: t.String({ minLength: 1 })
-      })
-    }
+        messageId: t.String({ minLength: 1 }),
+      }),
+    },
   )
   .use(urlPreviewControl)
   .post(
@@ -39,7 +39,7 @@ export const message = new Elysia({ prefix: "/message" })
         where: {
           userId: _userId,
           channelId,
-        }
+        },
       });
       //チャンネルに参加していない
       if (channelJoined === null) {
@@ -51,21 +51,24 @@ export const message = new Elysia({ prefix: "/message" })
           channelId,
           userId: _userId,
           content: message,
-        }
-      })
+        },
+      });
 
       //WSで通知
-      server?.publish(`channel::${channelId}`, JSON.stringify({
-        signal: "message::SendMessage",
-        data: messageSaved
-      }));
+      server?.publish(
+        `channel::${channelId}`,
+        JSON.stringify({
+          signal: "message::SendMessage",
+          data: messageSaved,
+        }),
+      );
 
       return {
         message: "Message sent",
         data: {
           messageSaved,
-        }
-      }
+        },
+      };
     },
     {
       body: t.Object({
@@ -76,6 +79,6 @@ export const message = new Elysia({ prefix: "/message" })
         description: "メッセージを送信します",
         tags: ["Message"],
       },
-      bindUrlPreview: true
-    }
+      bindUrlPreview: true,
+    },
   );

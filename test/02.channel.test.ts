@@ -221,7 +221,7 @@ describe("channel", async () => {
         headers: {
           "Content-Type": "application/json",
           Cookie: `token=${tokenTesting}`,
-        }
+        },
       }),
     );
     resultJson = await response.json();
@@ -242,7 +242,7 @@ describe("channel", async () => {
         },
         body: JSON.stringify({
           messageTimeFrom: "ErrorTimeString",
-        })
+        }),
       }),
     );
     //console.log("channel.test : get-history : response", response);
@@ -260,13 +260,13 @@ describe("channel", async () => {
         },
         body: JSON.stringify({
           messageTimeFrom: "2024-8-1",
-        })
+        }),
       }),
     );
     //console.log("channel.test : get-history : response", response);
     expect(responseUnknwown.ok).toBe(false);
     expect(responseUnknwown.status).toBe(404);
-    
+
     //正しいリクエストを送信
     const response = await app.handle(
       new Request(`http://localhost/channel/get-history/${createdChannelId}`, {
@@ -296,7 +296,7 @@ describe("channel", async () => {
         },
         body: JSON.stringify({
           messageTimeFrom: messageTimeForTesting,
-        })
+        }),
       }),
     );
     //console.log("channel.test : get-history : responseWithTime", responseWithTime);

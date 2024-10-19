@@ -34,7 +34,7 @@ describe("auth", async () => {
     data: {
       inviteCode: "testinvite",
       createdUserId: "SYSTEM",
-      isActive: true
+      isActive: true,
     },
   });
 
@@ -81,7 +81,7 @@ describe("auth", async () => {
         body: JSON.stringify({
           username: "testuser",
           password: "testuser",
-          inviteCode: "testinvite"
+          inviteCode: "testinvite",
         }),
       }),
     );

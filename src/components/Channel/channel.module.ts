@@ -10,7 +10,6 @@ export const channel = new Elysia({ prefix: "/channel" })
   .post(
     "/join",
     async ({ body: { channelId }, _userId }) => {
-
       //チャンネル参加データが存在するか確認
       const channelJoined = await db.channelJoin.findFirst({
         where: {
@@ -48,7 +47,7 @@ export const channel = new Elysia({ prefix: "/channel" })
         message: "Channel joined",
         data: {
           channelId,
-        }
+        },
       };
     },
     {
@@ -63,13 +62,13 @@ export const channel = new Elysia({ prefix: "/channel" })
         200: t.Object({
           message: t.Literal("Channel joined"),
           data: t.Object({
-            channelId: t.String()
-          })
+            channelId: t.String(),
+          }),
         }),
         400: t.Literal("Already joined"),
         404: t.Literal("Channel not found"),
-      }
-    }
+      },
+    },
   )
   .post(
     "/leave",
@@ -78,7 +77,7 @@ export const channel = new Elysia({ prefix: "/channel" })
       const channelJoinData = await db.channelJoin.findFirst({
         where: {
           userId: _userId,
-          channelId
+          channelId,
         },
       });
       if (channelJoinData === null) {
@@ -112,8 +111,8 @@ export const channel = new Elysia({ prefix: "/channel" })
           message: t.Literal("Channel left"),
         }),
         400: t.Literal("You are not joined this channel"),
-      }
-    }
+      },
+    },
   )
   .get(
     "/list",
@@ -122,60 +121,63 @@ export const channel = new Elysia({ prefix: "/channel" })
       const channelList = await db.channel.findMany({
         where: {
           ChannelViewableRole: {
-            none: {}
-          }
-        }
+            none: {},
+          },
+        },
       });
 
       //ユーザーのロールを取得
       const user = await db.user.findUnique({
         where: {
-          id: _userId
+          id: _userId,
         },
         include: {
-          RoleLink: true
-        }
+          RoleLink: true,
+        },
       });
       if (!user) {
         throw error(500, "Internal Server Error");
       }
       //指定のロールでしか閲覧できない、また他条件でのチャンネルを取得
-      const roleIds = user.RoleLink.map(roleLink => roleLink.roleId);
+      const roleIds = user.RoleLink.map((roleLink) => roleLink.roleId);
       const channelsLimited = await db.channel.findMany({
         where: {
           OR: [
-            { //閲覧制限があり、自分がそのロールに所属している
+            {
+              //閲覧制限があり、自分がそのロールに所属している
               ChannelViewableRole: {
                 some: {
                   roleId: {
-                    in: roleIds
-                  }
-                }
+                    in: roleIds,
+                  },
+                },
               },
             },
-            { //自分が作成した
+            {
+              //自分が作成した
               createdUserId: _userId,
             },
-            { //自分が参加している
+            {
+              //自分が参加している
               ChannelJoin: {
                 some: {
                   userId: _userId,
                 },
               },
             },
-          ]
-        }
+          ],
+        },
       });
 
       //重複を取り除く
       const mergedChannels = [...channelList, ...channelsLimited];
       const uniqueChannels = Array.from(
-        new Set(mergedChannels.map(channel => JSON.stringify(channel)))
-      ).map(channel => JSON.parse(channel));
+        new Set(mergedChannels.map((channel) => JSON.stringify(channel))),
+      ).map((channel) => JSON.parse(channel));
 
       return {
         message: "Channel list ready",
-        data: uniqueChannels
+        data: uniqueChannels,
       };
     },
     {
@@ -183,13 +185,14 @@ export const channel = new Elysia({ prefix: "/channel" })
         description: "チャンネル一覧を取得します",
         tags: ["Channel"],
       },
-    }
+    },
   )
   .post(
     "/get-history/:channelId",
     async ({ params: { channelId }, body }) => {
       //パラメータ指定の取得
-      const { messageIdFrom, fetchDirection, fetchLength, messageTimeFrom } = body || {};
+      const { messageIdFrom, fetchDirection, fetchLength, messageTimeFrom } =
+        body || {};
 
       let messageDataFrom: Message | null = null;
       //基準位置になるメッセージIdが指定されているなら
@@ -197,8 +200,8 @@ export const channel = new Elysia({ prefix: "/channel" })
         //取得、格納
         messageDataFrom = await db.message.findUnique({
           where: {
-            id: messageIdFrom
-          }
+            id: messageIdFrom,
+          },
         });
         //無ければエラー
         if (!messageDataFrom) {
@@ -210,32 +213,32 @@ export const channel = new Elysia({ prefix: "/channel" })
         //取得、格納
         messageDataFrom = await db.message.findFirst({
           where: {
-            createdAt: new Date(messageTimeFrom)
-          }
+            createdAt: new Date(messageTimeFrom),
+          },
         });
         //無ければエラー
         if (!messageDataFrom)
           return error(404, "Message cursor position not found");
-
       }
 
       //基準のメッセージIdがあるなら時間を取得、取得設定として設定
-      let optionDate: {createdAt: {lte: Date} | {gte: Date}} | null = null;
+      let optionDate: { createdAt: { lte: Date } | { gte: Date } } | null =
+        null;
       if (messageDataFrom !== null) {
         //取得時間方向に合わせて設定を指定
-        if (fetchDirection === 'older') {
+        if (fetchDirection === "older") {
           //古い方向に取得する場合
           optionDate = {
             createdAt: {
               lte: new Date(messageDataFrom.createdAt),
-            }
+            },
           };
         } else {
           //新しい方向に取得する場合
           optionDate = {
             createdAt: {
               gte: new Date(messageDataFrom.createdAt),
-            }
+            },
           };
         }
       }
@@ -247,46 +250,48 @@ export const channel = new Elysia({ prefix: "/channel" })
           ...optionDate,
         },
         take: fetchLength,
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: "desc" },
       });
 
       return {
         message: "History fetched",
-        data: history
+        data: history,
       };
     },
     {
       params: t.Object({
-        channelId: t.String()
+        channelId: t.String(),
       }),
       body: t.Optional(
         t.Object({
           messageIdFrom: t.Optional(t.String()),
           messageTimeFrom: t.Optional(t.String()),
           fetchLength: t.Number({ default: 30, maximum: 30 }),
-          fetchDirection: t.Union([t.Literal('older'), t.Literal('newer')], {default: 'older'})
-        })
+          fetchDirection: t.Union([t.Literal("older"), t.Literal("newer")], {
+            default: "older",
+          }),
+        }),
       ),
       detail: {
         description: "チャンネルのメッセージ履歴を取得します",
         tags: ["Channel"],
       },
-    }
+    },
   )
 
   .use(checkRoleTerm)
 
   .post(
     "/update",
-    async ({ body: {name, description, isArchived, channelId}, server }) => {
+    async ({ body: { name, description, isArchived, channelId }, server }) => {
       //適用するデータ群のJSON
       const updatingValues: {
-        name?: string,
-        description?: string,
-        isArchived?: boolean
+        name?: string;
+        description?: string;
+        isArchived?: boolean;
       } = {};
 
-        //渡されたデータを調べて適用するデータを格納
+      //渡されたデータを調べて適用するデータを格納
       if (name) updatingValues.name = name;
       if (description) updatingValues.description = description;
       if (isArchived !== undefined) updatingValues.isArchived = isArchived;
@@ -294,38 +299,40 @@ export const channel = new Elysia({ prefix: "/channel" })
       //チャンネルデータを更新する
       const channelDataUpdated = await db.channel.update({
         where: {
-          id: channelId
+          id: channelId,
         },
         data: {
-          ...updatingValues
-        }
+          ...updatingValues,
+        },
       });
 
       //WSで通知
-      server?.publish("GLOBAL", JSON.stringify({
-        signal: "channel::UpdateChannel",
-        data: channelDataUpdated
-      }));
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "channel::UpdateChannel",
+          data: channelDataUpdated,
+        }),
+      );
 
       return {
         message: "Channel updated",
-        data: channelDataUpdated
-      }
-
+        data: channelDataUpdated,
+      };
     },
     {
       body: t.Object({
         channelId: t.String({ minLength: 1 }),
         name: t.Optional(t.String()),
         description: t.Optional(t.String()),
-        isArchived: t.Optional(t.Boolean())
+        isArchived: t.Optional(t.Boolean()),
       }),
       detail: {
         description: "チャンネル情報を更新します",
         tags: ["Channel"],
       },
       checkRoleTerm: "manageChannel",
-    }
+    },
   )
   .put(
     "/create",

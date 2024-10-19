@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
+import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken from "../../Middlewares";
-import { unlink } from "node:fs/promises";
 import { userService } from "./user.service";
 
 const db = new PrismaClient();
@@ -32,7 +32,7 @@ export const user = new Elysia({ prefix: "/user" })
         if (serverConfig?.RegisterInviteOnly) {
           if (inviteCode === undefined) {
             return error(400, {
-              message: "Invite code is invalid"
+              message: "Invite code is invalid",
             });
           }
           //招待コードが有効か確認
@@ -42,15 +42,15 @@ export const user = new Elysia({ prefix: "/user" })
           //招待コードが無効な場合
           if (Invite === null || !Invite.isActive) {
             return error(400, {
-              message: "Invite code is invalid"
+              message: "Invite code is invalid",
             });
           }
           //使用回数を加算
           await db.invitation.update({
             where: { inviteCode: inviteCode },
             data: {
-              usedCount: Invite.usedCount + 1
-            }
+              usedCount: Invite.usedCount + 1,
+            },
           });
         }
       }
@@ -177,7 +177,7 @@ export const user = new Elysia({ prefix: "/user" })
 
   .get(
     "/icon/:userId",
-    async ({ params:{userId} }) => {
+    async ({ params: { userId } }) => {
       //アイコン読み取り、存在確認して返す
       const iconFilePng = Bun.file(`./STORAGE/icon/${userId}.png`);
       if (await iconFilePng.exists()) {
@@ -203,15 +203,19 @@ export const user = new Elysia({ prefix: "/user" })
         description: "ユーザーのアイコン画像を取得します",
         tags: ["User"],
       },
-    }
+    },
   )
   .post(
     "/change-icon",
-    async ({ body: {icon}, _userId }) => {
+    async ({ body: { icon }, _userId }) => {
       if (icon.size > 8 * 1024 * 1024) {
         return error(400, "File size is too large");
       }
-      if (icon.type !== "image/png" && icon.type !== "image/gif" && icon.type !== "image/jpeg") {
+      if (
+        icon.type !== "image/png" &&
+        icon.type !== "image/gif" &&
+        icon.type !== "image/jpeg"
+      ) {
         return error(400, "File type is invalid");
       }
       //拡張子取得
@@ -230,13 +234,13 @@ export const user = new Elysia({ prefix: "/user" })
     },
     {
       body: t.Object({
-        icon: t.File()
+        icon: t.File(),
       }),
       detail: {
         description: "ユーザーのアイコン画像を変更します",
         tags: ["User"],
       },
-    }
+    },
   )
   .post(
     "/change-password",
@@ -298,7 +302,7 @@ export const user = new Elysia({ prefix: "/user" })
   )
   .post(
     "/profile-update",
-    async ({ body: {name, selfIntroduction}, _userId, server }) => {
+    async ({ body: { name, selfIntroduction }, _userId, server }) => {
       //ユーザー情報取得
       const user = await db.user.findUnique({
         where: {
@@ -326,16 +330,19 @@ export const user = new Elysia({ prefix: "/user" })
         },
         data: updatingValue,
       });
-    
+
       //WSで全体へ通知
-      server?.publish("GLOBAL", JSON.stringify({
-        signal: "user::ProfileUpdate",
-        data: userUpdated,
-      }));
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "user::ProfileUpdate",
+          data: userUpdated,
+        }),
+      );
 
       return {
         message: "Profile updated",
-        data: userUpdated
+        data: userUpdated,
       };
     },
     {
@@ -347,7 +354,7 @@ export const user = new Elysia({ prefix: "/user" })
         description: "プロフィールの更新",
         tags: ["User"],
       },
-    }
+    },
   )
   .get(
     "/sign-out",
@@ -374,35 +381,37 @@ export const user = new Elysia({ prefix: "/user" })
       },
     },
   )
-  .get("/verify-token", ({ _userId, error }) => {
-    //もし空ならトークンが無効
-    if (_userId === "") {
-      throw error(401, "Token is invalid");
-    }
-
-    //トークンが有効
-    return {
-      message: "Token is valid",
-      data: {
-        userId: _userId
+  .get(
+    "/verify-token",
+    ({ _userId, error }) => {
+      //もし空ならトークンが無効
+      if (_userId === "") {
+        throw error(401, "Token is invalid");
       }
-    };
-  },
-  {
-    detail: {
-      description: "トークンの検証",
-      tags: ["User"],
+
+      //トークンが有効
+      return {
+        message: "Token is valid",
+        data: {
+          userId: _userId,
+        },
+      };
     },
-    response: {
-      200: t.Object({
-        message: t.Literal("Token is valid"),
-        data: t.Object({
-          userId: t.String()
-        })
-      }),
-      401: t.Literal("Token is invalid")
-    }
-  }
+    {
+      detail: {
+        description: "トークンの検証",
+        tags: ["User"],
+      },
+      response: {
+        200: t.Object({
+          message: t.Literal("Token is valid"),
+          data: t.Object({
+            userId: t.String(),
+          }),
+        }),
+        401: t.Literal("Token is invalid"),
+      },
+    },
   )
   .get(
     "/info/:id",
@@ -414,8 +423,8 @@ export const user = new Elysia({ prefix: "/user" })
         include: {
           ChannelJoin: {
             select: {
-              channelId: true
-            }
+              channelId: true,
+            },
           },
           RoleLink: {
             select: {
@@ -431,7 +440,7 @@ export const user = new Elysia({ prefix: "/user" })
 
       return {
         message: "User info",
-        data: user
+        data: user,
       };
     },
     {
@@ -442,5 +451,5 @@ export const user = new Elysia({ prefix: "/user" })
         description: "ユーザー情報を取得します",
         tags: ["User"],
       },
-    }
-  )
+    },
+  );

@@ -1,6 +1,6 @@
+import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
-import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
 
@@ -12,13 +12,13 @@ export const server = new Elysia({ prefix: "/server" })
       const config = await db.serverConfig.findFirst();
       //最初のユーザーになるかどうか
       const firstUser = await db.user.findFirst({
-        skip: 1
+        skip: 1,
       });
       const isFirstUser = firstUser === null;
 
       return {
         message: "Server config fetched",
-        data: { ...config, isFirstUser, id: undefined } // idは返さない,
+        data: { ...config, isFirstUser, id: undefined }, // idは返さない,
       };
     },
     {
@@ -26,7 +26,7 @@ export const server = new Elysia({ prefix: "/server" })
         description: "サーバーの設定を取得します",
         tags: ["Server"],
       },
-    }
+    },
   )
 
   .use(CheckToken)
@@ -46,17 +46,17 @@ export const server = new Elysia({ prefix: "/server" })
         description: "サーバーの招待コード情報を取得します",
         tags: ["Server"],
       },
-      checkRoleTerm: "manageServer"
-    }
+      checkRoleTerm: "manageServer",
+    },
   )
   .put(
     "/create-invite",
-    async ({ body: {inviteCode, expireDate}, _userId }) => {
+    async ({ body: { inviteCode, expireDate }, _userId }) => {
       const newInvite = await db.invitation.create({
         data: {
           inviteCode,
           createdUserId: _userId,
-          expireDate
+          expireDate,
         },
       });
 
@@ -74,23 +74,23 @@ export const server = new Elysia({ prefix: "/server" })
         description: "サーバーの招待コードを作成します",
         tags: ["Server"],
       },
-      checkRoleTerm: "manageServer"
-    }
+      checkRoleTerm: "manageServer",
+    },
   )
   .delete(
     "/delete-invite",
-    async ({ body: {inviteId} }) => {
+    async ({ body: { inviteId } }) => {
       await db.invitation.delete({
         where: {
-          id: inviteId
-        }
+          id: inviteId,
+        },
       });
 
       return {
         message: "Server invite deleted",
         data: {
-          id: inviteId
-        }
+          id: inviteId,
+        },
       };
     },
     {
@@ -101,24 +101,24 @@ export const server = new Elysia({ prefix: "/server" })
         description: "サーバーの招待コードを作成します",
         tags: ["Server"],
       },
-      checkRoleTerm: "manageServer"
-    }
+      checkRoleTerm: "manageServer",
+    },
   )
   .post(
     "/update-invite",
-    async ({ body: {inviteId, isActive} }) => {
+    async ({ body: { inviteId, isActive } }) => {
       const inviteDataNow = await db.invitation.update({
         where: {
-          id: inviteId
+          id: inviteId,
         },
         data: {
-          isActive
-        }
+          isActive,
+        },
       });
 
       return {
         message: "Server invite updated",
-        data: inviteDataNow
+        data: inviteDataNow,
       };
     },
     {
@@ -130,12 +130,12 @@ export const server = new Elysia({ prefix: "/server" })
         description: "サーバーの招待コードの状態を更新します",
         tags: ["Server"],
       },
-      checkRoleTerm: "manageServer"
-    }
+      checkRoleTerm: "manageServer",
+    },
   )
   .post(
     "/change-info",
-    async ({ body: {name, introduction}, server }) => {
+    async ({ body: { name, introduction }, server }) => {
       await db.serverConfig.updateMany({
         data: {
           name,
@@ -148,14 +148,17 @@ export const server = new Elysia({ prefix: "/server" })
       if (serverinfo === null) return error(500, "Server config not found");
 
       //WSで全体へ通知
-      server?.publish("GLOBAL", JSON.stringify({
-        signal: "server::ConfigUpdate",
-        data: { ...serverinfo, id: undefined },
-      }));
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "server::ConfigUpdate",
+          data: { ...serverinfo, id: undefined },
+        }),
+      );
 
       return {
         message: "Server info updated",
-        data: { ...serverinfo, id: undefined } // idは返さない
+        data: { ...serverinfo, id: undefined }, // idは返さない
       };
     },
     {
@@ -167,12 +170,15 @@ export const server = new Elysia({ prefix: "/server" })
         description: "サーバーの基本情報を変更します",
         tags: ["Server"],
       },
-      checkRoleTerm: "manageServer"
-    }
+      checkRoleTerm: "manageServer",
+    },
   )
   .post(
     "/change-config",
-    async ({ body: {RegisterAvailable, RegisterInviteOnly, MessageMaxLength}, server }) => {
+    async ({
+      body: { RegisterAvailable, RegisterInviteOnly, MessageMaxLength },
+      server,
+    }) => {
       await db.serverConfig.updateMany({
         data: {
           RegisterAvailable,
@@ -186,14 +192,17 @@ export const server = new Elysia({ prefix: "/server" })
       if (serverinfo === null) return error(500, "Server config not found");
 
       //WSで全体へ通知
-      server?.publish("GLOBAL", JSON.stringify({
-        signal: "server::ConfigUpdate",
-        data: { ...serverinfo, id: undefined }, // idは返さない
-      }));
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "server::ConfigUpdate",
+          data: { ...serverinfo, id: undefined }, // idは返さない
+        }),
+      );
 
       return {
         message: "Server config updated",
-        data: { ...serverinfo, id: undefined } // idは返さない
+        data: { ...serverinfo, id: undefined }, // idは返さない
       };
     },
     {
@@ -206,6 +215,6 @@ export const server = new Elysia({ prefix: "/server" })
         description: "サーバーの設定を変更します",
         tags: ["Server"],
       },
-      checkRoleTerm: "manageServer"
-    }
-  )
+      checkRoleTerm: "manageServer",
+    },
+  );
