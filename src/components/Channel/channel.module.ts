@@ -120,13 +120,6 @@ export const channel = new Elysia({ prefix: "/channel" })
     async ({ server }) => {
       const channelList = await db.channel.findMany();
 
-      //DEBUG :: 全体に通知
-      server?.publish("GLOBAL", JSON.stringify({
-        signal: "channel::Listとるテスト",
-        data: "asdf"
-      }));
-      console.log("/channel/list :: 送信したつもり");
-
       return {
         message: "Channel list ready",
         data: channelList
