@@ -229,6 +229,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
 
   .use(checkRoleTerm)
+
   .post(
     "/update",
     async ({ body: {name, description, isArchived, channelId}, server }) => {
@@ -277,6 +278,7 @@ export const channel = new Elysia({ prefix: "/channel" })
         description: "チャンネル情報を更新します",
         tags: ["Channel"],
       },
+      checkRoleTerm: "manageChannel",
     }
   )
   .put(
