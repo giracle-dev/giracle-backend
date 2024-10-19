@@ -169,7 +169,7 @@ export const channel = new Elysia({ prefix: "/channel" })
 
       return {
         message: "Channel list ready",
-        data: {...channelList, ...channelsLimited}
+        data: [...channelList, ...channelsLimited]
       };
     },
     {
