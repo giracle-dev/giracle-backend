@@ -177,14 +177,22 @@ export const user = new Elysia({ prefix: "/user" })
   .get(
     "/icon/:userId",
     async ({ params:{userId} }) => {
-      //アイコン読み取り
-      const iconFile = Bun.file(`./STORAGE/icon/${userId}.png`);
-      //アイコンが存在しない場合はデフォルトアイコンを返す
-      if (!await iconFile.exists()) {
-        return Bun.file("./STORAGE/icon/default.png");
+      //アイコン読み取り、存在確認して返す
+      const iconFilePng = Bun.file(`./STORAGE/icon/${userId}.png`);
+      if (await iconFilePng.exists()) {
+        return iconFilePng;
+      }
+      const iconFileGif = Bun.file(`./STORAGE/icon/${userId}.gif`);
+      if (await iconFileGif.exists()) {
+        return iconFileGif;
+      }
+      const iconFileJpeg = Bun.file(`./STORAGE/icon/${userId}.jpg`);
+      if (await iconFileJpeg.exists()) {
+        return iconFileJpeg;
       }
 
-      return iconFile;
+      //存在しない場合はデフォルトアイコンを返す
+      return Bun.file("./STORAGE/icon/default.png");
     },
     {
       params: t.Object({
@@ -205,9 +213,11 @@ export const user = new Elysia({ prefix: "/user" })
       if (icon.type !== "image/png" && icon.type !== "image/gif" && icon.type !== "image/jpeg") {
         return error(400, "File type is invalid");
       }
+      //拡張子取得
+      const ext = icon.type.split("/")[1];
 
       //アイコンを保存
-      Bun.write(`./STORAGE/icon/${_userId}.png`, icon);
+      Bun.write(`./STORAGE/icon/${_userId}.${ext}`, icon);
       return {
         message: "Icon changed",
       };
