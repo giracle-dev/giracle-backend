@@ -205,6 +205,36 @@ export const user = new Elysia({ prefix: "/user" })
       },
     },
   )
+  .get(
+    "/banner/:userId",
+    async ({ params: { userId } }) => {
+      //アイコン読み取り、存在確認して返す
+      const bannerFilePng = Bun.file(`./STORAGE/banner/${userId}.png`);
+      if (await bannerFilePng.exists()) {
+        return bannerFilePng;
+      }
+      const bannerFileGif = Bun.file(`./STORAGE/banner/${userId}.gif`);
+      if (await bannerFileGif.exists()) {
+        return bannerFileGif;
+      }
+      const bannerFileJpeg = Bun.file(`./STORAGE/banner/${userId}.jpeg`);
+      if (await bannerFileJpeg.exists()) {
+        return bannerFileJpeg;
+      }
+
+      //存在しない場合はデフォルトアイコンを返す
+      return error(404, "User banner not found");
+    },
+    {
+      params: t.Object({
+        userId: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "ユーザーのバナー画像を取得します",
+        tags: ["User"],
+      },
+    },
+  )
   .post(
     "/change-icon",
     async ({ body: { icon }, _userId }) => {
@@ -238,6 +268,43 @@ export const user = new Elysia({ prefix: "/user" })
       }),
       detail: {
         description: "ユーザーのアイコン画像を変更します",
+        tags: ["User"],
+      },
+    },
+  )
+  .post(
+    "/change-banner",
+    async ({ _userId, body: { banner } }) => {
+      if (banner.size > 10 * 1024 * 1024) {
+        return error(400, "File size is too large");
+      }
+      if (
+        banner.type !== "image/png" &&
+        banner.type !== "image/gif" &&
+        banner.type !== "image/jpeg"
+      ) {
+        return error(400, "File type is invalid");
+      }
+      //拡張子取得
+      const ext = banner.type.split("/")[1];
+
+      //既存のアイコンを削除
+      await unlink(`./STORAGE/banner/${_userId}.png`).catch(() => {});
+      await unlink(`./STORAGE/banner/${_userId}.gif`).catch(() => {});
+      await unlink(`./STORAGE/banner/${_userId}.jpeg`).catch(() => {});
+
+      //アイコンを保存
+      Bun.write(`./STORAGE/banner/${_userId}.${ext}`, banner);
+      return {
+        message: "Banner changed",
+      };
+    },
+    {
+      body: t.Object({
+        banner: t.File(),
+      }),
+      detail: {
+        description: "ユーザーのバナー画像を変更します",
         tags: ["User"],
       },
     },
