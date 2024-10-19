@@ -45,6 +45,13 @@ export const user = new Elysia({ prefix: "/user" })
               message: "Invite code is invalid",
             });
           }
+          //招待コードが期限切れの場合
+          if (Invite.expireDate < new Date()) {
+            return error(400, {
+              message: "Invite code is invalid",
+            });
+          }
+          //---------------------------------------
           //使用回数を加算
           await db.invitation.update({
             where: { inviteCode: inviteCode },
