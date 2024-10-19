@@ -9,7 +9,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   .use(CheckToken)
   .post(
     "/join",
-    async ({ body: { channelId }, _userId, server }) => {
+    async ({ body: { channelId }, _userId }) => {
 
       //チャンネル参加データが存在するか確認
       const channelJoined = await db.channelJoin.findFirst({
@@ -73,7 +73,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .post(
     "/leave",
-    async ({ body: { channelId }, _userId, server }) => {
+    async ({ body: { channelId }, _userId }) => {
       //チャンネル参加データが存在するか確認
       const channelJoinData = await db.channelJoin.findFirst({
         where: {
@@ -318,7 +318,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .delete(
     "/delete",
-    async ({ body: { channelId }, _userId }) => {
+    async ({ body: { channelId } }) => {
       const channel = await db.channel.findUnique({
         where: {
           id: channelId,
