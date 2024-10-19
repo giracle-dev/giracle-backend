@@ -46,7 +46,7 @@ export const message = new Elysia({ prefix: "/message" })
           const hasViewableRole = await db.roleLink.findFirst({
             where: {
               userId: _userId,
-              roleId: { in: roleViewable.map(role => role.roleId) },
+              roleId: { in: roleViewable.map((role) => role.roleId) },
             },
           });
 
