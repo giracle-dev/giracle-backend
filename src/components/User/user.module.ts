@@ -519,4 +519,15 @@ export const user = new Elysia({ prefix: "/user" })
         tags: ["User"],
       },
     },
+  )
+  .get(
+    "/list",
+    async () => {
+      const users = await db.user.findMany();
+
+      return {
+        message: "User list",
+        data: users,
+      };
+    }
   );
