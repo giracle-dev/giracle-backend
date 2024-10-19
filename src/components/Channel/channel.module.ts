@@ -141,9 +141,35 @@ export const channel = new Elysia({ prefix: "/channel" })
         }
       });
 
+      //ユーザーのロールを取得
+      const user = await db.user.findUnique({
+        where: {
+          id: _userId
+        },
+        include: {
+          RoleLink: true
+        }
+      });
+      if (!user) {
+        throw error(500, "Internal Server Error");
+      }
+      //指定のロールでしか閲覧できないチャンネルを取得
+      const roleIds = user.RoleLink.map(roleLink => roleLink.roleId);
+      const channelsLimited = await db.channel.findMany({
+        where: {
+          ChannelViewableRole: {
+            some: {
+              roleId: {
+                in: roleIds
+              }
+            }
+          }
+        }
+      });
+
       return {
         message: "Channel list ready",
-        data: channelList
+        data: {...channelList, ...channelsLimited}
       };
     },
     {
