@@ -266,14 +266,26 @@ export const channel = new Elysia({ prefix: "/channel" })
       //取得した履歴が最新まで取得したか、または最初まで取得したかを判別
       let atEnd = false;
       let atTop = false;
-      //取得した履歴がある場合
-      if (history[0] !== undefined) {
-        atEnd = firstMessageOfChannel?.id === history[0].id;
+      //取得方向によって判別方法が異なる
+      if (fetchDirection === "newer") {
+        //取得した履歴がある場合
+        if (history[0] !== undefined) {
+          atTop = firstMessageOfChannel?.id === history[0].id;
+        } else {
+          //取得した履歴がない場合、最初まで取得したと判定
+          atTop = true;
+        }
+        atEnd = history.length < (fetchLength || 30);
       } else {
-        //取得した履歴がない場合、最初まで取得したと判定
-        atEnd = true;
+        //取得した履歴がある場合
+        if (history[0] !== undefined) {
+          atEnd = firstMessageOfChannel?.id === history[0].id;
+        } else {
+          //取得した履歴がない場合、最初まで取得したと判定
+          atEnd = true;
+        }
+        atTop = history.length < (fetchLength || 30);
       }
-      atTop = history.length < (fetchLength || 30);
 
       return {
         message: "History fetched",
