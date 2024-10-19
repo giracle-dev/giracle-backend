@@ -37,7 +37,7 @@ export const message = new Elysia({ prefix: "/message" })
             userId_channelId: {
               userId: _userId,
               channelId: messageData.channelId,
-            }
+            },
           },
         });
         //チャンネルに参加していないならロールで調べる
@@ -65,7 +65,7 @@ export const message = new Elysia({ prefix: "/message" })
               userId: _userId,
               role: {
                 manageServer: true,
-              }
+              },
             },
           });
           //サーバー管理者でもない場合はエラー

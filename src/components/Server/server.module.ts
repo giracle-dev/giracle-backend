@@ -1,7 +1,7 @@
+import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
-import { unlink } from "node:fs/promises";
 
 const db = new PrismaClient();
 
@@ -254,5 +254,5 @@ export const server = new Elysia({ prefix: "/server" })
         tags: ["Server"],
       },
       checkRoleTerm: "manageServer",
-    }
+    },
   );
