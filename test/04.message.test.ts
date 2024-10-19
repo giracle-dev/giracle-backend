@@ -89,7 +89,6 @@ describe("message", async () => {
   });
 
   it("message :: fetch message", async () => {
-    console.log("message.test :: fetch message : messageIdForTest->", messageIdForTest);
     const response = await app.handle(
       new Request(`http://localhost/message/get/${messageIdForTest}`, {
         method: "GET",
