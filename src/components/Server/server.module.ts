@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
+import { unlink } from "node:fs/promises";
 
 const db = new PrismaClient();
 
@@ -24,6 +25,33 @@ export const server = new Elysia({ prefix: "/server" })
     {
       detail: {
         description: "サーバーの設定を取得します",
+        tags: ["Server"],
+      },
+    },
+  )
+  .get(
+    "/banner",
+    async () => {
+      //バナー読み取り、存在確認して返す
+      const serverFilePng = Bun.file("./STORAGE/banner/SERVER.png");
+      if (await serverFilePng.exists()) {
+        return serverFilePng;
+      }
+      const serverFileGif = Bun.file("./STORAGE/banner/SERVER.gif");
+      if (await serverFileGif.exists()) {
+        return serverFileGif;
+      }
+      const bannerFileJpeg = Bun.file("./STORAGE/banner/SERVER.jpeg");
+      if (await bannerFileJpeg.exists()) {
+        return bannerFileJpeg;
+      }
+
+      //存在しない場合はデフォルトアイコンを返す
+      return error(404, "Server banner not found");
+    },
+    {
+      detail: {
+        description: "サーバーのアイコン画像を取得します",
         tags: ["Server"],
       },
     },
@@ -188,4 +216,43 @@ export const server = new Elysia({ prefix: "/server" })
       },
       checkRoleTerm: "manageServer",
     },
+  )
+  .post(
+    "/change-banner",
+    async ({ body: { banner } }) => {
+      if (banner.size > 15 * 1024 * 1024) {
+        return error(400, "File size is too large");
+      }
+      if (
+        banner.type !== "image/png" &&
+        banner.type !== "image/gif" &&
+        banner.type !== "image/jpeg"
+      ) {
+        return error(400, "File type is invalid");
+      }
+
+      //拡張子取得
+      const ext = banner.type.split("/")[1];
+
+      //既存のアイコンを削除
+      await unlink("./STORAGE/banner/SERVER.png").catch(() => {});
+      await unlink("./STORAGE/banner/SERVER.gif").catch(() => {});
+      await unlink("./STORAGE/banner/SERVER.jpeg").catch(() => {});
+
+      //アイコンを保存
+      Bun.write(`./STORAGE/banner/SERVER.${ext}`, banner);
+      return {
+        message: "Server banner changed",
+      };
+    },
+    {
+      body: t.Object({
+        banner: t.File(),
+      }),
+      detail: {
+        description: "サーバーのバナー画像を変更します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageServer",
+    }
   );
