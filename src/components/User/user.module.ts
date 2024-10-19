@@ -205,6 +205,36 @@ export const user = new Elysia({ prefix: "/user" })
       },
     },
   )
+  .get(
+    "/banner/:userId",
+    async ({ params: { userId } }) => {
+      //アイコン読み取り、存在確認して返す
+      const bannerFilePng = Bun.file(`./STORAGE/banner/${userId}.png`);
+      if (await bannerFilePng.exists()) {
+        return bannerFilePng;
+      }
+      const bannerFileGif = Bun.file(`./STORAGE/banner/${userId}.gif`);
+      if (await bannerFileGif.exists()) {
+        return bannerFileGif;
+      }
+      const bannerFileJpeg = Bun.file(`./STORAGE/banner/${userId}.jpeg`);
+      if (await bannerFileJpeg.exists()) {
+        return bannerFileJpeg;
+      }
+
+      //存在しない場合はデフォルトアイコンを返す
+      return error(404, "User banner not found");
+    },
+    {
+      params: t.Object({
+        userId: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "ユーザーのバナー画像を取得します",
+        tags: ["User"],
+      },
+    },
+  )
   .post(
     "/change-icon",
     async ({ body: { icon }, _userId }) => {
