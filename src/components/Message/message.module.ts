@@ -8,7 +8,7 @@ export const message = new Elysia({ prefix: "/message" })
   .use(CheckToken)
   .get(
     "/get/:messageId",
-    async ({ query: { messageId }, _userId }) => {
+    async ({ params: { messageId }, _userId }) => {
       const messageData = await db.message.findUnique({
         where: {
           id: messageId,
@@ -93,7 +93,7 @@ export const message = new Elysia({ prefix: "/message" })
       return error(404, "Message not found");
     },
     {
-      query: t.Object({
+      params: t.Object({
         messageId: t.String({ minLength: 1 }),
       }),
       detail: {
