@@ -29,6 +29,33 @@ export const server = new Elysia({ prefix: "/server" })
       },
     },
   )
+  .get(
+    "/banner",
+    async () => {
+      //バナー読み取り、存在確認して返す
+      const serverFilePng = Bun.file("./STORAGE/banner/SERVER.png");
+      if (await serverFilePng.exists()) {
+        return serverFilePng;
+      }
+      const serverFileGif = Bun.file("./STORAGE/banner/SERVER.gif");
+      if (await serverFileGif.exists()) {
+        return serverFileGif;
+      }
+      const bannerFileJpeg = Bun.file("./STORAGE/banner/SERVER.jpeg");
+      if (await bannerFileJpeg.exists()) {
+        return bannerFileJpeg;
+      }
+
+      //存在しない場合はデフォルトアイコンを返す
+      return error(404, "Server banner not found");
+    },
+    {
+      detail: {
+        description: "サーバーのアイコン画像を取得します",
+        tags: ["Server"],
+      },
+    },
+  )
 
   .use(CheckToken)
   .use(checkRoleTerm)
