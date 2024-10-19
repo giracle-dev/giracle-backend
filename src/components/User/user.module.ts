@@ -523,7 +523,20 @@ export const user = new Elysia({ prefix: "/user" })
   .get(
     "/list",
     async () => {
-      const users = await db.user.findMany();
+      const users = await db.user.findMany({
+        include: {
+          ChannelJoin: {
+            select: {
+              channelId: true,
+            },
+          },
+          RoleLink: {
+            select: {
+              roleId: true,
+            },
+          },
+        },
+      });
 
       return {
         message: "User list",
