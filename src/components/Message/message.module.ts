@@ -29,9 +29,9 @@ export const message = new Elysia({ prefix: "/message" })
         },
       });
 
-      //閲覧制限があるならユーザーが条件に入るか調べる
-      if (roleViewable !== null) {
-        //チャンネルに参加しているか調べる
+      // 閲覧制限があるならユーザーが条件に入るか調べる
+      if (roleViewable.length > 0) {
+        // チャンネルに参加しているか調べる
         const channelJoined = await db.channelJoin.findUnique({
           where: {
             userId_channelId: {
@@ -40,54 +40,39 @@ export const message = new Elysia({ prefix: "/message" })
             },
           },
         });
-        //チャンネルに参加していないならロールで調べる
-        if (channelJoined === null) {
-          //閲覧できるロールを持っているか調べる
-          for (const role of roleViewable) {
-            const userRole = await db.roleLink.findFirst({
-              where: {
-                userId: _userId,
-                roleId: role.roleId,
-              },
-            });
-            //ロールを持っていれば閲覧可能
-            if (userRole !== null) {
-              return {
-                message: "Fetched message",
-                data: messageData,
-              };
-            }
+
+        // チャンネルに参加していないならロールで調べる
+        if (!channelJoined) {
+          const hasViewableRole = await db.roleLink.findFirst({
+            where: {
+              userId: _userId,
+              roleId: { in: roleViewable.map(role => role.roleId) },
+            },
+          });
+
+          // ロールを持っていれば閲覧可能
+          if (hasViewableRole) {
+            return { message: "Fetched message", data: messageData };
           }
 
-          //チャンネルに参加していなくとも、サーバー管理者の場合は閲覧可能
+          // サーバー管理者の場合は閲覧可能
           const userAdminRole = await db.roleLink.findFirst({
             where: {
               userId: _userId,
-              role: {
-                manageServer: true,
-              },
+              role: { manageServer: true },
             },
           });
-          //サーバー管理者でもない場合はエラー
-          if (userAdminRole !== null) {
-            return {
-              message: "Fetched message",
-              data: messageData,
-            };
+
+          if (userAdminRole) {
+            return { message: "Fetched message", data: messageData };
           }
         } else {
-          //チャンネルに参加している場合はそのまま返す
-          return {
-            message: "Fetched message",
-            data: messageData,
-          };
+          // チャンネルに参加している場合はそのまま返す
+          return { message: "Fetched message", data: messageData };
         }
       } else {
-        //閲覧制限がない場合はそのまま返す
-        return {
-          message: "Fetched message",
-          data: messageData,
-        };
+        // 閲覧制限がない場合はそのまま返す
+        return { message: "Fetched message", data: messageData };
       }
 
       return error(404, "Message not found");
