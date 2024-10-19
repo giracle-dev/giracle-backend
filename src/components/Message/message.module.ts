@@ -137,9 +137,7 @@ export const message = new Elysia({ prefix: "/message" })
 
       return {
         message: "Message sent",
-        data: {
-          messageSaved,
-        },
+        data: messageSaved,
       };
     },
     {
