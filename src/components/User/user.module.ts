@@ -40,7 +40,7 @@ export const user = new Elysia({ prefix: "/user" })
             where: { inviteCode: inviteCode },
           });
           //招待コードが無効な場合
-          if (Invite === null || !Invite.isActive) {
+          if (Invite === null) {
             return error(400, {
               message: "Invite code is invalid",
             });
