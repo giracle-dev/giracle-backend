@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
+import { unlink } from "node:fs/promises";
 
 const db = new PrismaClient();
 
@@ -188,4 +189,43 @@ export const server = new Elysia({ prefix: "/server" })
       },
       checkRoleTerm: "manageServer",
     },
+  )
+  .post(
+    "/change-banner",
+    async ({ body: { banner } }) => {
+      if (banner.size > 15 * 1024 * 1024) {
+        return error(400, "File size is too large");
+      }
+      if (
+        banner.type !== "image/png" &&
+        banner.type !== "image/gif" &&
+        banner.type !== "image/jpeg"
+      ) {
+        return error(400, "File type is invalid");
+      }
+
+      //拡張子取得
+      const ext = banner.type.split("/")[1];
+
+      //既存のアイコンを削除
+      await unlink("./STORAGE/banner/SERVER.png").catch(() => {});
+      await unlink("./STORAGE/banner/SERVER.gif").catch(() => {});
+      await unlink("./STORAGE/banner/SERVER.jpeg").catch(() => {});
+
+      //アイコンを保存
+      Bun.write(`./STORAGE/banner/SERVER.${ext}`, banner);
+      return {
+        message: "Server banner changed",
+      };
+    },
+    {
+      body: t.Object({
+        banner: t.File(),
+      }),
+      detail: {
+        description: "サーバーのバナー画像を変更します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageServer",
+    }
   );
