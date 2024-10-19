@@ -2,9 +2,9 @@ import { describe, expect, it } from "bun:test";
 import { Elysia } from "elysia";
 
 import { PrismaClient } from "@prisma/client";
+import { message } from "../src/components/Message/message.module";
 import { user } from "../src/components/User/user.module";
 import { wsHandler } from "../src/ws";
-import { message } from "../src/components/Message/message.module";
 import { getMyuserinfo, joinAnyChannel } from "./util";
 
 describe("message", async () => {
@@ -81,5 +81,4 @@ describe("message", async () => {
     resultJson = await response.json();
     expect(response.status).toBe(200);
   });
-
 });

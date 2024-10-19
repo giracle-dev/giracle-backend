@@ -32,7 +32,7 @@ describe("ws", async () => {
 
   it("ws :: connect", async () => {
     const ws = new WebSocket(
-      `ws://localhost:${app.server?.port}/ws?token=${tokenTesting}`
+      `ws://localhost:${app.server?.port}/ws?token=${tokenTesting}`,
     );
     await new Promise((resolve) => {
       ws.onopen = () => {
@@ -50,5 +50,4 @@ describe("ws", async () => {
     //console.log("ws.test :: connect : ws", ws.readyState);
     ws.close();
   });
-
 });

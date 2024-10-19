@@ -1,14 +1,14 @@
 import { type Message, PrismaClient } from "@prisma/client";
 import { Elysia, error, t } from "elysia";
-import ogs from "open-graph-scraper"
+import ogs from "open-graph-scraper";
 
 const db = new PrismaClient();
 
 const CheckToken = new Elysia({ name: "CheckToken" })
   .guard({
     cookie: t.Object(
-      { token: t.String({ minLength: 1}) },
-      { error: "Cookie for token is not valid." }
+      { token: t.String({ minLength: 1 }) },
+      { error: "Cookie for token is not valid." },
     ),
   })
   .resolve({ as: "scoped" }, async ({ cookie: { token } }) => {
@@ -102,39 +102,42 @@ const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
           const messageId = response.data.messageSaved.id;
 
           //URLを抽出
-          const urlRegex: RegExp = /https?:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#\u3000-\u30FE\u4E00-\u9FA0\uFF01-\uFFE3]+/g;
+          const urlRegex: RegExp =
+            /https?:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#\u3000-\u30FE\u4E00-\u9FA0\uFF01-\uFFE3]+/g;
           const urlMatched = body.message.match(urlRegex);
           //URLが含まれていないなら何もしない
           if (urlMatched === null) return;
 
           //URLプレビュー情報取得、格納
           for (const url of urlMatched) {
-            await ogs({ url })
-              .then(async (data) => {
-                if (data.error) {
-                  //console.error("Middleware :: urlPreviewControl : URLプレビュー情報取得エラー->", data.error);
-                  return;
-                };
+            await ogs({ url }).then(async (data) => {
+              if (data.error) {
+                //console.error("Middleware :: urlPreviewControl : URLプレビュー情報取得エラー->", data.error);
+                return;
+              }
 
-                //メッセージデータにURLプレビュー情報を紐付けしながら変数として保存
-                await db.message.update({
-                  where: {
-                    id: messageId,
+              //メッセージデータにURLプレビュー情報を紐付けしながら変数として保存
+              await db.message.update({
+                where: {
+                  id: messageId,
+                },
+                data: {
+                  MessageUrlPreview: {
+                    create: {
+                      url: data.result.requestUrl || "",
+                      type: data.result.ogType || "UNKNOWN",
+                      title: data.result.ogTitle || "",
+                      description: data.result.ogDescription || "",
+                      faviconLink: data.result.favicon || "",
+                      imageLink:
+                        data.result.ogImage !== undefined
+                          ? data.result.ogImage[0].url
+                          : null,
+                    },
                   },
-                  data: {
-                    MessageUrlPreview: {
-                      create: {
-                        url: data.result.requestUrl || '',
-                        type: data.result.ogType || 'UNKNOWN',
-                        title: data.result.ogTitle || '',
-                        description: data.result.ogDescription || '',
-                        faviconLink: data.result.favicon || '',
-                        imageLink: data.result.ogImage !== undefined ? data.result.ogImage[0].url : null,
-                      }
-                    }
-                  }
-                })
+                },
               });
+            });
           }
 
           const message = await db.message.findUnique({
@@ -143,17 +146,20 @@ const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
             },
             include: {
               MessageUrlPreview: true,
-            }
+            },
           });
 
           //WSで通知
-          server?.publish(`channel::${body.channelId}`, JSON.stringify({
-            signal: "message::UpdateMessage",
-            data: message
-          }));
+          server?.publish(
+            `channel::${body.channelId}`,
+            JSON.stringify({
+              signal: "message::UpdateMessage",
+              data: message,
+            }),
+          );
         });
-      }
-    }
+      },
+    };
   });
 
 export default CheckToken;

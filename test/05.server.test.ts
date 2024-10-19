@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { Elysia } from "elysia";
-import { user } from "../src/components/User/user.module";
 import { server } from "../src/components/Server/server.module";
+import { user } from "../src/components/User/user.module";
 
 describe("server", async () => {
   //インスタンス生成
@@ -39,7 +39,7 @@ describe("server", async () => {
         headers: {
           "Content-Type": "application/json",
           cookie: `token=${tokenTesting}`,
-        }
+        },
       }),
     );
     //console.log("server.test :: fetch-config : response->", response);
@@ -80,7 +80,7 @@ describe("server", async () => {
           cookie: `token=${tokenTesting}`,
         },
         body: JSON.stringify({
-          MessageMaxLength: 1234
+          MessageMaxLength: 1234,
         }),
       }),
     );
@@ -101,7 +101,7 @@ describe("server", async () => {
           cookie: `token=${tokenTesting}`,
         },
         body: JSON.stringify({
-          inviteCode: "招待作成のテスト"
+          inviteCode: "招待作成のテスト",
         }),
       }),
     );
@@ -119,7 +119,7 @@ describe("server", async () => {
         headers: {
           "Content-Type": "application/json",
           cookie: `token=${tokenTesting}`,
-        }
+        },
       }),
     );
     //console.log("server.test :: fetch invites : response->", response);
@@ -133,24 +133,26 @@ describe("server", async () => {
 
   it("server :: enable invites", async () => {
     //招待を有効にするリクエスト
-    await app.handle(
-      new Request("http://localhost/server/update-invite", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          inviteId: inviteIdTesting,
-          isActive: true
+    await app
+      .handle(
+        new Request("http://localhost/server/update-invite", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            cookie: `token=${tokenTesting}`,
+          },
+          body: JSON.stringify({
+            inviteId: inviteIdTesting,
+            isActive: true,
+          }),
         }),
-      }),
-    ).then(async (res) => {
-      const result = await res.json();
-      console.log("server.test :: enable-invites : result->", result);
-      expect(result.message).toBe("Server invite updated");
-      expect(result.data.isActive).toBe(true);
-    });
+      )
+      .then(async (res) => {
+        const result = await res.json();
+        console.log("server.test :: enable-invites : result->", result);
+        expect(result.message).toBe("Server invite updated");
+        expect(result.data.isActive).toBe(true);
+      });
   });
 
   it("server :: test register with invite", async () => {
@@ -165,7 +167,7 @@ describe("server", async () => {
         body: JSON.stringify({
           username: "testuser2",
           password: "testuser2",
-          inviteCode: "errorcode"
+          inviteCode: "errorcode",
         }),
       }),
     );
@@ -183,7 +185,7 @@ describe("server", async () => {
         body: JSON.stringify({
           username: "testuser2",
           password: "testuser2",
-          inviteCode: "testinvite"
+          inviteCode: "testinvite",
         }),
       }),
     );
@@ -194,39 +196,42 @@ describe("server", async () => {
   });
 
   it("sever :: check invite count", async () => {
-    await app.handle(
-      new Request("http://localhost/server/get-invite", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          cookie: `token=${tokenTesting}`,
-        },
-      }),
-    ).then(async (res) => {
-      const result = await res.json();
-      //console.log("server.test :: check-invite-count : result->", result);
-      expect(result.data[0].usedCount).toBe(2); //auth.testとここで使ったので２回
-    });
+    await app
+      .handle(
+        new Request("http://localhost/server/get-invite", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            cookie: `token=${tokenTesting}`,
+          },
+        }),
+      )
+      .then(async (res) => {
+        const result = await res.json();
+        //console.log("server.test :: check-invite-count : result->", result);
+        expect(result.data[0].usedCount).toBe(2); //auth.testとここで使ったので２回
+      });
   });
 
   it("server :: delete invites", async () => {
     //招待を削除するリクエスト
-    await app.handle(
-      new Request("http://localhost/server/delete-invite", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          inviteId: inviteIdTesting
+    await app
+      .handle(
+        new Request("http://localhost/server/delete-invite", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            cookie: `token=${tokenTesting}`,
+          },
+          body: JSON.stringify({
+            inviteId: inviteIdTesting,
+          }),
         }),
-      }),
-    ).then(async (res) => {
-      const result = await res.json();
-      //console.log("server.test :: delete-invites : result->", result);
-      expect(result.message).toBe("Server invite deleted");
-    });
+      )
+      .then(async (res) => {
+        const result = await res.json();
+        //console.log("server.test :: delete-invites : result->", result);
+        expect(result.message).toBe("Server invite deleted");
+      });
   });
-
 });

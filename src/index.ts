@@ -3,10 +3,10 @@ import { swagger } from "@elysiajs/swagger";
 import { Elysia } from "elysia";
 
 import { channel } from "./components/Channel/channel.module";
+import { message } from "./components/Message/message.module";
 import { role } from "./components/Role/role.module";
 import { user } from "./components/User/user.module";
 import { wsHandler } from "./ws";
-import { message } from "./components/Message/message.module";
 
 //アイコン用のディレクトリ作成
 import { mkdir } from "node:fs/promises";

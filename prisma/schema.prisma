@@ -39,6 +39,15 @@ model Token {
   @@index([userId])
 }
 
+model ChannelViewableRole {
+  channelId String
+  channel   Channel  @relation(fields: [channelId], references: [id])
+  roleId    String
+  role      RoleInfo @relation(fields: [roleId], references: [id])
+
+  @@id([channelId, roleId])
+}
+
 model ChannelJoin {
   channelJoinedAt DateTime @default(now())
   channelId       String
@@ -50,14 +59,15 @@ model ChannelJoin {
 }
 
 model Channel {
-  id            String        @id @default(uuid())
-  name          String        @unique
-  description   String
-  isArchived    Boolean       @default(false)
-  createdUserId String
-  user          User          @relation(fields: [createdUserId], references: [id])
-  ChannelJoin   ChannelJoin[]
-  Message       Message[]
+  id                  String                @id @default(uuid())
+  name                String                @unique
+  description         String
+  isArchived          Boolean               @default(false)
+  createdUserId       String
+  user                User                  @relation(fields: [createdUserId], references: [id])
+  ChannelJoin         ChannelJoin[]
+  Message             Message[]
+  ChannelViewableRole ChannelViewableRole[]
 }
 
 model MessageUrlPreview {
@@ -110,7 +120,8 @@ model RoleInfo {
   manageUser    Boolean @default(false)
   manageRole    Boolean @default(false)
 
-  RoleLink RoleLink[]
+  RoleLink            RoleLink[]
+  ChannelViewableRole ChannelViewableRole[]
 }
 
 model Invitation {

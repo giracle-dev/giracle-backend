@@ -10,9 +10,9 @@ export const getMyuserinfo = async () => {
   return await dbTest.user.findFirst({
     where: {
       name: "testuser",
-    }
+    },
   });
-}
+};
 
 export const joinAnyChannel = async () => {
   let channel = await dbTest.channel.findFirst();
@@ -27,7 +27,7 @@ export const joinAnyChannel = async () => {
         name: "testchannel",
         createdUserId: user.id,
         description: "testchannel description",
-      }
+      },
     });
   }
 
@@ -35,6 +35,6 @@ export const joinAnyChannel = async () => {
     data: {
       userId: user.id,
       channelId: channel.id,
-    }
+    },
   });
-}
+};
