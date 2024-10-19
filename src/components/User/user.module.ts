@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken from "../../Middlewares";
+import { unlink } from "node:fs/promises";
 import { userService } from "./user.service";
 
 const db = new PrismaClient();
@@ -215,6 +216,11 @@ export const user = new Elysia({ prefix: "/user" })
       }
       //拡張子取得
       const ext = icon.type.split("/")[1];
+
+      //既存のアイコンを削除
+      await unlink(`./STORAGE/icon/${_userId}.png`).catch(() => {});
+      await unlink(`./STORAGE/icon/${_userId}.gif`).catch(() => {});
+      await unlink(`./STORAGE/icon/${_userId}.jpeg`).catch(() => {});
 
       //アイコンを保存
       Bun.write(`./STORAGE/icon/${_userId}.${ext}`, icon);
