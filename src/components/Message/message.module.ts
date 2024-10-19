@@ -31,6 +31,7 @@ export const message = new Elysia({ prefix: "/message" })
 
       //閲覧制限があるならユーザーが条件に入るか調べる
       if (roleViewable !== null) {
+        //チャンネルに参加しているか調べる
         const channelJoined = await db.channelJoin.findUnique({
           where: {
             userId_channelId: {
@@ -74,8 +75,15 @@ export const message = new Elysia({ prefix: "/message" })
               data: messageData,
             };
           }
+        } else {
+          //チャンネルに参加している場合はそのまま返す
+          return {
+            message: "Fetched message",
+            data: messageData,
+          };
         }
       } else {
+        //閲覧制限がない場合はそのまま返す
         return {
           message: "Fetched message",
           data: messageData,
