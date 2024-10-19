@@ -46,6 +46,8 @@ describe("message", async () => {
   // メッセージテスト用の事前チャンネル参加 //
   const joinedChannel = await joinAnyChannel();
   /* -------------------------------------------- */
+  // メッセージテスト用のId用変数
+  let messageIdForTest = "";
 
   it("message :: send", async () => {
     const responseMissingChannel = await app.handle(
@@ -77,8 +79,30 @@ describe("message", async () => {
         }),
       }),
     );
-    //console.log("message.test :: send : responseMissingChannel->", responseMissingChannel);
+    console.log("message.test :: send : response->", responseMissingChannel);
     resultJson = await response.json();
+    console.log("message.test :: send : resultJson->", resultJson);
     expect(response.status).toBe(200);
+    expect(resultJson.data.id).toBeString();
+    // テスト用のIdを保存
+    messageIdForTest = resultJson.data.id;
+  });
+
+  it("message :: fetch message", async () => {
+    console.log("message.test :: fetch message : messageIdForTest->", messageIdForTest);
+    const response = await app.handle(
+      new Request(`http://localhost/message/get/${messageIdForTest}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `token=${tokenTesting}`,
+        },
+      }),
+    );
+    //console.log("message.test :: fetch message : response->", response);
+    resultJson = await response.json();
+    //console.log("message.test :: fetch message : resultJson->", resultJson);
+    expect(response.status).toBe(200);
+    expect(resultJson.data.id).toBe(messageIdForTest);
   });
 });

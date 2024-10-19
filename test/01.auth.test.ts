@@ -34,7 +34,6 @@ describe("auth", async () => {
     data: {
       inviteCode: "testinvite",
       createdUserId: "SYSTEM",
-      isActive: true,
     },
   });
 
