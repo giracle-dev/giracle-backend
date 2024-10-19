@@ -92,15 +92,7 @@ export const channel = new Elysia({ prefix: "/channel" })
         },
       });
 
-      //WSで通知
-      server?.publish(`user::${_userId}`, JSON.stringify({
-        signal: "channel::LeaveChannel",
-        data: {
-          channelId
-        }
-      }));
-
-      //WS登録させる
+      //WS登録を解除させる
       userWSInstance.get(_userId)?.unsubscribe(`channel::${channelId}`);
 
       return {
