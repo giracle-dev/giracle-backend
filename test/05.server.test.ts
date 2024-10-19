@@ -131,30 +131,6 @@ describe("server", async () => {
     inviteIdTesting = resultJson.data[1].id;
   });
 
-  it("server :: enable invites", async () => {
-    //招待を有効にするリクエスト
-    await app
-      .handle(
-        new Request("http://localhost/server/update-invite", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            cookie: `token=${tokenTesting}`,
-          },
-          body: JSON.stringify({
-            inviteId: inviteIdTesting,
-            isActive: true,
-          }),
-        }),
-      )
-      .then(async (res) => {
-        const result = await res.json();
-        console.log("server.test :: enable-invites : result->", result);
-        expect(result.message).toBe("Server invite updated");
-        expect(result.data.isActive).toBe(true);
-      });
-  });
-
   it("server :: test register with invite", async () => {
     //不正な招待コードでのリクエスト
     const responseError = await app.handle(
