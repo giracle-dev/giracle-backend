@@ -105,35 +105,6 @@ export const server = new Elysia({ prefix: "/server" })
     },
   )
   .post(
-    "/update-invite",
-    async ({ body: { inviteId, isActive } }) => {
-      const inviteDataNow = await db.invitation.update({
-        where: {
-          id: inviteId,
-        },
-        data: {
-          isActive,
-        },
-      });
-
-      return {
-        message: "Server invite updated",
-        data: inviteDataNow,
-      };
-    },
-    {
-      body: t.Object({
-        inviteId: t.Number(),
-        isActive: t.Boolean(),
-      }),
-      detail: {
-        description: "サーバーの招待コードの状態を更新します",
-        tags: ["Server"],
-      },
-      checkRoleTerm: "manageServer",
-    },
-  )
-  .post(
     "/change-info",
     async ({ body: { name, introduction }, server }) => {
       await db.serverConfig.updateMany({

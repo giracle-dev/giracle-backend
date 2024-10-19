@@ -132,7 +132,6 @@ model RoleInfo {
 
 model Invitation {
   id            Int      @id @default(autoincrement())
-  isActive      Boolean  @default(false)
   inviteCode    String   @unique
   createdUserId String
   expireDate    DateTime @default(dbgenerated("(datetime('now', '+1 day'))"))
