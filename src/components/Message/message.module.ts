@@ -8,7 +8,7 @@ export const message = new Elysia({ prefix: "/message" })
   .use(CheckToken)
   .get(
     "/get/:messageId",
-    async ({ query: { messageId } }) => {
+    async ({ query: { messageId }, _userId }) => {
       const messageData = await db.message.findUnique({
         where: {
           id: messageId,
@@ -19,10 +19,70 @@ export const message = new Elysia({ prefix: "/message" })
         return error(404, "Message not found");
       }
 
-      return {
-        message: "Fetched message",
-        data: messageData,
-      };
+      //チャンネルの閲覧制限があるか確認
+      const roleViewable = await db.channelViewableRole.findMany({
+        where: {
+          channelId: messageData.channelId,
+        },
+        select: {
+          roleId: true,
+        },
+      });
+
+      //閲覧制限があるならユーザーが条件に入るか調べる
+      if (roleViewable !== null) {
+        const channelJoined = await db.channelJoin.findUnique({
+          where: {
+            userId_channelId: {
+              userId: _userId,
+              channelId: messageData.channelId,
+            }
+          },
+        });
+        //チャンネルに参加していないならロールで調べる
+        if (channelJoined === null) {
+          //閲覧できるロールを持っているか調べる
+          for (const role of roleViewable) {
+            const userRole = await db.roleLink.findFirst({
+              where: {
+                userId: _userId,
+                roleId: role.roleId,
+              },
+            });
+            //ロールを持っていれば閲覧可能
+            if (userRole !== null) {
+              return {
+                message: "Fetched message",
+                data: messageData,
+              };
+            }
+          }
+
+          //チャンネルに参加していなくとも、サーバー管理者の場合は閲覧可能
+          const userAdminRole = await db.roleLink.findFirst({
+            where: {
+              userId: _userId,
+              role: {
+                manageServer: true,
+              }
+            },
+          });
+          //サーバー管理者でもない場合はエラー
+          if (userAdminRole !== null) {
+            return {
+              message: "Fetched message",
+              data: messageData,
+            };
+          }
+        }
+      } else {
+        return {
+          message: "Fetched message",
+          data: messageData,
+        };
+      }
+
+      return error(404, "Message not found");
     },
     {
       query: t.Object({
