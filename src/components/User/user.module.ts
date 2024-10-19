@@ -548,5 +548,5 @@ export const user = new Elysia({ prefix: "/user" })
         description: "ユーザーの情報を一覧で取得します",
         tags: ["User"],
       },
-    }
+    },
   );

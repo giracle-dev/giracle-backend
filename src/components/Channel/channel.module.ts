@@ -293,7 +293,7 @@ export const channel = new Elysia({ prefix: "/channel" })
           history,
           atEnd: firstMessageOfChannel?.id === history[0].id,
           atTop: history.length < (fetchLength || 30),
-        }
+        },
       };
     },
     {
