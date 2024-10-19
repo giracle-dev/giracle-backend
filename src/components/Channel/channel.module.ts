@@ -118,26 +118,12 @@ export const channel = new Elysia({ prefix: "/channel" })
   .get(
     "/list",
     async ({ _userId }) => {
-      //複数条件のもとでチャンネルリストを取得
+      //ロール閲覧制限のないチャンネルリストから取得
       const channelList = await db.channel.findMany({
         where: {
-          OR: [
-            { //ロール閲覧制限がない
-              ChannelViewableRole: {
-                none: {}
-              }
-            },
-            { //自分が作成した
-              createdUserId: _userId,
-            },
-            { //参加している
-              ChannelJoin: {
-                some: {
-                  userId: _userId,
-                },
-              },
-            },
-          ],
+          ChannelViewableRole: {
+            none: {}
+          }
         }
       });
 
@@ -153,23 +139,43 @@ export const channel = new Elysia({ prefix: "/channel" })
       if (!user) {
         throw error(500, "Internal Server Error");
       }
-      //指定のロールでしか閲覧できないチャンネルを取得
+      //指定のロールでしか閲覧できない、また他条件でのチャンネルを取得
       const roleIds = user.RoleLink.map(roleLink => roleLink.roleId);
       const channelsLimited = await db.channel.findMany({
         where: {
-          ChannelViewableRole: {
-            some: {
-              roleId: {
-                in: roleIds
-              }
-            }
-          }
+          OR: [
+            { //閲覧制限があり、自分がそのロールに所属している
+              ChannelViewableRole: {
+                some: {
+                  roleId: {
+                    in: roleIds
+                  }
+                }
+              },
+            },
+            { //自分が作成した
+              createdUserId: _userId,
+            },
+            { //自分が参加している
+              ChannelJoin: {
+                some: {
+                  userId: _userId,
+                },
+              },
+            },
+          ]
         }
       });
 
+      //重複を取り除く
+      const mergedChannels = [...channelList, ...channelsLimited];
+      const uniqueChannels = Array.from(
+        new Set(mergedChannels.map(channel => JSON.stringify(channel)))
+      ).map(channel => JSON.parse(channel));
+
       return {
         message: "Channel list ready",
-        data: [...channelList, ...channelsLimited]
+        data: uniqueChannels
       };
     },
     {
