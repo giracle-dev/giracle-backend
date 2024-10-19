@@ -291,8 +291,8 @@ export const channel = new Elysia({ prefix: "/channel" })
         message: "History fetched",
         data: {
           history,
-          atEnd: firstMessageOfChannel?.id === history[0].id,
-          atTop: history.length < (fetchLength || 30),
+          atEnd,
+          atTop,
         },
       };
     },
