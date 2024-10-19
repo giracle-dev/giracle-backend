@@ -4,6 +4,7 @@ import type { ElysiaWS } from "elysia/dist/ws";
 
 const db = new PrismaClient();
 //ユーザーごとのWSインスタンス管理
+// biome-ignore lint/suspicious/noExplicitAny: どのwsインスタンスでも受け付けるためにany
 export const userWSInstance = new Map<string, ElysiaWS<any, any, any>>();
 
 /**
