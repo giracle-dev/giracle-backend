@@ -23,7 +23,6 @@ export const wsHandler = new Elysia().ws("/ws", {
     //トークンを取得して有効か調べる
     const token = ws.data.cookie.token.value || ws.data.query.token;
     if (!token) {
-      console.log("ws :: WS接続 :: token not valid");
       ws.send({
         signal: "ERROR",
         data: "token not valid",
@@ -45,7 +44,6 @@ export const wsHandler = new Elysia().ws("/ws", {
       },
     });
     if (!user) {
-      console.log("ws :: WS接続 :: user not found");
       ws.send({
         signal: "ERROR",
         data: "token not valid",
@@ -70,11 +68,11 @@ export const wsHandler = new Elysia().ws("/ws", {
       data: user.id,
     }));
 
-    console.log("index :: 新しいWS接続");
+    //console.log("index :: 新しいWS接続");
   },
 
   async close(ws) {
-    console.log("ws :: WS切断");
+    //console.log("ws :: WS切断");
 
     //トークンを取得して有効か調べる
     const token = ws.data.cookie.token.value || ws.data.query.token;
