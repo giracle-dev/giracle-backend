@@ -87,6 +87,27 @@ export const message = new Elysia({ prefix: "/message" })
       },
     },
   )
+  .get(
+    "/read-time/get",
+    async ({ _userId }) => {
+      const readTime = await db.messageReadTime.findFirst({
+        where: {
+          userId: _userId,
+        },
+      });
+
+      return {
+        message: "Fetched read time",
+        data: readTime,
+      };
+    },
+    {
+      detail: {
+        description: "既読時間の設定を取得します",
+        tags: ["Message"],
+      }
+    }
+  )
   .use(urlPreviewControl)
   .post(
     "/send",
