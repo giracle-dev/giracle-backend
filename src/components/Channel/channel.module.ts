@@ -92,7 +92,7 @@ export const channel = new Elysia({ prefix: "/channel" })
             userId: _userId,
           },
         },
-      });
+      }).catch(() => {});
       //チャンネル参加データを削除
       await db.channelJoin.deleteMany({
         where: {
