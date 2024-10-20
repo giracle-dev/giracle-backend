@@ -8,8 +8,8 @@ datasource db {
 }
 
 model User {
-  id               String        @id @default(uuid())
-  name             String?       @unique
+  id               String            @id @default(uuid())
+  name             String?           @unique
   selfIntroduction String
   password         Password?
   Token            Token[]
@@ -19,6 +19,7 @@ model User {
   ChannelJoin      ChannelJoin[]
   Message          Message[]
   Invitation       Invitation[]
+  MessageReadTime  MessageReadTime[]
 }
 
 model Password {
@@ -72,6 +73,7 @@ model Channel {
   ChannelJoin         ChannelJoin[]
   Message             Message[]
   ChannelViewableRole ChannelViewableRole[]
+  MessageReadTime     MessageReadTime[]
 }
 
 model MessageUrlPreview {
@@ -84,6 +86,17 @@ model MessageUrlPreview {
   description String?
   faviconLink String?
   imageLink   String?
+}
+
+model MessageReadTime {
+  readTime  DateTime
+  channelId String
+  channel   Channel  @relation(fields: [channelId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@id([channelId, userId])
+  @@index([userId])
 }
 
 model Message {
