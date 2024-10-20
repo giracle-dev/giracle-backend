@@ -249,6 +249,9 @@ export const channel = new Elysia({ prefix: "/channel" })
           channelId: channelId,
           ...optionDate,
         },
+        include: {
+          MessageUrlPreview: true
+        },
         take: fetchLength,
         orderBy: { createdAt: "desc" },
       });
