@@ -422,7 +422,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .delete(
     "/delete",
-    async ({ body: { channelId } }) => {
+    async ({ body: { channelId }, server }) => {
       const channel = await db.channel.findUnique({
         where: {
           id: channelId,
@@ -461,6 +461,14 @@ export const channel = new Elysia({ prefix: "/channel" })
           id: channelId,
         },
       });
+
+      //チャンネル参加者にWSで通知
+      server?.publish(`channel::${channelId}`, JSON.stringify({
+        signal: "channel::Deleted",
+        data: {
+          channelId
+        }
+      }));
 
       return {
         success: true,
