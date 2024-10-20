@@ -88,7 +88,7 @@ export const message = new Elysia({ prefix: "/message" })
     },
   )
   .get(
-    "/news",
+    "/new",
     async ({ _userId }) => {
       // ユーザーが参加しているチャンネルを取得
       const userChannelJoined = await db.channelJoin.findMany({
