@@ -97,6 +97,7 @@ model MessageReadTime {
 
   @@id([channelId, userId])
   @@index([userId])
+  @@index([channelId])
 }
 
 model Message {
