@@ -190,7 +190,7 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .post(
     "/read-time/update",
-    async ({ _userId, body: {channelId, readTime} }) => {
+    async ({ _userId, body: {channelId, readTime}, server }) => {
       //既読時間を取得して更新する必要があるか調べる
       const readTimeNow = await db.messageReadTime.findUnique({
         where: {
@@ -220,6 +220,12 @@ export const message = new Elysia({ prefix: "/message" })
           readTime,
         },
       });
+
+      //WSで通知
+      server?.publish(`user::${_userId}`, JSON.stringify({
+        signal: "message::ReadTimeUpdated",
+        data: readTimeUpdated,
+      }));
 
       return {
         message: "Updated read time",
