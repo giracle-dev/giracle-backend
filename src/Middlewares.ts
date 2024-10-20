@@ -95,9 +95,9 @@ const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
   .macro(({ onAfterResponse }) => {
     return {
       async bindUrlPreview(isEnabled: boolean) {
-        onAfterResponse(async ({ body, server, response, error }) => {
-          //URLプレビューが無効あるいはエラーのレスポンスなら何もしない
-          if (!isEnabled || error !== undefined) return;
+        onAfterResponse(async ({ body, server, response }) => {
+          //URLプレビューが無効あるいはレスポンスが存在しないなら何もしない
+          if (!isEnabled || response === undefined) return;
           //メッセージId取り出し
           const messageId = response.data.messageSaved.id;
 
