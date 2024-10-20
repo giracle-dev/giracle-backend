@@ -140,6 +140,6 @@ describe("message", async () => {
     resultJson = await response.json();
     console.log("message.test :: update readtime : resultJson->", resultJson);
     expect(response.status).toBe(200);
-    expect(resultJson.data.channelId).toBe(true);
+    expect(resultJson.data[joinedChannel.channelId]).toBe(true);
   });
 });
