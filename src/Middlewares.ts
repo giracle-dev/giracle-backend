@@ -81,14 +81,12 @@ const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
     response: t.Object({
       message: t.Literal("Message sent"),
       data: t.Object({
-        messageSaved: t.Object({
-          id: t.String({ minLength: 1 }),
-          channelId: t.String({ minLength: 1 }),
-          userId: t.String({ minLength: 1 }),
-          content: t.String({ minLength: 1 }),
-          createdAt: t.String({ minLength: 1 }),
-          updatedAt: t.String({ minLength: 1 }),
-        }),
+        id: t.String({ minLength: 1 }),
+        channelId: t.String({ minLength: 1 }),
+        userId: t.String({ minLength: 1 }),
+        content: t.String({ minLength: 1 }),
+        createdAt: t.String({ minLength: 1 }),
+        updatedAt: t.String({ minLength: 1 }),
       }),
     }),
   })
@@ -99,7 +97,7 @@ const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
           //URLプレビューが無効あるいはレスポンスが存在しないなら何もしない
           if (!isEnabled || response === undefined) return;
           //メッセージId取り出し
-          const messageId = response.data.messageSaved.id;
+          const messageId = response.data.id;
 
           //URLを抽出
           const urlRegex: RegExp =
