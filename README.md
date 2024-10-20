@@ -7,9 +7,10 @@ bun i
 ```
 
 ## Development 開発用実行
-初回の実行ならDBのプッシュを行う。
+初回の実行ならDBのプッシュと初期データの挿入を行う。
 ```bash
-bunx prisma db push
+bunx prisma db push #DB構造の適用
+bun ./prisma/seeds.ts #初期データの挿入
 ```
 開発用に実行するなら
 ```bash
