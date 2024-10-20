@@ -84,6 +84,16 @@ export const channel = new Elysia({ prefix: "/channel" })
         throw error(400, "You are not joined this channel");
       }
 
+      //既読時間データを削除
+      await db.messageReadTime.delete({
+        where: {
+          channelId_userId: {
+            channelId,
+            userId: _userId,
+          },
+        },
+      }).catch(() => {});
+      //チャンネル参加データを削除
       await db.channelJoin.deleteMany({
         where: {
           userId: _userId,
@@ -412,7 +422,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .delete(
     "/delete",
-    async ({ body: { channelId } }) => {
+    async ({ body: { channelId }, server }) => {
       const channel = await db.channel.findUnique({
         where: {
           id: channelId,
@@ -427,13 +437,36 @@ export const channel = new Elysia({ prefix: "/channel" })
         };
       }
 
+      //チャンネル参加者にWSで通知
+      server?.publish(`channel::${channelId}`, JSON.stringify({
+        signal: "channel::Deleted",
+        data: {
+          channelId
+        }
+      }));
+      //チャンネルに参加しているユーザーのWS登録を解除
+      await db.channelJoin.findMany({
+        where: {
+          channelId,
+        },
+      }).then(data => {
+        for (const channelJoinData of data) {
+          userWSInstance.get(channelJoinData.userId)?.unsubscribe(`channel::${channelId}`);
+        }
+      });
+
+      //既読時間データを削除
+      await db.messageReadTime.deleteMany({
+        where: {
+          channelId,
+        },
+      });
       //メッセージデータを削除
       await db.message.deleteMany({
         where: {
           channelId,
         },
       });
-
       //チャンネル参加データを削除
       await db.channelJoin.deleteMany({
         where: {
