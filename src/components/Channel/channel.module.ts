@@ -437,6 +437,24 @@ export const channel = new Elysia({ prefix: "/channel" })
         };
       }
 
+      //チャンネル参加者にWSで通知
+      server?.publish(`channel::${channelId}`, JSON.stringify({
+        signal: "channel::Deleted",
+        data: {
+          channelId
+        }
+      }));
+      //チャンネルに参加しているユーザーのWS登録を解除
+      await db.channelJoin.findMany({
+        where: {
+          channelId,
+        },
+      }).then(data => {
+        for (const channelJoinData of data) {
+          userWSInstance.get(channelJoinData.userId)?.unsubscribe(`channel::${channelId}`);
+        }
+      });
+
       //既読時間データを削除
       await db.messageReadTime.deleteMany({
         where: {
@@ -461,14 +479,6 @@ export const channel = new Elysia({ prefix: "/channel" })
           id: channelId,
         },
       });
-
-      //チャンネル参加者にWSで通知
-      server?.publish(`channel::${channelId}`, JSON.stringify({
-        signal: "channel::Deleted",
-        data: {
-          channelId
-        }
-      }));
 
       return {
         success: true,
