@@ -84,6 +84,16 @@ export const channel = new Elysia({ prefix: "/channel" })
         throw error(400, "You are not joined this channel");
       }
 
+      //既読時間データを削除
+      await db.messageReadTime.delete({
+        where: {
+          channelId_userId: {
+            channelId,
+            userId: _userId,
+          },
+        },
+      });
+      //チャンネル参加データを削除
       await db.channelJoin.deleteMany({
         where: {
           userId: _userId,
