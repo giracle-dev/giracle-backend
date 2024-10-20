@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken from "../../Middlewares";
 import { userService } from "./user.service";
+import { userWSInstance } from "../../ws";
 
 const db = new PrismaClient();
 
@@ -182,6 +183,26 @@ export const user = new Elysia({ prefix: "/user" })
 
   .use(CheckToken)
 
+  .get(
+    "/get-online",
+    async () => {
+      //オンラインユーザーIDを取得
+      const onlineUserIds = Array.from(userWSInstance.keys());
+      //重複を削除
+      const uniqueOnlineUserIds = Array.from(new Set(onlineUserIds)).map(String);
+
+      return {
+        message: "Fetched online user list",
+        data: uniqueOnlineUserIds,
+      }
+    },
+    {
+      detail: {
+        description: "オンラインユーザーを取得します",
+        tags: ["User"],
+      },
+    }
+  )
   .get(
     "/icon/:userId",
     async ({ params: { userId } }) => {
