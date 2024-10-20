@@ -437,13 +437,18 @@ export const channel = new Elysia({ prefix: "/channel" })
         };
       }
 
+      //既読時間データを削除
+      await db.messageReadTime.deleteMany({
+        where: {
+          channelId,
+        },
+      });
       //メッセージデータを削除
       await db.message.deleteMany({
         where: {
           channelId,
         },
       });
-
       //チャンネル参加データを削除
       await db.channelJoin.deleteMany({
         where: {
