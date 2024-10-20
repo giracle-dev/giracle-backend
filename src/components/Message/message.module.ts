@@ -108,6 +108,42 @@ export const message = new Elysia({ prefix: "/message" })
       }
     }
   )
+  .post(
+    "/read-time/update",
+    async ({ _userId, body: {channelId, readTime} }) => {
+      const readTimeUpdated = await db.messageReadTime.upsert({
+        where: {
+          channelId_userId: {
+            channelId,
+            userId: _userId,
+          }
+        },
+        create: {
+          readTime,
+          channelId,
+          userId: _userId,
+        },
+        update: {
+          readTime,
+        },
+      });
+
+      return {
+        message: "Updated read time",
+        data: readTimeUpdated,
+      };
+    },
+    {
+      body: t.Object({
+        readTime: t.Date(),
+        channelId: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "既読時間の設定を更新します",
+        tags: ["Message"],
+      }
+    }
+  )
   .use(urlPreviewControl)
   .post(
     "/send",
