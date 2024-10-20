@@ -14,7 +14,7 @@ bun ./prisma/seeds.ts #初期データの挿入
 ```
 開発用に実行するなら
 ```bash
-bun run dev
+bun dev
 ```
 
 Open http://localhost:3000/ with your browser to see the result.
