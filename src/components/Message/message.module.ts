@@ -145,7 +145,7 @@ export const message = new Elysia({ prefix: "/message" })
           const readTimeData = messageReadTime.find((data) => data.channelId === channelId);
           //存在するなら比較してBooleanを返す、ないならfalse
           if (readTimeData) {
-            JSONnews[channelId] = newest.createdAt.valueOf() < readTimeData?.readTime.valueOf();
+            JSONnews[channelId] = newest.createdAt.valueOf() > readTimeData?.readTime.valueOf();
           } else {
             JSONnews[channelId] = false;
           }
