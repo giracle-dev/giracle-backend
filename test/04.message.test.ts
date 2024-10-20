@@ -104,4 +104,42 @@ describe("message", async () => {
     expect(response.status).toBe(200);
     expect(resultJson.data.id).toBe(messageIdForTest);
   });
+
+  it("message :: update readtime", async () => {
+    const response = await app.handle(
+      new Request("http://localhost/message/read-time/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          channelId: joinedChannel.channelId,
+          readTime: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1日前の日付
+        }),
+      }),
+    );
+    //console.log("message.test :: update readtime : response->", response);
+    resultJson = await response.json();
+    //console.log("message.test :: update readtime : resultJson->", resultJson);
+    expect(response.status).toBe(200);
+    expect(resultJson.data.channelId).toBe(joinedChannel.channelId);
+  });
+
+  it("message :: check news", async () => {
+    const response = await app.handle(
+      new Request("http://localhost/message/new", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `token=${tokenTesting}`,
+        },
+      }),
+    );
+    //console.log("message.test :: update readtime : response->", response);
+    resultJson = await response.json();
+    console.log("message.test :: update readtime : resultJson->", resultJson);
+    expect(response.status).toBe(200);
+    expect(resultJson.data.channelId).toBe(true);
+  });
 });
