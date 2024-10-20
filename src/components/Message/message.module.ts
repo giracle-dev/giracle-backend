@@ -191,6 +191,19 @@ export const message = new Elysia({ prefix: "/message" })
   .post(
     "/read-time/update",
     async ({ _userId, body: {channelId, readTime} }) => {
+      //既読時間を取得して更新する必要があるか調べる
+      const readTimeNow = await db.messageReadTime.findUnique({
+        where: {
+          channelId_userId: {
+            channelId,
+            userId: _userId,
+          }
+        },
+      });
+      if (readTimeNow !== null && readTimeNow.readTime.valueOf() > readTime.valueOf()) {
+        throw error(400, "Read time is already newer");
+      }
+
       const readTimeUpdated = await db.messageReadTime.upsert({
         where: {
           channelId_userId: {
