@@ -195,7 +195,7 @@ export const message = new Elysia({ prefix: "/message" })
     "/read-time/update",
     async ({ _userId, body: { channelId, readTime }, server }) => {
       //既読時間を取得して更新する必要があるか調べる
-      const readTimeNow = await db.messageReadTime.findUnique({
+      const readTimeSaved = await db.messageReadTime.findUnique({
         where: {
           channelId_userId: {
             channelId,
@@ -204,8 +204,8 @@ export const message = new Elysia({ prefix: "/message" })
         },
       });
       if (
-        readTimeNow !== null &&
-        readTimeNow.readTime.valueOf() > readTime.valueOf()
+        readTimeSaved !== null &&
+        readTimeSaved.readTime.valueOf() > readTime.valueOf()
       ) {
         throw error(400, "Read time is already newer");
       }
