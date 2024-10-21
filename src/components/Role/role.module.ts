@@ -45,6 +45,48 @@ export const role = new Elysia({ prefix: "/role" })
     },
   )
   .post(
+    "/update",
+    async ({ body: { roleId, roleData }, _userId }) => {
+      if (roleId === "HOST") throw error(400, "You cannot update HOST role");
+
+      const roleUpdated = await db.roleInfo.update({
+        where: {
+          id: roleId
+        },
+        data: {
+          createdUserId: _userId,
+          ...roleData,
+        },
+      });
+
+      return {
+        success: true,
+        message: "Role updated",
+        data: {
+          roleId: roleUpdated.id,
+        },
+      };
+    },
+    {
+      body: t.Object({
+        roleId: t.String(),
+        roleData: t.Object({
+          name: t.String(),
+          color: t.String(),
+          manageServer: t.Optional(t.Boolean()),
+          manageChannel: t.Optional(t.Boolean()),
+          manageRole: t.Optional(t.Boolean()),
+          manageUser: t.Optional(t.Boolean()),
+        }),
+      }),
+      detail: {
+        description: "ロール情報を更新します",
+        tags: ["Role"],
+      },
+      checkRoleTerm: "manageRole",
+    },
+  )
+  .post(
     "/link",
     async ({ body: { userId, roleId }, _userId }) => {
       //送信者のロールレベルが足りるか確認
