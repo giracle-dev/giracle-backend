@@ -5,7 +5,7 @@ import type { ElysiaWS } from "elysia/dist/ws";
 const db = new PrismaClient();
 //ユーザーごとのWSインスタンス管理 ( Map <UserId, WSインスタンス>)
 // biome-ignore lint/suspicious/noExplicitAny: どのwsインスタンスでも受け付けるためにany
-export const userWSInstance = new Map<string, ElysiaWS<any, any, any>>();
+export const userWSInstance = new Map<string, ElysiaWS<any, any, any>[]>();
 
 /**
  * WebSocket用 ハンドラ
@@ -61,7 +61,8 @@ export const wsHandler = new Elysia().ws("/ws", {
     }
 
     //このユーザーWSインスタンス保存
-    userWSInstance.set(user.id, ws);
+    //userWSInstance.set(user.id, ws);
+    WSaddUserInstance(user.id, ws);
     //ユーザー接続通知
     ws.publish("GLOBAL", JSON.stringify({
       signal: "user::Connected",
@@ -97,11 +98,87 @@ export const wsHandler = new Elysia().ws("/ws", {
     }
 
     //このユーザーWSインスタンス削除
-    userWSInstance.delete(user.id);
-    //ユーザー接続通知
-    ws.publish("GLOBAL", JSON.stringify({
-      signal: "user::Disconnected",
-      data: user.id,
-    }));
+    //userWSInstance.delete(user.id);
+    WSremoveUserInstance(user.id, ws);
+
+    //console.log("ws :: close : userWSInstance.get(user.id)?.length", userWSInstance.get(user.id)?.length);
+    if (userWSInstance.get(user.id)?.length === 0) {
+      //ユーザー接続通知
+      ws.publish("GLOBAL", JSON.stringify({
+        signal: "user::Disconnected",
+        data: user.id,
+      }));
+    }
   },
 });
+
+/**
+ * WSインスタンスマップにユーザーのインスタンスを新しく追加
+ * @param userId 
+ * @param ws 
+ * @returns 
+ */
+// biome-ignore lint/suspicious/noExplicitAny: どのwsインスタンスでも受け付けるためにany
+function  WSaddUserInstance(userId: string, ws: ElysiaWS<any, any, any>) {
+  const currentInstance = userWSInstance.get(userId);
+  //存在しない場合普通にset
+  if (!currentInstance) {
+    userWSInstance.set(userId, [ws]);
+    return;
+  }
+  userWSInstance.set(userId, [...currentInstance, ws]);
+}
+
+/**
+ * WSインスタンスマップからユーザーのインスタンスを削除
+ * @param userId 
+ * @param ws 
+ * @returns 
+ */
+// biome-ignore lint/suspicious/noExplicitAny: どのwsインスタンスでも受け付けるためにany
+function WSremoveUserInstance(userId: string, ws: ElysiaWS<any, any, any>) {
+  const currentInstance = userWSInstance.get(userId);
+  //存在しない場合スルー
+  if (!currentInstance) {
+    return;
+  }
+  const tokenRemoving = ws.data.cookie.token.value;
+  userWSInstance.set(userId, currentInstance.filter((v) => {
+    //console.log("WSremoveUserInstance :: v.data.cookie.token", v.data.cookie.token.value);
+    return v.data.cookie.token.value !== tokenRemoving
+  }));
+}
+
+/**
+ * 指定のユーザーIdのWSインスタンスすべてに対し指定のWSチャンネルから登録させる
+ * @param userId 
+ * @param wsChannel 
+ * @returns 
+ */
+export function WSSubscribe(userId: string, wsChannel: `${string}::${string}`) {
+  const currentInstance = userWSInstance.get(userId);
+  //存在しない場合スルー
+  if (!currentInstance) {
+    return;
+  }
+  for (const ws of currentInstance) {
+    ws.subscribe(wsChannel);
+  }
+}
+
+/**
+ * 指定のユーザーIdのWSインスタンスすべてに対し指定のWSチャンネルから登録解除させる
+ * @param userId 
+ * @param wsChannel 
+ * @returns 
+ */
+export function WSUnsubscribe(userId: string, wsChannel: `${string}::${string}`) {
+  const currentInstance = userWSInstance.get(userId);
+  //存在しない場合スルー
+  if (!currentInstance) {
+    return;
+  }
+  for (const ws of currentInstance) {
+    ws.unsubscribe(wsChannel);
+  }
+}
