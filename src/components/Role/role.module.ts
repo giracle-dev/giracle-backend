@@ -168,7 +168,7 @@ export const role = new Elysia({ prefix: "/role" })
   )
   .delete(
     "/delete",
-    async ({ body: { roleId }, _userId }) => {
+    async ({ body: { roleId }, _userId, server }) => {
       //送信者のロールレベルが足りるか確認
       if (!(await CompareRoleLevelToRole(_userId, roleId))) {
         throw error(400, "Role level not enough or role not found");
@@ -186,6 +186,9 @@ export const role = new Elysia({ prefix: "/role" })
           id: roleId,
         },
       });
+
+      //WSで通知
+      server?.publish("GLOBAL", JSON.stringify({ signal: "role::Deleted", data: { roleId } }));
 
       return {
         success: true,
