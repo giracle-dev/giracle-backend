@@ -142,7 +142,11 @@ function WSremoveUserInstance(userId: string, ws: ElysiaWS<any, any, any>) {
   if (!currentInstance) {
     return;
   }
-  userWSInstance.set(userId, currentInstance.filter((v) => v !== ws));
+  const tokenRemoving = ws.data.cookie.token.value;
+  userWSInstance.set(userId, currentInstance.filter((v) => {
+    //console.log("WSremoveUserInstance :: v.data.cookie.token", v.data.cookie.token.value);
+    return v.data.cookie.token.value !== tokenRemoving
+  }));
 }
 
 /**
