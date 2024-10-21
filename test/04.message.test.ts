@@ -66,6 +66,22 @@ describe("message", async () => {
     //console.log("message.test :: send : responseMissingChannel->", responseMissingChannel);
     expect(responseMissingChannel.status).toBe(400);
 
+    const responseBlank = await app.handle(
+      new Request("http://localhost/message/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: `token=${tokenTesting}`,
+        },
+        body: JSON.stringify({
+          channelId: "test",
+          message: "  \n ",
+        }),
+      }),
+    );
+    //console.log("message.test :: send : responseBlank->", responseBlank);
+    expect(responseBlank.status).toBe(400);
+
     const response = await app.handle(
       new Request("http://localhost/message/send", {
         method: "POST",
