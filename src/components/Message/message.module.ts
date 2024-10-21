@@ -247,6 +247,10 @@ export const message = new Elysia({ prefix: "/message" })
   .post(
     "/send",
     async ({ body: { channelId, message }, _userId, server }) => {
+      //メッセージが空白か改行しか含まれていないならエラー
+      const spaceCount = (message.match(/ /g) || "").length + (message.match(/　/g) || "").length + (message.match(/\n/g) || "").length;
+      if (spaceCount === message.length) throw error(400, "Message is empty");
+
       //チャンネル参加情報を取得
       const channelJoined = await db.channelJoin.findFirst({
         where: {
