@@ -207,7 +207,11 @@ export const message = new Elysia({ prefix: "/message" })
         readTimeSaved !== null &&
         readTimeSaved.readTime.valueOf() > readTime.valueOf()
       ) {
-        throw error(400, "Read time is already newer");
+        //throw error(400, "Read time is already newer");
+        return {
+          message: "Read time is already newer",
+          data: readTimeSaved,
+        };
       }
 
       const readTimeUpdated = await db.messageReadTime.upsert({
