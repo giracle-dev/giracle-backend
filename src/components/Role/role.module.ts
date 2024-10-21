@@ -190,4 +190,27 @@ export const role = new Elysia({ prefix: "/role" })
         tags: ["Role"],
       },
     },
-  );
+  )
+  .get(
+    "/list",
+    async ({ error }) => {
+      const role = await db.roleInfo.findMany();
+
+      //ロールが存在しない
+      if (role === null) {
+        throw error(404, "Roles not found");
+      }
+
+      return {
+        success: true,
+        message: "Role list",
+        data: role,
+      };
+    },
+    {
+      detail: {
+        description: "ロール情報の一覧を取得します",
+        tags: ["Role"],
+      },
+    },
+  );;
