@@ -100,11 +100,15 @@ export const wsHandler = new Elysia().ws("/ws", {
     //このユーザーWSインスタンス削除
     //userWSInstance.delete(user.id);
     WSremoveUserInstance(user.id, ws);
-    //ユーザー接続通知
-    ws.publish("GLOBAL", JSON.stringify({
-      signal: "user::Disconnected",
-      data: user.id,
-    }));
+
+    //console.log("ws :: close : userWSInstance.get(user.id)?.length", userWSInstance.get(user.id)?.length);
+    if (userWSInstance.get(user.id)?.length === 0) {
+      //ユーザー接続通知
+      ws.publish("GLOBAL", JSON.stringify({
+        signal: "user::Disconnected",
+        data: user.id,
+      }));
+    }
   },
 });
 
