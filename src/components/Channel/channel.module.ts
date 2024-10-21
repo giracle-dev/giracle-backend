@@ -1,7 +1,7 @@
 import { type Message, PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
-import { userWSInstance } from "../../ws";
+import { WSSubscribe, WSUnsubscribe } from "../../ws";
 
 const db = new PrismaClient();
 
@@ -41,7 +41,8 @@ export const channel = new Elysia({ prefix: "/channel" })
       });
 
       //WS登録させる
-      userWSInstance.get(_userId)?.subscribe(`channel::${channelId}`);
+      //userWSInstance.get(_userId)?.subscribe(`channel::${channelId}`);
+      WSSubscribe(_userId, `channel::${channelId}`);
 
       return {
         message: "Channel joined",
@@ -102,7 +103,8 @@ export const channel = new Elysia({ prefix: "/channel" })
       });
 
       //WS登録を解除させる
-      userWSInstance.get(_userId)?.unsubscribe(`channel::${channelId}`);
+      //userWSInstance.get(_userId)?.unsubscribe(`channel::${channelId}`);
+      WSUnsubscribe(_userId, `channel::${channelId}`);
 
       return {
         message: "Channel left",
@@ -451,7 +453,8 @@ export const channel = new Elysia({ prefix: "/channel" })
         },
       }).then(data => {
         for (const channelJoinData of data) {
-          userWSInstance.get(channelJoinData.userId)?.unsubscribe(`channel::${channelId}`);
+          //userWSInstance.get(channelJoinData.userId)?.unsubscribe(`channel::${channelId}`);
+          WSUnsubscribe(channelJoinData.userId, `channel::${channelId}`);
         }
       });
 
