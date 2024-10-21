@@ -124,7 +124,7 @@ export const message = new Elysia({ prefix: "/message" })
       });
 
       //チャンネルごとの新着メッセージがあるかどうかを格納するJSON
-      const JSONnews: {[key: string]: boolean } = {};
+      const JSONnews: { [key: string]: boolean } = {};
 
       //チャンネルごとの最新メッセージを取得、比較
       for (const channelId of channelIds) {
@@ -142,10 +142,13 @@ export const message = new Elysia({ prefix: "/message" })
         //存在するなら
         if (newest) {
           //自分の既読時間を取得
-          const readTimeData = messageReadTime.find((data) => data.channelId === channelId);
+          const readTimeData = messageReadTime.find(
+            (data) => data.channelId === channelId,
+          );
           //存在するなら比較してBooleanを返す、ないならfalse
           if (readTimeData) {
-            JSONnews[channelId] = newest.createdAt.valueOf() > readTimeData?.readTime.valueOf();
+            JSONnews[channelId] =
+              newest.createdAt.valueOf() > readTimeData?.readTime.valueOf();
           } else {
             JSONnews[channelId] = false;
           }
@@ -164,8 +167,8 @@ export const message = new Elysia({ prefix: "/message" })
       detail: {
         description: "チャンネルごとの新着メッセージがあるかどうかを取得します",
         tags: ["Message"],
-      }
-    }
+      },
+    },
   )
   .get(
     "/read-time/get",
@@ -185,22 +188,25 @@ export const message = new Elysia({ prefix: "/message" })
       detail: {
         description: "既読時間の設定を取得します",
         tags: ["Message"],
-      }
-    }
+      },
+    },
   )
   .post(
     "/read-time/update",
-    async ({ _userId, body: {channelId, readTime}, server }) => {
+    async ({ _userId, body: { channelId, readTime }, server }) => {
       //既読時間を取得して更新する必要があるか調べる
       const readTimeNow = await db.messageReadTime.findUnique({
         where: {
           channelId_userId: {
             channelId,
             userId: _userId,
-          }
+          },
         },
       });
-      if (readTimeNow !== null && readTimeNow.readTime.valueOf() > readTime.valueOf()) {
+      if (
+        readTimeNow !== null &&
+        readTimeNow.readTime.valueOf() > readTime.valueOf()
+      ) {
         throw error(400, "Read time is already newer");
       }
 
@@ -209,7 +215,7 @@ export const message = new Elysia({ prefix: "/message" })
           channelId_userId: {
             channelId,
             userId: _userId,
-          }
+          },
         },
         create: {
           readTime,
@@ -222,10 +228,13 @@ export const message = new Elysia({ prefix: "/message" })
       });
 
       //WSで通知
-      server?.publish(`user::${_userId}`, JSON.stringify({
-        signal: "message::ReadTimeUpdated",
-        data: readTimeUpdated,
-      }));
+      server?.publish(
+        `user::${_userId}`,
+        JSON.stringify({
+          signal: "message::ReadTimeUpdated",
+          data: readTimeUpdated,
+        }),
+      );
 
       return {
         message: "Updated read time",
@@ -240,15 +249,18 @@ export const message = new Elysia({ prefix: "/message" })
       detail: {
         description: "既読時間の設定を更新します",
         tags: ["Message"],
-      }
-    }
+      },
+    },
   )
   .use(urlPreviewControl)
   .post(
     "/send",
     async ({ body: { channelId, message }, _userId, server }) => {
       //メッセージが空白か改行しか含まれていないならエラー
-      const spaceCount = (message.match(/ /g) || "").length + (message.match(/　/g) || "").length + (message.match(/\n/g) || "").length;
+      const spaceCount =
+        (message.match(/ /g) || "").length +
+        (message.match(/　/g) || "").length +
+        (message.match(/\n/g) || "").length;
       if (spaceCount === message.length) throw error(400, "Message is empty");
 
       //チャンネル参加情報を取得

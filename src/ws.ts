@@ -64,10 +64,13 @@ export const wsHandler = new Elysia().ws("/ws", {
     //userWSInstance.set(user.id, ws);
     WSaddUserInstance(user.id, ws);
     //ユーザー接続通知
-    ws.publish("GLOBAL", JSON.stringify({
-      signal: "user::Connected",
-      data: user.id,
-    }));
+    ws.publish(
+      "GLOBAL",
+      JSON.stringify({
+        signal: "user::Connected",
+        data: user.id,
+      }),
+    );
 
     //console.log("index :: 新しいWS接続");
   },
@@ -104,22 +107,25 @@ export const wsHandler = new Elysia().ws("/ws", {
     //console.log("ws :: close : userWSInstance.get(user.id)?.length", userWSInstance.get(user.id)?.length);
     if (userWSInstance.get(user.id)?.length === 0) {
       //ユーザー接続通知
-      ws.publish("GLOBAL", JSON.stringify({
-        signal: "user::Disconnected",
-        data: user.id,
-      }));
+      ws.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "user::Disconnected",
+          data: user.id,
+        }),
+      );
     }
   },
 });
 
 /**
  * WSインスタンスマップにユーザーのインスタンスを新しく追加
- * @param userId 
- * @param ws 
- * @returns 
+ * @param userId
+ * @param ws
+ * @returns
  */
 // biome-ignore lint/suspicious/noExplicitAny: どのwsインスタンスでも受け付けるためにany
-function  WSaddUserInstance(userId: string, ws: ElysiaWS<any, any, any>) {
+function WSaddUserInstance(userId: string, ws: ElysiaWS<any, any, any>) {
   const currentInstance = userWSInstance.get(userId);
   //存在しない場合普通にset
   if (!currentInstance) {
@@ -131,9 +137,9 @@ function  WSaddUserInstance(userId: string, ws: ElysiaWS<any, any, any>) {
 
 /**
  * WSインスタンスマップからユーザーのインスタンスを削除
- * @param userId 
- * @param ws 
- * @returns 
+ * @param userId
+ * @param ws
+ * @returns
  */
 // biome-ignore lint/suspicious/noExplicitAny: どのwsインスタンスでも受け付けるためにany
 function WSremoveUserInstance(userId: string, ws: ElysiaWS<any, any, any>) {
@@ -143,17 +149,20 @@ function WSremoveUserInstance(userId: string, ws: ElysiaWS<any, any, any>) {
     return;
   }
   const tokenRemoving = ws.data.cookie.token.value;
-  userWSInstance.set(userId, currentInstance.filter((v) => {
-    //console.log("WSremoveUserInstance :: v.data.cookie.token", v.data.cookie.token.value);
-    return v.data.cookie.token.value !== tokenRemoving
-  }));
+  userWSInstance.set(
+    userId,
+    currentInstance.filter((v) => {
+      //console.log("WSremoveUserInstance :: v.data.cookie.token", v.data.cookie.token.value);
+      return v.data.cookie.token.value !== tokenRemoving;
+    }),
+  );
 }
 
 /**
  * 指定のユーザーIdのWSインスタンスすべてに対し指定のWSチャンネルから登録させる
- * @param userId 
- * @param wsChannel 
- * @returns 
+ * @param userId
+ * @param wsChannel
+ * @returns
  */
 export function WSSubscribe(userId: string, wsChannel: `${string}::${string}`) {
   const currentInstance = userWSInstance.get(userId);
@@ -168,11 +177,14 @@ export function WSSubscribe(userId: string, wsChannel: `${string}::${string}`) {
 
 /**
  * 指定のユーザーIdのWSインスタンスすべてに対し指定のWSチャンネルから登録解除させる
- * @param userId 
- * @param wsChannel 
- * @returns 
+ * @param userId
+ * @param wsChannel
+ * @returns
  */
-export function WSUnsubscribe(userId: string, wsChannel: `${string}::${string}`) {
+export function WSUnsubscribe(
+  userId: string,
+  wsChannel: `${string}::${string}`,
+) {
   const currentInstance = userWSInstance.get(userId);
   //存在しない場合スルー
   if (!currentInstance) {
