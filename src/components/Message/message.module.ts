@@ -131,9 +131,7 @@ export const message = new Elysia({ prefix: "/message" })
         //指定のチャンネルIdの最新メッセージを取得
         const newest = await db.message.findFirst({
           where: {
-            channelId: {
-              in: channelIds,
-            },
+            channelId,
           },
           orderBy: {
             createdAt: "desc",
