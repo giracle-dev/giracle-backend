@@ -1,6 +1,7 @@
 import { type Message, PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
+import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import { WSSubscribe, WSUnsubscribe } from "../../ws";
 
 const db = new PrismaClient();
@@ -203,7 +204,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .post(
     "/get-history/:channelId",
-    async ({ params: { channelId }, body }) => {
+    async ({ params: { channelId }, body, _userId }) => {
       //パラメータ指定の取得
       const { messageIdFrom, fetchDirection, fetchLength, messageTimeFrom } =
         body || {};
@@ -233,6 +234,11 @@ export const channel = new Elysia({ prefix: "/channel" })
         //無ければエラー
         if (!messageDataFrom)
           return error(404, "Message cursor position not found");
+      }
+
+      //チャンネルへのアクセス権限があるか調べる
+      if (!(await CheckChannelVisibility(channelId, _userId))) {
+        return error(403, "You don't have permission to access this channel");
       }
 
       //基準のメッセージIdがあるなら時間を取得、取得設定として設定
