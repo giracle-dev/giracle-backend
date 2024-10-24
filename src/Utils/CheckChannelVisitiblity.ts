@@ -2,15 +2,15 @@ import { PrismaClient } from "@prisma/client";
 
 /**
  * 指定のユーザーIdが指定のチャンネルにアクセス可能かどうかを確認する
- * @param _channelId 
- * @param _userId 
+ * @param _channelId
+ * @param _userId
  */
 export default async function CheckChannelVisibility(
   _channelId: string,
   _userId: string,
 ): Promise<boolean> {
   const db = new PrismaClient();
-  
+
   //チャンネルの閲覧制限があるか確認
   const roleViewable = await db.channelViewableRole.findMany({
     where: {
@@ -43,7 +43,7 @@ export default async function CheckChannelVisibility(
 
       // ロールを持っていれば閲覧可能
       if (hasViewableRole) {
-        true
+        true;
       }
 
       // サーバー管理者の場合は閲覧可能

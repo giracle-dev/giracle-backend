@@ -51,7 +51,7 @@ export const role = new Elysia({ prefix: "/role" })
 
       const roleUpdated = await db.roleInfo.update({
         where: {
-          id: roleId
+          id: roleId,
         },
         data: {
           createdUserId: _userId,
@@ -188,7 +188,10 @@ export const role = new Elysia({ prefix: "/role" })
       });
 
       //WSで通知
-      server?.publish("GLOBAL", JSON.stringify({ signal: "role::Deleted", data: { roleId } }));
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({ signal: "role::Deleted", data: { roleId } }),
+      );
 
       return {
         success: true,
@@ -258,4 +261,4 @@ export const role = new Elysia({ prefix: "/role" })
         tags: ["Role"],
       },
     },
-  );;
+  );

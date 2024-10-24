@@ -1,8 +1,8 @@
 import { type Message, PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
-import { WSSubscribe, WSUnsubscribe } from "../../ws";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
+import { WSSubscribe, WSUnsubscribe } from "../../ws";
 
 const db = new PrismaClient();
 
