@@ -1,4 +1,3 @@
-import { mkdir } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
@@ -207,6 +206,42 @@ export const message = new Elysia({ prefix: "/message" })
         tags: ["Message"],
       },
     },
+  )
+  .get(
+    "/search",
+    async ({ query: {content, channelId, userId, hasUrlPreview} }) => {
+      //もし検索条件がないならエラー
+      if (content === undefined && channelId === undefined && userId === undefined && hasUrlPreview === undefined) {
+        throw error(400, "No search condition");
+      }
+
+      //メッセージを検索する
+      const messages = await db.message.findMany({
+        where: {
+          content: {
+            contains: content,
+          },
+          channelId: channelId ? { equals: channelId } : undefined,
+          userId: userId ? { equals: userId } : undefined,
+        },
+        include: {
+          MessageUrlPreview: hasUrlPreview ? true : undefined,
+        }
+      });
+
+      return {
+        message: "Searched messages",
+        data: messages,
+      };
+    },
+    {
+      query: t.Object({
+        content: t.Optional(t.String({ minLength: 1 })),
+        channelId: t.Optional(t.String({ minLength: 1 })),
+        userId: t.Optional(t.String({ minLength: 1 })),
+        hasUrlPreview: t.Optional(t.Boolean()),
+      }),
+    }
   )
   .post(
     "/file/upload",
