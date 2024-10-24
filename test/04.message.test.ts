@@ -144,7 +144,7 @@ describe("message", async () => {
 
   it("message :: check news", async () => {
     const response = await app.handle(
-      new Request("http://localhost/message/new", {
+      new Request("http://localhost/message/get-new", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
