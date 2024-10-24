@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
+import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 
 const db = new PrismaClient();
 
@@ -19,60 +20,12 @@ export const message = new Elysia({ prefix: "/message" })
         return error(404, "Message not found");
       }
 
-      //チャンネルの閲覧制限があるか確認
-      const roleViewable = await db.channelViewableRole.findMany({
-        where: {
-          channelId: messageData.channelId,
-        },
-        select: {
-          roleId: true,
-        },
-      });
-
-      // 閲覧制限があるならユーザーが条件に入るか調べる
-      if (roleViewable.length > 0) {
-        // チャンネルに参加しているか調べる
-        const channelJoined = await db.channelJoin.findUnique({
-          where: {
-            userId_channelId: {
-              userId: _userId,
-              channelId: messageData.channelId,
-            },
-          },
-        });
-
-        // チャンネルに参加していないならロールで調べる
-        if (!channelJoined) {
-          const hasViewableRole = await db.roleLink.findFirst({
-            where: {
-              userId: _userId,
-              roleId: { in: roleViewable.map((role) => role.roleId) },
-            },
-          });
-
-          // ロールを持っていれば閲覧可能
-          if (hasViewableRole) {
-            return { message: "Fetched message", data: messageData };
-          }
-
-          // サーバー管理者の場合は閲覧可能
-          const userAdminRole = await db.roleLink.findFirst({
-            where: {
-              userId: _userId,
-              role: { manageServer: true },
-            },
-          });
-
-          if (userAdminRole) {
-            return { message: "Fetched message", data: messageData };
-          }
-        } else {
-          // チャンネルに参加している場合はそのまま返す
-          return { message: "Fetched message", data: messageData };
-        }
-      } else {
-        // 閲覧制限がない場合はそのまま返す
-        return { message: "Fetched message", data: messageData };
+      //チャンネルの閲覧制限があるか確認してから返す
+      if (await CheckChannelVisibility(messageData.channelId, _userId)) {
+        return {
+          message: "Fetched message",
+          data: messageData,
+        };
       }
 
       return error(404, "Message not found");
