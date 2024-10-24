@@ -207,6 +207,47 @@ export const message = new Elysia({ prefix: "/message" })
       },
     },
   )
+  .get(
+    "/search",
+    async ({ query: {content, channelId, userId, hasUrlPreview}, params: { loadIndex } }) => {
+      //もし検索条件がないならエラー
+      if (content === undefined && channelId === undefined && userId === undefined && hasUrlPreview === undefined) {
+        throw error(400, "No search condition");
+      }
+
+      const messageSkipping = loadIndex ? (loadIndex - 1) * 50 : 0; 
+
+      //メッセージを検索する
+      const messages = await db.message.findMany({
+        where: {
+          content: {
+            contains: content,
+          },
+          channelId: channelId ? { equals: channelId } : undefined,
+          userId: userId ? { equals: userId } : undefined,
+        },
+        include: {
+          MessageUrlPreview: hasUrlPreview ? true : undefined,
+        },
+        take: 50,
+        skip: messageSkipping,
+      });
+
+      return {
+        message: "Searched messages",
+        data: messages,
+      };
+    },
+    {
+      query: t.Object({
+        content: t.Optional(t.String({ minLength: 1 })),
+        channelId: t.Optional(t.String({ minLength: 1 })),
+        userId: t.Optional(t.String({ minLength: 1 })),
+        hasUrlPreview: t.Optional(t.Boolean()),
+        loadIndex: t.Optional(t.Number({ minimum: 1, default: 1 })),
+      }),
+    }
+  )
   .use(urlPreviewControl)
   .post(
     "/send",
