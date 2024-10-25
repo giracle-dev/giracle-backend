@@ -7,7 +7,35 @@ const db = new PrismaClient();
 
 export const role = new Elysia({ prefix: "/role" })
   .use(CheckToken)
+  .get(
+    "/search",
+    async ({ query: { name } }) => {
+      const roles = await db.roleInfo.findMany({
+        where: {
+          name: {
+            contains: name,
+          },
+        }
+      });
+
+      return {
+        message: "Role searched",
+        data: roles,
+      };
+    },
+    {
+      query: t.Object({
+        name: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "ロールを検索します",
+        tags: ["Role"],
+      }
+    }
+  )
+
   .use(checkRoleTerm)
+
   .put(
     "/create",
     async ({ body: { roleName, rolePower }, _userId }) => {
