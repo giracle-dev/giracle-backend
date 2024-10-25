@@ -33,6 +33,34 @@ export const role = new Elysia({ prefix: "/role" })
       }
     }
   )
+  .get(
+    "/get-info/:id",
+    async ({ params: { id } }) => {
+      const role = await db.roleInfo.findUnique({
+        where: {
+          id,
+        }
+      });
+      //ロールが存在しない
+      if (!role) {
+        throw error(404, "Role not found");
+      }
+
+      return {
+        message: "Role fetched",
+        data: role,
+      };
+    },
+    {
+      params: t.Object({
+        id: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "ロール情報を取得します",
+        tags: ["Role"],
+      }
+    }
+  )
 
   .use(checkRoleTerm)
 
