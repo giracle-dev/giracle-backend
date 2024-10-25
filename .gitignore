@@ -45,3 +45,4 @@ package-lock.json
 /prisma/.env
 *.db
 *.db-journal
+/.idea
