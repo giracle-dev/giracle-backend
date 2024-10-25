@@ -145,6 +145,11 @@ export const role = new Elysia({ prefix: "/role" })
   .post(
     "/link",
     async ({ body: { userId, roleId }, _userId, server }) => {
+      //デフォルトのロールはリンク不可
+      if (roleId === "MEMBER" || roleId === "HOST") {
+        throw error(400, "You cannot link default role");
+      }
+
       //送信者のロールレベルが足りるか確認
       if (userId !== _userId) {
         if (!(await CompareRoleLevelToRole(_userId, roleId))) {
