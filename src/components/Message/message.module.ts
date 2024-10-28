@@ -368,6 +368,51 @@ export const message = new Elysia({ prefix: "/message" })
       },
     },
   )
+  .delete(
+    "/delete",
+    async ({ body: { messageId }, _userId, server }) => {
+      //取得
+      const messageData = await db.message.findUnique({
+        where: {
+          id: messageId,
+        },
+      });
+      if (messageData === null) {
+        throw error(404, "Message not found");
+      }
+      if (messageData.userId !== _userId) {
+        throw error(403, "You are not owner of this message");
+      }
+
+      //メッセージの削除
+      await db.message.delete({
+        where: {
+          id: messageId,
+        },
+      });
+
+      //WSで通知
+      server?.publish("GLOBAL", JSON.stringify({
+        signal: "message::MessageDeleted",
+        data: messageData.id,
+      }));
+
+      return {
+        message: "Message deleted",
+        data: messageData.id,
+      };
+    },
+    {
+      body: t.Object({
+        messageId: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "メッセージを削除します",
+        tags: ["Message"],
+      },
+      bindUrlPreview: true,
+    },
+  )
   .use(urlPreviewControl)
   .post(
     "/send",
