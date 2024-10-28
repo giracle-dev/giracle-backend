@@ -103,29 +103,32 @@ model MessageReadTime {
 }
 
 model MessageFileAttached {
-  id             String  @id @default(uuid())
+  id             String   @id @default(uuid())
   channelId      String
-  channel        Channel @relation(fields: [channelId], references: [id])
+  channel        Channel  @relation(fields: [channelId], references: [id])
   userId         String
-  user           User    @relation(fields: [userId], references: [id])
+  user           User     @relation(fields: [userId], references: [id])
   actualFileName String
   savedFileName  String
   size           Int
+  Message        Message? @relation(fields: [messageId], references: [id])
+  messageId      String?
 
   @@index([channelId])
   @@index([userId])
 }
 
 model Message {
-  id                String              @id @default(uuid())
-  content           String
-  isSystemMessage   Boolean             @default(false)
-  userId            String
-  user              User                @relation(fields: [userId], references: [id])
-  channelId         String
-  channel           Channel             @relation(fields: [channelId], references: [id])
-  createdAt         DateTime            @default(now())
-  MessageUrlPreview MessageUrlPreview[]
+  id                  String                @id @default(uuid())
+  content             String
+  isSystemMessage     Boolean               @default(false)
+  userId              String
+  user                User                  @relation(fields: [userId], references: [id])
+  channelId           String
+  channel             Channel               @relation(fields: [channelId], references: [id])
+  createdAt           DateTime              @default(now())
+  MessageUrlPreview   MessageUrlPreview[]
+  MessageFileAttached MessageFileAttached[]
 
   @@index([channelId])
   @@index([userId])

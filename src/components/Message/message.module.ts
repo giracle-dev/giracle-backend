@@ -256,7 +256,7 @@ export const message = new Elysia({ prefix: "/message" })
   .use(urlPreviewControl)
   .post(
     "/send",
-    async ({ body: { channelId, message }, _userId, server }) => {
+    async ({ body: { channelId, message, fileIds }, _userId, server }) => {
       //メッセージが空白か改行しか含まれていないならエラー
       const spaceCount =
         (message.match(/ /g) || "").length +
@@ -276,11 +276,28 @@ export const message = new Elysia({ prefix: "/message" })
         throw error(400, "You are not joined this channel");
       }
 
+      //アップロードしているファイルId配列があるならファイル情報を取得
+      const fileDatas = await db.messageFileAttached.findMany({
+        where: {
+          id: {
+            in: fileIds,
+          }
+        },
+      });
+
+      //メッセージを保存
       const messageSaved = await db.message.create({
         data: {
           channelId,
           userId: _userId,
           content: message,
+          MessageFileAttached: {
+            connect: fileDatas.map((data) => {
+              return {
+                id: data.id,
+              };
+            }), 
+          }
         },
       });
 
@@ -302,6 +319,7 @@ export const message = new Elysia({ prefix: "/message" })
       body: t.Object({
         channelId: t.String({ minLength: 1 }),
         message: t.String({ minLength: 1 }),
+        fileIds: t.Array(t.String({ minLength: 1 })),
       }),
       detail: {
         description: "メッセージを送信します",
