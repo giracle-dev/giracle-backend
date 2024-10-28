@@ -211,6 +211,11 @@ export const message = new Elysia({ prefix: "/message" })
   .post(
     "/file/upload",
     async ({ body: { channelId, file }, _userId }) => {
+      //ファイルサイズが500MBを超える場合はエラー
+      if (file.size > 1024 * 1024 * 500) {
+        throw error(400, "File size is too large");
+      }
+
       //保存するためのファイル名保存
       const fileNameGen = `${Date.now()}_${file.name}`;
       //チャンネルIdのディレクトリを作成
