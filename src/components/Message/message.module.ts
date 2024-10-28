@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
+import { mkdir } from "node:fs/promises";
 
 const db = new PrismaClient();
 
@@ -206,6 +207,44 @@ export const message = new Elysia({ prefix: "/message" })
         tags: ["Message"],
       },
     },
+  )
+  .post(
+    "/file/upload",
+    async ({ body: { channelId, file }, _userId }) => {
+      //保存するためのファイル名保存
+      const fileNameGen = `${Date.now()}_${file.name}`;
+      //チャンネルIdのディレクトリを作成
+      await mkdir(`./STORAGE/file/${channelId}`, { recursive: true });
+
+      //ファイルを保存
+      Bun.write(`./STORAGE/file/${channelId}/${fileNameGen}`, file);
+
+      //ファイル情報を作成、保存する
+      const fileData = await db.messageFileAttached.create({
+        data: {
+          channelId,
+          userId: _userId,
+          size: file.size,
+          actualFileName: file.name,
+          savedFileName: fileNameGen
+        },
+      });
+
+      return {
+        message: "File uploaded",
+        data: fileData,
+      }
+    },
+    {
+      body: t.Object({
+        channelId: t.String({ minLength: 1 }),
+        file: t.File()
+      }),
+      detail: {
+        description: "ファイルをアップロードします",
+        tags: ["Message"],
+      },
+    }
   )
   .use(urlPreviewControl)
   .post(
