@@ -237,7 +237,9 @@ export const message = new Elysia({ prefix: "/message" })
 
       return {
         message: "File uploaded",
-        data: fileData,
+        data: {
+          fileId: fileData.id,
+        },
       }
     },
     {
