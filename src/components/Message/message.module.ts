@@ -231,7 +231,8 @@ export const message = new Elysia({ prefix: "/message" })
           userId: _userId,
           size: file.size,
           actualFileName: file.name,
-          savedFileName: fileNameGen
+          savedFileName: fileNameGen,
+          type: file.type,
         },
       });
 
@@ -246,6 +247,38 @@ export const message = new Elysia({ prefix: "/message" })
       body: t.Object({
         channelId: t.String({ minLength: 1 }),
         file: t.File()
+      }),
+      detail: {
+        description: "ファイルをアップロードします",
+        tags: ["Message"],
+      },
+    }
+  )
+  .get(
+    "/file/:fileId",
+    async ({ params:{ fileId }, _userId }) => {
+      const fileData = await db.messageFileAttached.findUnique({
+        where: {
+          id: fileId,
+        },
+      });
+
+      if (fileData === null) {
+        throw error(404, "File not found");
+      }
+
+      const fileBuffer = Bun.file(`./STORAGE/file/${fileData.channelId}/${fileData.savedFileName}`);
+
+      //ファイル名を適用させてファイルを返す
+      return new Response(fileBuffer, {
+        headers: {
+          "Content-Disposition": `attachment; filename="${fileData.actualFileName}"`,
+        },
+      });
+    },
+    {
+      params: t.Object({
+        fileId: t.String({ minLength: 1 }),
       }),
       detail: {
         description: "ファイルをアップロードします",

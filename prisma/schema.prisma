@@ -111,6 +111,7 @@ model MessageFileAttached {
   actualFileName String
   savedFileName  String
   size           Int
+  type           String
   Message        Message? @relation(fields: [messageId], references: [id])
   messageId      String?
 
