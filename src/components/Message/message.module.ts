@@ -299,6 +299,9 @@ export const message = new Elysia({ prefix: "/message" })
             }), 
           }
         },
+        include: {
+          MessageFileAttached: true,
+        }
       });
 
       //WSで通知
