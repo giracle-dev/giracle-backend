@@ -222,7 +222,7 @@ export const message = new Elysia({ prefix: "/message" })
       await mkdir(`./STORAGE/file/${channelId}`, { recursive: true });
 
       //ファイルを保存
-      Bun.write(`./STORAGE/file/${channelId}/${fileNameGen}`, file);
+      await Bun.write(`./STORAGE/file/${channelId}/${fileNameGen}`, file);
 
       //ファイル情報を作成、保存する
       const fileData = await db.messageFileAttached.create({
