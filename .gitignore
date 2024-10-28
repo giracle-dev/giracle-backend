@@ -46,3 +46,9 @@ package-lock.json
 *.db
 *.db-journal
 /.idea
+
+# ユーザーのアップロード
+/STORAGE/file/*
+/STORAGE/icon/*
+!/STORAGE/icon/default.png
+/STORAGE/banner/*

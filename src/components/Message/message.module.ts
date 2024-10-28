@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
+import { mkdir } from "node:fs/promises";
 
 const db = new PrismaClient();
 
@@ -207,16 +208,94 @@ export const message = new Elysia({ prefix: "/message" })
       },
     },
   )
+  .post(
+    "/file/upload",
+    async ({ body: { channelId, file }, _userId }) => {
+      //ファイルサイズが500MBを超える場合はエラー
+      if (file.size > 1024 * 1024 * 500) {
+        throw error(400, "File size is too large");
+      }
+
+      //保存するためのファイル名保存
+      const fileNameGen = `${Date.now()}_${file.name}`;
+      //チャンネルIdのディレクトリを作成
+      await mkdir(`./STORAGE/file/${channelId}`, { recursive: true });
+
+      //ファイルを保存
+      await Bun.write(`./STORAGE/file/${channelId}/${fileNameGen}`, file);
+
+      //ファイル情報を作成、保存する
+      const fileData = await db.messageFileAttached.create({
+        data: {
+          channelId,
+          userId: _userId,
+          size: file.size,
+          actualFileName: file.name,
+          savedFileName: fileNameGen,
+          type: file.type,
+        },
+      });
+
+      return {
+        message: "File uploaded",
+        data: {
+          fileId: fileData.id,
+        },
+      }
+    },
+    {
+      body: t.Object({
+        channelId: t.String({ minLength: 1 }),
+        file: t.File()
+      }),
+      detail: {
+        description: "ファイルをアップロードします",
+        tags: ["Message"],
+      },
+    }
+  )
+  .get(
+    "/file/:fileId",
+    async ({ params:{ fileId }, _userId }) => {
+      const fileData = await db.messageFileAttached.findUnique({
+        where: {
+          id: fileId,
+        },
+      });
+
+      if (fileData === null) {
+        throw error(404, "File not found");
+      }
+
+      const fileBuffer = Bun.file(`./STORAGE/file/${fileData.channelId}/${fileData.savedFileName}`);
+
+      //ファイル名を適用させてファイルを返す
+      return new Response(fileBuffer, {
+        headers: {
+          "Content-Disposition": `attachment; filename="${fileData.actualFileName}"`,
+        },
+      });
+    },
+    {
+      params: t.Object({
+        fileId: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "ファイルをアップロードします",
+        tags: ["Message"],
+      },
+    }
+  )
   .use(urlPreviewControl)
   .post(
     "/send",
-    async ({ body: { channelId, message }, _userId, server }) => {
-      //メッセージが空白か改行しか含まれていないならエラー
+    async ({ body: { channelId, message, fileIds }, _userId, server }) => {
+      //メッセージが空白か改行しか含まれていないならエラー(ファイル添付があるなら除外)
       const spaceCount =
         (message.match(/ /g) || "").length +
         (message.match(/　/g) || "").length +
         (message.match(/\n/g) || "").length;
-      if (spaceCount === message.length) throw error(400, "Message is empty");
+      if (spaceCount === message.length && fileIds.length === 0) throw error(400, "Message is empty");
 
       //チャンネル参加情報を取得
       const channelJoined = await db.channelJoin.findFirst({
@@ -230,12 +309,32 @@ export const message = new Elysia({ prefix: "/message" })
         throw error(400, "You are not joined this channel");
       }
 
+      //アップロードしているファイルId配列があるならファイル情報を取得
+      const fileDatas = await db.messageFileAttached.findMany({
+        where: {
+          id: {
+            in: fileIds,
+          }
+        },
+      });
+
+      //メッセージを保存
       const messageSaved = await db.message.create({
         data: {
           channelId,
           userId: _userId,
           content: message,
+          MessageFileAttached: {
+            connect: fileDatas.map((data) => {
+              return {
+                id: data.id,
+              };
+            }), 
+          }
         },
+        include: {
+          MessageFileAttached: true,
+        }
       });
 
       //WSで通知
@@ -255,7 +354,8 @@ export const message = new Elysia({ prefix: "/message" })
     {
       body: t.Object({
         channelId: t.String({ minLength: 1 }),
-        message: t.String({ minLength: 1 }),
+        message: t.String(),
+        fileIds: t.Array(t.String({ minLength: 1 })),
       }),
       detail: {
         description: "メッセージを送信します",

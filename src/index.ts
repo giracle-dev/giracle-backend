@@ -12,6 +12,7 @@ import { wsHandler } from "./ws";
 import { mkdir } from "node:fs/promises";
 import { server } from "./components/Server/server.module";
 await mkdir("./STORAGE", { recursive: true });
+await mkdir("./STORAGE/file", { recursive: true });
 await mkdir("./STORAGE/icon", { recursive: true });
 await mkdir("./STORAGE/banner", { recursive: true });
 
