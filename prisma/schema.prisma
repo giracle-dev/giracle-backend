@@ -8,18 +8,19 @@ datasource db {
 }
 
 model User {
-  id               String            @id @default(uuid())
-  name             String?           @unique
-  selfIntroduction String
-  password         Password?
-  Token            Token[]
-  Channel          Channel[]
-  RoleInfo         RoleInfo[]
-  RoleLink         RoleLink[]
-  ChannelJoin      ChannelJoin[]
-  Message          Message[]
-  Invitation       Invitation[]
-  MessageReadTime  MessageReadTime[]
+  id                  String                @id @default(uuid())
+  name                String?               @unique
+  selfIntroduction    String
+  password            Password?
+  Token               Token[]
+  Channel             Channel[]
+  RoleInfo            RoleInfo[]
+  RoleLink            RoleLink[]
+  ChannelJoin         ChannelJoin[]
+  Message             Message[]
+  Invitation          Invitation[]
+  MessageReadTime     MessageReadTime[]
+  MessageFileAttached MessageFileAttached[]
 }
 
 model Password {
@@ -74,6 +75,7 @@ model Channel {
   Message             Message[]
   ChannelViewableRole ChannelViewableRole[]
   MessageReadTime     MessageReadTime[]
+  MessageFileAttached MessageFileAttached[]
 }
 
 model MessageUrlPreview {
@@ -98,6 +100,20 @@ model MessageReadTime {
   @@id([channelId, userId])
   @@index([userId])
   @@index([channelId])
+}
+
+model MessageFileAttached {
+  id             String  @id @default(uuid())
+  channelId      String
+  channel        Channel @relation(fields: [channelId], references: [id])
+  userId         String
+  user           User    @relation(fields: [userId], references: [id])
+  actualFileName String
+  savedFileName  String
+  size           Int
+
+  @@index([channelId])
+  @@index([userId])
 }
 
 model Message {
