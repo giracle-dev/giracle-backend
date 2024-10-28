@@ -271,6 +271,7 @@ export const channel = new Elysia({ prefix: "/channel" })
         },
         include: {
           MessageUrlPreview: true,
+          MessageFileAttached: true,
         },
         take: fetchLength,
         orderBy: { createdAt: "desc" },
