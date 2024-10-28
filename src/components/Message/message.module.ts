@@ -290,12 +290,12 @@ export const message = new Elysia({ prefix: "/message" })
   .post(
     "/send",
     async ({ body: { channelId, message, fileIds }, _userId, server }) => {
-      //メッセージが空白か改行しか含まれていないならエラー
+      //メッセージが空白か改行しか含まれていないならエラー(ファイル添付があるなら除外)
       const spaceCount =
         (message.match(/ /g) || "").length +
         (message.match(/　/g) || "").length +
         (message.match(/\n/g) || "").length;
-      if (spaceCount === message.length) throw error(400, "Message is empty");
+      if (spaceCount === message.length && fileIds.length === 0) throw error(400, "Message is empty");
 
       //チャンネル参加情報を取得
       const channelJoined = await db.channelJoin.findFirst({
@@ -354,7 +354,7 @@ export const message = new Elysia({ prefix: "/message" })
     {
       body: t.Object({
         channelId: t.String({ minLength: 1 }),
-        message: t.String({ minLength: 1 }),
+        message: t.String(),
         fileIds: t.Array(t.String({ minLength: 1 })),
       }),
       detail: {
