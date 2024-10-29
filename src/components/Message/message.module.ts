@@ -210,7 +210,7 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .get(
     "/search",
-    async ({ query: {content, channelId, userId, hasUrlPreview, loadIndex, sort} }) => {
+    async ({ query: {content, channelId, userId, hasUrlPreview, hasFileAttachment, loadIndex, sort} }) => {
       //もし検索条件がないならエラー
       if (content === undefined && channelId === undefined && userId === undefined && hasUrlPreview === undefined) {
         throw error(400, "No search condition");
@@ -234,10 +234,18 @@ export const message = new Elysia({ prefix: "/message" })
                 not: ""
               }
             },
+          } : undefined,
+          MessageFileAttached: hasUrlPreview ? {
+            some: {
+              size: {
+                not: 0
+              }
+            },
           } : undefined
         },
         include: {
           MessageUrlPreview: true,
+          MessageFileAttached: true,
         },
         take: 50,
         skip: messageSkipping,
@@ -256,7 +264,8 @@ export const message = new Elysia({ prefix: "/message" })
         content: t.Optional(t.String({ minLength: 1 })),
         channelId: t.Optional(t.String({ minLength: 1 })),
         userId: t.Optional(t.String({ minLength: 1 })),
-        hasUrlPreview: t.Optional(t.Boolean()),
+        hasUrlPreview: t.Optional(t.Boolean({default: false})),
+        hasFileAttachment: t.Optional(t.Boolean({default: false})),
         loadIndex: t.Optional(t.Number({ minimum: 1, default: 1 })),
         sort: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
       }),
