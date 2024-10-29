@@ -235,7 +235,7 @@ export const message = new Elysia({ prefix: "/message" })
               }
             },
           } : undefined,
-          MessageFileAttached: hasUrlPreview ? {
+          MessageFileAttached: hasFileAttachment ? {
             some: {
               size: {
                 not: 0
