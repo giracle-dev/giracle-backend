@@ -256,7 +256,7 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .get(
     "/file/:fileId",
-    async ({ params:{ fileId }, _userId }) => {
+    async ({ params:{ fileId } }) => {
       const fileData = await db.messageFileAttached.findUnique({
         where: {
           id: fileId,
@@ -310,7 +310,7 @@ export const message = new Elysia({ prefix: "/message" })
       }
 
       //アップロードしているファイルId配列があるならファイル情報を取得
-      const fileDatas = await db.messageFileAttached.findMany({
+      const fileData = await db.messageFileAttached.findMany({
         where: {
           id: {
             in: fileIds,
@@ -325,7 +325,7 @@ export const message = new Elysia({ prefix: "/message" })
           userId: _userId,
           content: message,
           MessageFileAttached: {
-            connect: fileDatas.map((data) => {
+            connect: fileData.map((data) => {
               return {
                 id: data.id,
               };
