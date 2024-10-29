@@ -1,4 +1,6 @@
+import fs from "node:fs";
 import { unlink } from "node:fs/promises";
+import * as path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
@@ -251,6 +253,37 @@ export const server = new Elysia({ prefix: "/server" })
       }),
       detail: {
         description: "サーバーのバナー画像を変更します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageServer",
+    },
+  )
+  .get(
+    "/storage-usage",
+    async () => {
+      //ディレクトリ一覧を取得
+      const dirs = fs.readdirSync("./STORAGE/file");
+      if (dirs.length === 0) return 0;
+
+      //合計サイズ
+      let totalSize = 0;
+
+      //ディレクトリごとにファイルを取得、パスを格納する
+      for (const dir of dirs) {
+        const insideDir = fs.readdirSync(`./STORAGE/file/${dir}`);
+        for (const f of insideDir) {
+          totalSize += fs.statSync(path.join(`./STORAGE/file/${dir}`, f)).size;
+        }
+      }
+
+      return {
+        message: "Server storage usage fetched",
+        data: totalSize,
+      };
+    },
+    {
+      detail: {
+        description: "サーバーのストレージ使用量を取得します",
         tags: ["Server"],
       },
       checkRoleTerm: "manageServer",

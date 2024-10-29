@@ -7,7 +7,63 @@ const db = new PrismaClient();
 
 export const role = new Elysia({ prefix: "/role" })
   .use(CheckToken)
+  .get(
+    "/search",
+    async ({ query: { name } }) => {
+      const roles = await db.roleInfo.findMany({
+        where: {
+          name: {
+            contains: name,
+          },
+        },
+      });
+
+      return {
+        message: "Role searched",
+        data: roles,
+      };
+    },
+    {
+      query: t.Object({
+        name: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "ロールを検索します",
+        tags: ["Role"],
+      },
+    },
+  )
+  .get(
+    "/get-info/:id",
+    async ({ params: { id } }) => {
+      const role = await db.roleInfo.findUnique({
+        where: {
+          id,
+        },
+      });
+      //ロールが存在しない
+      if (!role) {
+        throw error(404, "Role not found");
+      }
+
+      return {
+        message: "Role fetched",
+        data: role,
+      };
+    },
+    {
+      params: t.Object({
+        id: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "ロール情報を取得します",
+        tags: ["Role"],
+      },
+    },
+  )
+
   .use(checkRoleTerm)
+
   .put(
     "/create",
     async ({ body: { roleName, rolePower }, _userId }) => {
@@ -88,10 +144,17 @@ export const role = new Elysia({ prefix: "/role" })
   )
   .post(
     "/link",
-    async ({ body: { userId, roleId }, _userId }) => {
+    async ({ body: { userId, roleId }, _userId, server }) => {
+      //デフォルトのロールはリンク不可
+      if (roleId === "MEMBER" || roleId === "HOST") {
+        throw error(400, "You cannot link default role");
+      }
+
       //送信者のロールレベルが足りるか確認
-      if (!(await CompareRoleLevelToRole(_userId, roleId))) {
-        throw error(400, "Role level not enough or role not found");
+      if (userId !== _userId) {
+        if (!(await CompareRoleLevelToRole(_userId, roleId))) {
+          throw error(400, "Role level not enough or role not found");
+        }
       }
 
       //リンク済みか確認
@@ -113,6 +176,12 @@ export const role = new Elysia({ prefix: "/role" })
         },
       });
 
+      //WSで通知
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({ signal: "role::Linked", data: { userId, roleId } }),
+      );
+
       return {
         success: true,
         message: "Role linked",
@@ -132,7 +201,7 @@ export const role = new Elysia({ prefix: "/role" })
   )
   .post(
     "/unlink",
-    async ({ body: { userId, roleId }, _userId }) => {
+    async ({ body: { userId, roleId }, _userId, server }) => {
       //デフォルトのロールはリンク取り消し不可
       if (roleId === "MEMBER" || roleId === "HOST") {
         throw error(400, "You cannot unlink default role");
@@ -149,6 +218,12 @@ export const role = new Elysia({ prefix: "/role" })
           roleId,
         },
       });
+
+      //WSで通知
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({ signal: "role::Unlinked", data: { userId, roleId } }),
+      );
 
       return {
         success: true,
