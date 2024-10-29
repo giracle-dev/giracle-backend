@@ -1,8 +1,8 @@
+import { mkdir } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
-import { mkdir } from "node:fs/promises";
 
 const db = new PrismaClient();
 
@@ -241,22 +241,22 @@ export const message = new Elysia({ prefix: "/message" })
         data: {
           fileId: fileData.id,
         },
-      }
+      };
     },
     {
       body: t.Object({
         channelId: t.String({ minLength: 1 }),
-        file: t.File()
+        file: t.File(),
       }),
       detail: {
         description: "ファイルをアップロードします",
         tags: ["Message"],
       },
-    }
+    },
   )
   .get(
     "/file/:fileId",
-    async ({ params:{ fileId } }) => {
+    async ({ params: { fileId } }) => {
       const fileData = await db.messageFileAttached.findUnique({
         where: {
           id: fileId,
@@ -267,7 +267,9 @@ export const message = new Elysia({ prefix: "/message" })
         throw error(404, "File not found");
       }
 
-      const fileBuffer = Bun.file(`./STORAGE/file/${fileData.channelId}/${fileData.savedFileName}`);
+      const fileBuffer = Bun.file(
+        `./STORAGE/file/${fileData.channelId}/${fileData.savedFileName}`,
+      );
 
       //ファイル名を適用させてファイルを返す
       return new Response(fileBuffer, {
@@ -284,7 +286,7 @@ export const message = new Elysia({ prefix: "/message" })
         description: "ファイルをアップロードします",
         tags: ["Message"],
       },
-    }
+    },
   )
   .use(urlPreviewControl)
   .post(
@@ -295,7 +297,8 @@ export const message = new Elysia({ prefix: "/message" })
         (message.match(/ /g) || "").length +
         (message.match(/　/g) || "").length +
         (message.match(/\n/g) || "").length;
-      if (spaceCount === message.length && fileIds.length === 0) throw error(400, "Message is empty");
+      if (spaceCount === message.length && fileIds.length === 0)
+        throw error(400, "Message is empty");
 
       //チャンネル参加情報を取得
       const channelJoined = await db.channelJoin.findFirst({
@@ -314,7 +317,7 @@ export const message = new Elysia({ prefix: "/message" })
         where: {
           id: {
             in: fileIds,
-          }
+          },
         },
       });
 
@@ -329,12 +332,12 @@ export const message = new Elysia({ prefix: "/message" })
               return {
                 id: data.id,
               };
-            }), 
-          }
+            }),
+          },
         },
         include: {
           MessageFileAttached: true,
-        }
+        },
       });
 
       //WSで通知
