@@ -210,7 +210,7 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .get(
     "/search",
-    async ({ query: {content, channelId, userId, hasUrlPreview}, params: { loadIndex } }) => {
+    async ({ query: {content, channelId, userId, hasUrlPreview, loadIndex} }) => {
       //もし検索条件がないならエラー
       if (content === undefined && channelId === undefined && userId === undefined && hasUrlPreview === undefined) {
         throw error(400, "No search condition");
