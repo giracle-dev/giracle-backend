@@ -78,7 +78,7 @@ export const message = new Elysia({ prefix: "/message" })
       });
 
       //チャンネルごとの新着メッセージがあるかどうかを格納するJSON
-      const JSONnews: { [key: string]: boolean } = {};
+      const JSONNews: { [key: string]: boolean } = {};
 
       //チャンネルごとの最新メッセージを取得、比較
       for (const channelId of channelIds) {
@@ -99,20 +99,20 @@ export const message = new Elysia({ prefix: "/message" })
           );
           //存在するなら比較してBooleanを返す、ないならfalse
           if (readTimeData) {
-            JSONnews[channelId] =
+            JSONNews[channelId] =
               newest.createdAt.valueOf() > readTimeData?.readTime.valueOf();
           } else {
-            JSONnews[channelId] = false;
+            JSONNews[channelId] = false;
           }
         } else {
           //存在しないならfalse
-          JSONnews[channelId] = false;
+          JSONNews[channelId] = false;
         }
       }
 
       return {
         message: "Fetched news",
-        data: JSONnews,
+        data: JSONNews,
       };
     },
     {
