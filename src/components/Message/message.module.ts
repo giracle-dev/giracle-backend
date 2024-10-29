@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
+import {mkdir} from "node:fs/promises";
 
 const db = new PrismaClient();
 
