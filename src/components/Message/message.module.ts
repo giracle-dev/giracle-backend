@@ -218,7 +218,7 @@ export const message = new Elysia({ prefix: "/message" })
 
       if (sort === undefined) sort = "desc";
 
-      const messageSkipping = loadIndex ? (loadIndex - 1) * 50 : 0; 
+      const messageSkipping = loadIndex ? (loadIndex - 1) * 50 : 0;
 
       //メッセージを検索する
       const messages = await db.message.findMany({
@@ -239,7 +239,7 @@ export const message = new Elysia({ prefix: "/message" })
             some: {
               size: {
                 not: 0
-              }
+              },
             },
           } : undefined
         },
