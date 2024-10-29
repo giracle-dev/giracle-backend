@@ -210,11 +210,13 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .get(
     "/search",
-    async ({ query: {content, channelId, userId, hasUrlPreview, loadIndex} }) => {
+    async ({ query: {content, channelId, userId, hasUrlPreview, loadIndex, sort} }) => {
       //もし検索条件がないならエラー
       if (content === undefined && channelId === undefined && userId === undefined && hasUrlPreview === undefined) {
         throw error(400, "No search condition");
       }
+
+      if (sort === undefined) sort = "desc";
 
       const messageSkipping = loadIndex ? (loadIndex - 1) * 50 : 0; 
 
@@ -226,12 +228,22 @@ export const message = new Elysia({ prefix: "/message" })
           },
           channelId: channelId ? { equals: channelId } : undefined,
           userId: userId ? { equals: userId } : undefined,
+          MessageUrlPreview: hasUrlPreview ? {
+            some: {
+              url: {
+                not: ""
+              }
+            },
+          } : undefined
         },
         include: {
-          MessageUrlPreview: hasUrlPreview ? true : undefined,
+          MessageUrlPreview: true,
         },
         take: 50,
         skip: messageSkipping,
+        orderBy: {
+          createdAt: sort,
+        },
       });
 
       return {
@@ -246,6 +258,7 @@ export const message = new Elysia({ prefix: "/message" })
         userId: t.Optional(t.String({ minLength: 1 })),
         hasUrlPreview: t.Optional(t.Boolean()),
         loadIndex: t.Optional(t.Number({ minimum: 1, default: 1 })),
+        sort: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
       }),
     }
   )
