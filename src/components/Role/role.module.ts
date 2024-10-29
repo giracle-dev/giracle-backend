@@ -15,7 +15,7 @@ export const role = new Elysia({ prefix: "/role" })
           name: {
             contains: name,
           },
-        }
+        },
       });
 
       return {
@@ -30,8 +30,8 @@ export const role = new Elysia({ prefix: "/role" })
       detail: {
         description: "ロールを検索します",
         tags: ["Role"],
-      }
-    }
+      },
+    },
   )
   .get(
     "/get-info/:id",
@@ -39,7 +39,7 @@ export const role = new Elysia({ prefix: "/role" })
       const role = await db.roleInfo.findUnique({
         where: {
           id,
-        }
+        },
       });
       //ロールが存在しない
       if (!role) {
@@ -58,8 +58,8 @@ export const role = new Elysia({ prefix: "/role" })
       detail: {
         description: "ロール情報を取得します",
         tags: ["Role"],
-      }
-    }
+      },
+    },
   )
 
   .use(checkRoleTerm)
@@ -177,7 +177,10 @@ export const role = new Elysia({ prefix: "/role" })
       });
 
       //WSで通知
-      server?.publish("GLOBAL", JSON.stringify({ signal: "role::Linked", data: { userId, roleId } }));
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({ signal: "role::Linked", data: { userId, roleId } }),
+      );
 
       return {
         success: true,
@@ -217,7 +220,10 @@ export const role = new Elysia({ prefix: "/role" })
       });
 
       //WSで通知
-      server?.publish("GLOBAL", JSON.stringify({ signal: "role::Unlinked", data: { userId, roleId } }));
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({ signal: "role::Unlinked", data: { userId, roleId } }),
+      );
 
       return {
         success: true,
