@@ -351,7 +351,6 @@ export const message = new Elysia({ prefix: "/message" })
         description: "メッセージを削除します",
         tags: ["Message"],
       },
-      bindUrlPreview: true,
     },
   )
   .use(urlPreviewControl)
