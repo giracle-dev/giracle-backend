@@ -78,7 +78,7 @@ export const message = new Elysia({ prefix: "/message" })
       });
 
       //チャンネルごとの新着メッセージがあるかどうかを格納するJSON
-      const JSONnews: { [key: string]: boolean } = {};
+      const JSONNews: { [key: string]: boolean } = {};
 
       //チャンネルごとの最新メッセージを取得、比較
       for (const channelId of channelIds) {
@@ -99,20 +99,20 @@ export const message = new Elysia({ prefix: "/message" })
           );
           //存在するなら比較してBooleanを返す、ないならfalse
           if (readTimeData) {
-            JSONnews[channelId] =
+            JSONNews[channelId] =
               newest.createdAt.valueOf() > readTimeData?.readTime.valueOf();
           } else {
-            JSONnews[channelId] = false;
+            JSONNews[channelId] = false;
           }
         } else {
           //存在しないならfalse
-          JSONnews[channelId] = false;
+          JSONNews[channelId] = false;
         }
       }
 
       return {
         message: "Fetched news",
-        data: JSONnews,
+        data: JSONNews,
       };
     },
     {
@@ -206,6 +206,86 @@ export const message = new Elysia({ prefix: "/message" })
         description: "既読時間の設定を更新します",
         tags: ["Message"],
       },
+    },
+  )
+  .get(
+    "/search",
+    async ({
+      query: {
+        content,
+        channelId,
+        userId,
+        hasUrlPreview,
+        hasFileAttachment,
+        loadIndex,
+        sort,
+      },
+    }) => {
+      //もし検索条件がないならエラー
+      /*
+      if (content === undefined && channelId === undefined && userId === undefined && hasUrlPreview === undefined) {
+        throw error(400, "No search condition");
+      }
+      */
+
+      //デフォルトのソート順を設定
+      if (sort === undefined) sort = "desc";
+      //読み込みインデックス指定があるならスキップするメッセ数を計算
+      const messageSkipping = loadIndex ? (loadIndex - 1) * 50 : 0;
+
+      //URLプレビューがあるかどうかの条件を変換
+      const relationOptionGetter = (_opt: boolean | undefined) => {
+        switch (_opt) {
+          case undefined:
+            return undefined;
+          case true:
+            return {
+              some: {},
+            };
+          case false:
+            return {
+              none: {},
+            };
+        }
+      };
+
+      //メッセージを検索する
+      const messages = await db.message.findMany({
+        where: {
+          content: {
+            contains: content,
+          },
+          channelId: channelId ? { equals: channelId } : undefined,
+          userId: userId ? { equals: userId } : undefined,
+          MessageUrlPreview: relationOptionGetter(hasUrlPreview),
+          MessageFileAttached: relationOptionGetter(hasFileAttachment),
+        },
+        include: {
+          MessageUrlPreview: true,
+          MessageFileAttached: true,
+        },
+        take: 50,
+        skip: messageSkipping,
+        orderBy: {
+          createdAt: sort,
+        },
+      });
+
+      return {
+        message: "Searched messages",
+        data: messages,
+      };
+    },
+    {
+      query: t.Object({
+        content: t.Optional(t.String({ minLength: 1 })),
+        channelId: t.Optional(t.String({ minLength: 1 })),
+        userId: t.Optional(t.String({ minLength: 1 })),
+        hasUrlPreview: t.Optional(t.Union([t.Boolean(), t.Undefined()])),
+        hasFileAttachment: t.Optional(t.Union([t.Boolean(), t.Undefined()])),
+        loadIndex: t.Optional(t.Number({ minimum: 1, default: 1 })),
+        sort: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
+      }),
     },
   )
   .post(
