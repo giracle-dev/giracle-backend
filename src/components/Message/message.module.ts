@@ -1,8 +1,8 @@
+import { mkdir } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
-import {mkdir} from "node:fs/promises";
 
 const db = new PrismaClient();
 
@@ -210,14 +210,27 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .get(
     "/search",
-    async ({ query: {content, channelId, userId, hasUrlPreview, hasFileAttachment, loadIndex, sort} }) => {
+    async ({
+      query: {
+        content,
+        channelId,
+        userId,
+        hasUrlPreview,
+        hasFileAttachment,
+        loadIndex,
+        sort,
+      },
+    }) => {
       //もし検索条件がないならエラー
+      /*
       if (content === undefined && channelId === undefined && userId === undefined && hasUrlPreview === undefined) {
         throw error(400, "No search condition");
       }
+      */
 
+      //デフォルトのソート順を設定
       if (sort === undefined) sort = "desc";
-
+      //読み込みインデックス指定があるならスキップするメッセ数を計算
       const messageSkipping = loadIndex ? (loadIndex - 1) * 50 : 0;
 
       //URLプレビューがあるかどうかの条件を変換
@@ -268,12 +281,12 @@ export const message = new Elysia({ prefix: "/message" })
         content: t.Optional(t.String({ minLength: 1 })),
         channelId: t.Optional(t.String({ minLength: 1 })),
         userId: t.Optional(t.String({ minLength: 1 })),
-        hasUrlPreview: t.Optional( t.Union( [t.Boolean(), t.Undefined()]) ),
-        hasFileAttachment: t.Optional( t.Union([t.Boolean(), t.Undefined()]) ),
+        hasUrlPreview: t.Optional(t.Union([t.Boolean(), t.Undefined()])),
+        hasFileAttachment: t.Optional(t.Union([t.Boolean(), t.Undefined()])),
         loadIndex: t.Optional(t.Number({ minimum: 1, default: 1 })),
         sort: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
       }),
-    }
+    },
   )
   .post(
     "/file/upload",
