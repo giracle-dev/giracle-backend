@@ -1,10 +1,12 @@
-import {PrismaClient} from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 /**
  * ユーザーのロールレベルを取得する関数
  * @param _userId
  */
-export default async function getUsersRoleLevel(_userId: string): Promise<number> {
+export default async function getUsersRoleLevel(
+  _userId: string,
+): Promise<number> {
   const db = new PrismaClient();
 
   //ユーザー情報を付与されたロールと同時に取得
