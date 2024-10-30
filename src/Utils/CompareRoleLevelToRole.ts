@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import getUsersRoleLevel from "./getUsersRoleLevel";
 
 const levelIndex = {
   manageServer: 5,
@@ -21,21 +22,6 @@ export default async function CompareRoleLevelToRole(
   if (_roleId === "HOST") return false;
 
   const db = new PrismaClient();
-  //送信者のユーザー情報を付与されたロールと同時に取得
-  const userWithRoles = await db.user.findUnique({
-    where: {
-      id: _userId,
-    },
-    include: {
-      RoleLink: {
-        include: {
-          role: true,
-        },
-      },
-    },
-  });
-  //ユーザーが存在しない場合はfalseを返す
-  if (userWithRoles === null) return false;
 
   //対象のロール情報を取得
   const role = await db.roleInfo.findUnique({
@@ -46,28 +32,7 @@ export default async function CompareRoleLevelToRole(
   //対象ロールが見つからなかったらfalseを返す
   if (role === null) return false;
 
-  //送信者のロールレベル用変数
-  let userRoleLevel = 0;
-  //送信者のロール分ループしてレベルを計算(高ければ格納)
-  for (const roleData of userWithRoles.RoleLink) {
-    if (roleData.role.manageServer) {
-      //管理者権限を持つユーザーなら問答無用でtrueを返す
-      userRoleLevel = 5;
-      return true;
-    }
-
-    if (roleData.role.manageRole && userRoleLevel < 4) {
-      userRoleLevel = 4;
-      continue;
-    }
-    if (roleData.role.manageUser && userRoleLevel < 3) {
-      userRoleLevel = 3;
-      continue;
-    }
-    if (roleData.role.manageChannel && userRoleLevel < 2) {
-      userRoleLevel = 2;
-    }
-  }
+  const userRoleLevel = await getUsersRoleLevel(_userId);
 
   //対象のロールのレベル用変数
   let targetRoleLevel = 0;
