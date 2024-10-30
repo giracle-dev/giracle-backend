@@ -220,6 +220,22 @@ export const message = new Elysia({ prefix: "/message" })
 
       const messageSkipping = loadIndex ? (loadIndex - 1) * 50 : 0;
 
+      //URLプレビューがあるかどうかの条件を変換
+      const relationOptionGetter = (_opt: boolean | undefined) => {
+        switch (_opt) {
+          case undefined:
+            return undefined;
+          case true:
+            return {
+              some: {},
+            };
+          case false:
+            return {
+              none: {},
+            };
+        }
+      };
+
       //メッセージを検索する
       const messages = await db.message.findMany({
         where: {
@@ -228,20 +244,8 @@ export const message = new Elysia({ prefix: "/message" })
           },
           channelId: channelId ? { equals: channelId } : undefined,
           userId: userId ? { equals: userId } : undefined,
-          MessageUrlPreview: hasUrlPreview ? {
-            some: {
-              url: {
-                not: ""
-              }
-            },
-          } : undefined,
-          MessageFileAttached: hasFileAttachment ? {
-            some: {
-              size: {
-                not: 0
-              },
-            },
-          } : undefined
+          MessageUrlPreview: relationOptionGetter(hasUrlPreview),
+          MessageFileAttached: relationOptionGetter(hasFileAttachment),
         },
         include: {
           MessageUrlPreview: true,
@@ -264,8 +268,8 @@ export const message = new Elysia({ prefix: "/message" })
         content: t.Optional(t.String({ minLength: 1 })),
         channelId: t.Optional(t.String({ minLength: 1 })),
         userId: t.Optional(t.String({ minLength: 1 })),
-        hasUrlPreview: t.Optional(t.Boolean({default: false})),
-        hasFileAttachment: t.Optional(t.Boolean({default: false})),
+        hasUrlPreview: t.Optional( t.Union( [t.Boolean(), t.Undefined()]) ),
+        hasFileAttachment: t.Optional( t.Union([t.Boolean(), t.Undefined()]) ),
         loadIndex: t.Optional(t.Number({ minimum: 1, default: 1 })),
         sort: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
       }),
