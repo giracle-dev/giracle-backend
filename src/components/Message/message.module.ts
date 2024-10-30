@@ -1,10 +1,9 @@
 import { mkdir } from "node:fs/promises";
+import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
-import { unlink } from "node:fs/promises";
-
 
 const db = new PrismaClient();
 
@@ -416,142 +415,13 @@ export const message = new Elysia({ prefix: "/message" })
       });
 
       //WSで通知
-      server?.publish("GLOBAL", JSON.stringify({
-        signal: "message::MessageDeleted",
-        data: messageData.id,
-      }));
-
-      return {
-        message: "Message deleted",
-        data: messageData.id,
-      };
-    },
-    {
-      body: t.Object({
-        messageId: t.String({ minLength: 1 }),
-      }),
-      detail: {
-        description: "メッセージを削除します",
-        tags: ["Message"],
-      },
-    },
-  )
-  .delete(
-    "/delete",
-    async ({ body: { messageId }, _userId, server }) => {
-      //取得
-      const messageData = await db.message.findUnique({
-        where: {
-          id: messageId,
-        },
-      });
-      if (messageData === null) {
-        throw error(404, "Message not found");
-      }
-      if (messageData.userId !== _userId) {
-        throw error(403, "You are not owner of this message");
-      }
-
-      //URLプレビューの削除
-      await db.messageUrlPreview.deleteMany({
-        where: {
-          messageId,
-        },
-      });
-      //ファイル情報の取得、削除
-      const fileData = await db.messageFileAttached.findMany({
-        where: {
-          messageId,
-        },
-      });
-      for (const file of fileData) {
-        await unlink(`./STORAGE/file/${file.channelId}/${file.savedFileName}`);
-      }
-      //添付ファイル情報の削除
-      await db.messageFileAttached.deleteMany({
-        where: {
-          messageId,
-        },
-      });
-
-      //メッセージの削除
-      await db.message.delete({
-        where: {
-          id: messageId,
-        },
-      });
-
-      //WSで通知
-      server?.publish("GLOBAL", JSON.stringify({
-        signal: "message::MessageDeleted",
-        data: messageData.id,
-      }));
-
-      return {
-        message: "Message deleted",
-        data: messageData.id,
-      };
-    },
-    {
-      body: t.Object({
-        messageId: t.String({ minLength: 1 }),
-      }),
-      detail: {
-        description: "メッセージを削除します",
-        tags: ["Message"],
-      },
-    },
-  )
-  .delete(
-    "/delete",
-    async ({ body: { messageId }, _userId, server }) => {
-      //取得
-      const messageData = await db.message.findUnique({
-        where: {
-          id: messageId,
-        },
-      });
-      if (messageData === null) {
-        throw error(404, "Message not found");
-      }
-      if (messageData.userId !== _userId) {
-        throw error(403, "You are not owner of this message");
-      }
-
-      //URLプレビューの削除
-      await db.messageUrlPreview.deleteMany({
-        where: {
-          messageId,
-        },
-      });
-      //ファイル情報の取得、削除
-      const fileData = await db.messageFileAttached.findMany({
-        where: {
-          messageId,
-        },
-      });
-      for (const file of fileData) {
-        await unlink(`./STORAGE/file/${file.channelId}/${file.savedFileName}`);
-      }
-      //添付ファイル情報の削除
-      await db.messageFileAttached.deleteMany({
-        where: {
-          messageId,
-        },
-      });
-
-      //メッセージの削除
-      await db.message.delete({
-        where: {
-          id: messageId,
-        },
-      });
-
-      //WSで通知
-      server?.publish("GLOBAL", JSON.stringify({
-        signal: "message::MessageDeleted",
-        data: messageData.id,
-      }));
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "message::MessageDeleted",
+          data: messageData.id,
+        }),
+      );
 
       return {
         message: "Message deleted",
