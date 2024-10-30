@@ -222,13 +222,6 @@ export const message = new Elysia({ prefix: "/message" })
         sort,
       },
     }) => {
-      //もし検索条件がないならエラー
-      /*
-      if (content === undefined && channelId === undefined && userId === undefined && hasUrlPreview === undefined) {
-        throw error(400, "No search condition");
-      }
-      */
-
       //デフォルトのソート順を設定
       if (sort === undefined) sort = "desc";
       //読み込みインデックス指定があるならスキップするメッセ数を計算
