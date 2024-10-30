@@ -280,6 +280,10 @@ export const message = new Elysia({ prefix: "/message" })
         loadIndex: t.Optional(t.Number({ minimum: 1, default: 1 })),
         sort: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
       }),
+      detail: {
+        description: "メッセージを検索します",
+        tags: ["Message"],
+      },
     },
   )
   .post(
