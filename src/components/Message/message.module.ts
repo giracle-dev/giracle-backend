@@ -126,7 +126,7 @@ export const message = new Elysia({ prefix: "/message" })
   .get(
     "/read-time/get",
     async ({ _userId }) => {
-      const readTime = await db.messageReadTime.findFirst({
+      const readTime = await db.messageReadTime.findMany({
         where: {
           userId: _userId,
         },
