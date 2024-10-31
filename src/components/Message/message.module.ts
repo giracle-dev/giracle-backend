@@ -131,6 +131,10 @@ export const message = new Elysia({ prefix: "/message" })
           userId: _userId,
         },
       });
+      //既読時間がない場合はエラー
+      if (readTime === null) {
+        throw error(404, "Read time not found");
+      }
 
       return {
         message: "Fetched read time",
