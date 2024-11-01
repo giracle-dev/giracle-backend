@@ -2,11 +2,13 @@ import { type Channel, PrismaClient } from "@prisma/client";
 
 /**
  * 指定のユーザーが閲覧できるチャンネル情報を取得する
- * @param _userId
+ * @param _userId - ユーザーId
+ * @param _onlyJoinedChannel - 参加しているチャンネルのみを取得するか
  * @returns
  */
 export default async function GetUserViewableChannel(
   _userId: string,
+  _onlyJoinedChannel = false,
 ): Promise<Channel[]> {
   //PrismaClientのインスタンスを作成
   const db = new PrismaClient();
@@ -26,27 +28,34 @@ export default async function GetUserViewableChannel(
   //このユーザーが見れるチャンネルIdを取得
   const viewableChannel = (await db.channel.findMany({
     where: {
-      OR: [
+      AND: [
         {
-          createdUserId: _userId,
-        },
-        {
-          ChannelViewableRole: {
-            some: {
-              roleId: {
-                in: userRoleIds,
+          OR: [ //ここで見れるチャンネルをすべて抜き出す
+            { //チャンネル作成者は見れる
+              createdUserId: _userId,
+            },
+            { //閲覧ロールが設定されているもので自分のロールがあるなら見れる
+              ChannelViewableRole: {
+                some: {
+                  roleId: {
+                    in: userRoleIds,
+                  },
+                },
               },
             },
-          },
+          ],
         },
         {
-          ChannelJoin: {
-            some: {
-              userId: _userId,
-            },
-          },
-        },
-      ],
+        !_onlyJoinedChannel //参加しているチャンネルのみを取得する場合はチャンネルに参加しているか確認
+            ? {
+                ChannelJoin: {
+                  some: {
+                    userId: _userId,
+                  },
+                },
+              }
+            : {},
+      ]
     },
   })) as Channel[];
 
