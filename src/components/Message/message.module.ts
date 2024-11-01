@@ -242,7 +242,7 @@ export const message = new Elysia({ prefix: "/message" })
           throw error(403, "You are not allowed to view this channel");
         }
       } else {
-        const viewableChannels = await GetUserViewableChannel(_userId);
+        const viewableChannels = await GetUserViewableChannel(_userId, false);
         viewableChannelIds = viewableChannels.map((channel) => channel.id);
       }
 
