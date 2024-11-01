@@ -2,10 +2,12 @@ import { type Channel, PrismaClient } from "@prisma/client";
 
 /**
  * 指定のユーザーが閲覧できるチャンネル情報を取得する
- * @param _userId 
- * @returns 
+ * @param _userId
+ * @returns
  */
-export default async function GetUserViewableChannel(_userId: string): Promise<Channel[]> {
+export default async function GetUserViewableChannel(
+  _userId: string,
+): Promise<Channel[]> {
   //PrismaClientのインスタンスを作成
   const db = new PrismaClient();
 
@@ -22,7 +24,7 @@ export default async function GetUserViewableChannel(_userId: string): Promise<C
   const userRoleIds = userRolesLinks.map((role) => role.roleId);
 
   //このユーザーが見れるチャンネルIdを取得
-  const viewableChannel =await db.channel.findMany({
+  const viewableChannel = (await db.channel.findMany({
     where: {
       OR: [
         {
@@ -32,10 +34,10 @@ export default async function GetUserViewableChannel(_userId: string): Promise<C
           ChannelViewableRole: {
             some: {
               roleId: {
-                in: userRoleIds
-              }
+                in: userRoleIds,
+              },
             },
-          }
+          },
         },
         {
           ChannelJoin: {
@@ -46,7 +48,7 @@ export default async function GetUserViewableChannel(_userId: string): Promise<C
         },
       ],
     },
-  }) as Channel[];
+  })) as Channel[];
 
   return viewableChannel;
 }

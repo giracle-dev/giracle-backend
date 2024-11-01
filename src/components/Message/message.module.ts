@@ -226,7 +226,7 @@ export const message = new Elysia({ prefix: "/message" })
         loadIndex,
         sort,
       },
-      _userId
+      _userId,
     }) => {
       //デフォルトのソート順を設定
       if (sort === undefined) sort = "desc";
@@ -268,7 +268,9 @@ export const message = new Elysia({ prefix: "/message" })
           content: {
             contains: content,
           },
-          channelId: channelId ? { equals: channelId } : { in: viewableChannelIds },
+          channelId: channelId
+            ? { equals: channelId }
+            : { in: viewableChannelIds },
           userId: userId ? { equals: userId } : undefined,
           MessageUrlPreview: relationOptionGetter(hasUrlPreview),
           MessageFileAttached: relationOptionGetter(hasFileAttachment),
