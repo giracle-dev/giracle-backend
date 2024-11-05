@@ -141,7 +141,7 @@ export const user = new Elysia({ prefix: "/user" })
       //パスワードが設定されていない場合
       if (!user.password) {
         return error(400, {
-          message: "Interlal error",
+          message: "Internal error",
         });
       }
 
