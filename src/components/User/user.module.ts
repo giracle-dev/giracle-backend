@@ -76,7 +76,7 @@ export const user = new Elysia({ prefix: "/user" })
       const salt = crypto.randomBytes(16).toString("hex");
       const passwordHashed = await Bun.password.hash(password + salt);
       //DBへユーザー情報を登録
-      await db.user.create({
+      const createdUser = await db.user.create({
         data: {
           name: username,
           selfIntroduction: `こんにちは、${username}です。`,
@@ -93,6 +93,17 @@ export const user = new Elysia({ prefix: "/user" })
           },
         },
       });
+
+      //デフォルトで参加するチャンネルに参加させる
+      const channelJoinOnDefault = await db.channelJoinOnDefault.findMany({});
+      for (const channelIdJson of channelJoinOnDefault) {
+        await db.channelJoin.create({
+          data: {
+            userId: createdUser.id,
+            channelId: channelIdJson.channelId
+          }
+        });
+      }
 
       return {
         message: "User created",
