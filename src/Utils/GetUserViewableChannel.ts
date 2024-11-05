@@ -1,4 +1,4 @@
-import {type Channel, PrismaClient} from "@prisma/client";
+import { type Channel, PrismaClient } from "@prisma/client";
 
 /**
  * 指定のユーザーが閲覧できるチャンネル情報を取得する
@@ -64,17 +64,17 @@ export default async function GetUserViewableChannel(
                   userId: _userId,
                 },
               },
-            }
+            },
           ],
         },
         _onlyJoinedChannel //参加しているチャンネルのみを取得する場合はチャンネルに参加しているか確認
           ? {
-            ChannelJoin: {
-              some: {
-                userId: _userId,
+              ChannelJoin: {
+                some: {
+                  userId: _userId,
+                },
               },
-            },
-          }
+            }
           : {},
       ],
     },
