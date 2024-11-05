@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
+import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 
 const db = new PrismaClient();
 
@@ -225,11 +226,25 @@ export const message = new Elysia({ prefix: "/message" })
         loadIndex,
         sort,
       },
+      _userId,
     }) => {
       //デフォルトのソート順を設定
       if (sort === undefined) sort = "desc";
       //読み込みインデックス指定があるならスキップするメッセ数を計算
       const messageSkipping = loadIndex ? (loadIndex - 1) * 50 : 0;
+
+      //チャンネル指定が無かった時用のユーザーが閲覧できるチャンネルId配列
+      let viewableChannelIds: string[] = [];
+      //チャンネル指定があるなら閲覧制限を確認する、無いならユーザーが閲覧できるチャンネルを取得
+      if (channelId) {
+        //チャンネルの閲覧制限があるか確認
+        if (!(await CheckChannelVisibility(channelId, _userId))) {
+          throw error(403, "You are not allowed to view this channel");
+        }
+      } else {
+        const viewableChannels = await GetUserViewableChannel(_userId, false);
+        viewableChannelIds = viewableChannels.map((channel) => channel.id);
+      }
 
       //URLプレビューがあるかどうかの条件を変換
       const relationOptionGetter = (_opt: boolean | undefined) => {
@@ -253,7 +268,9 @@ export const message = new Elysia({ prefix: "/message" })
           content: {
             contains: content,
           },
-          channelId: channelId ? { equals: channelId } : undefined,
+          channelId: channelId
+            ? { equals: channelId }
+            : { in: viewableChannelIds },
           userId: userId ? { equals: userId } : undefined,
           MessageUrlPreview: relationOptionGetter(hasUrlPreview),
           MessageFileAttached: relationOptionGetter(hasFileAttachment),
