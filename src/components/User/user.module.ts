@@ -100,8 +100,8 @@ export const user = new Elysia({ prefix: "/user" })
         await db.channelJoin.create({
           data: {
             userId: createdUser.id,
-            channelId: channelIdJson.channelId
-          }
+            channelId: channelIdJson.channelId,
+          },
         });
       }
 

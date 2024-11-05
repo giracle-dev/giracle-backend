@@ -2,8 +2,8 @@ import { type Message, PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
-import { WSSubscribe, WSUnsubscribe } from "../../ws";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
+import { WSSubscribe, WSUnsubscribe } from "../../ws";
 
 const db = new PrismaClient();
 
@@ -132,7 +132,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .get(
     "/get-info/:channelId",
-    async ({ params: {channelId} }) => {
+    async ({ params: { channelId } }) => {
       const channelData = await db.channel.findUnique({
         where: {
           id: channelId,
@@ -156,12 +156,11 @@ export const channel = new Elysia({ prefix: "/channel" })
         description: "チャンネル単体の情報を取得します",
         tags: ["Channel"],
       },
-    }
+    },
   )
   .get(
     "/list",
-    async ({ _userId }) =>
-    {
+    async ({ _userId }) => {
       //ロール閲覧制限のないチャンネルリストから取得
       const channelList = await db.channel.findMany({
         where: {
@@ -381,28 +380,28 @@ export const channel = new Elysia({ prefix: "/channel" })
       const channelInfos = await db.channel.findMany({
         where: {
           name: {
-            contains: query
+            contains: query,
           },
           id: {
-            in: channelIdsViewable
-          }
-        }
+            in: channelIdsViewable,
+          },
+        },
       });
 
       return {
         message: "Searched channels",
-        data: channelInfos
+        data: channelInfos,
       };
     },
     {
       query: t.Object({
-        query: t.String()
+        query: t.String(),
       }),
       detail: {
         description: "チャンネル情報を検索します",
         tags: ["Channel"],
       },
-    }
+    },
   )
 
   .use(checkRoleTerm)

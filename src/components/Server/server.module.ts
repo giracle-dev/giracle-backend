@@ -21,10 +21,12 @@ export const server = new Elysia({ prefix: "/server" })
       //デフォルトで参加するチャンネル
       const defaultJoinChannelFetched = await db.channelJoinOnDefault.findMany({
         select: {
-          channel: true
-        }
+          channel: true,
+        },
       });
-      const defaultJoinChannel = defaultJoinChannelFetched.map((c) => c.channel);
+      const defaultJoinChannel = defaultJoinChannelFetched.map(
+        (c) => c.channel,
+      );
 
       return {
         message: "Server config fetched",
@@ -184,7 +186,12 @@ export const server = new Elysia({ prefix: "/server" })
   .post(
     "/change-config",
     async ({
-      body: { RegisterAvailable, RegisterInviteOnly, MessageMaxLength, DefaultJoinChannel },
+      body: {
+        RegisterAvailable,
+        RegisterInviteOnly,
+        MessageMaxLength,
+        DefaultJoinChannel,
+      },
       server,
     }) => {
       await db.serverConfig.updateMany({
@@ -203,8 +210,8 @@ export const server = new Elysia({ prefix: "/server" })
         for (const channelId of DefaultJoinChannel) {
           await db.channelJoinOnDefault.create({
             data: {
-              channelId
-            }
+              channelId,
+            },
           });
         }
       }
