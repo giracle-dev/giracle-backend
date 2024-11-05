@@ -46,21 +46,28 @@ export default async function GetUserViewableChannel(
                 },
               },
             },
-          ],
-        },
-        {
-          //チャンネルの閲覧限定ロールが設定されているもので、自分のロールが含まれないものは見れない
-          NOT: {
-            ChannelViewableRole: {
-              some: {
-                roleId: {
-                  notIn: userRoleIds,
+            {
+              //チャンネルの閲覧限定ロールが設定されているもので、自分のロールが含まれないものは見れない
+              NOT: {
+                ChannelViewableRole: {
+                  some: {
+                    roleId: {
+                      notIn: userRoleIds,
+                    },
+                  },
                 },
               },
             },
-          },
+            {
+              ChannelJoin: {
+                some: {
+                  userId: _userId,
+                },
+              },
+            }
+          ],
         },
-        !_onlyJoinedChannel //参加しているチャンネルのみを取得する場合はチャンネルに参加しているか確認
+        _onlyJoinedChannel //参加しているチャンネルのみを取得する場合はチャンネルに参加しているか確認
           ? {
             ChannelJoin: {
               some: {
