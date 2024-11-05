@@ -131,6 +131,34 @@ export const channel = new Elysia({ prefix: "/channel" })
     },
   )
   .get(
+    "/get-info/:channelId",
+    async ({ params: {channelId} }) => {
+      const channelData = await db.channel.findUnique({
+        where: {
+          id: channelId,
+        },
+      });
+
+      if (channelData === null) {
+        return error(404, "Channel not found");
+      }
+
+      return {
+        message: "Channel info ready",
+        data: channelData,
+      };
+    },
+    {
+      params: t.Object({
+        channelId: t.String(),
+      }),
+      detail: {
+        description: "チャンネル単体の情報を取得します",
+        tags: ["Channel"],
+      },
+    }
+  )
+  .get(
     "/list",
     async ({ _userId }) =>
     {
