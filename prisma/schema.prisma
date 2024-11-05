@@ -65,17 +65,18 @@ model ChannelJoin {
 }
 
 model Channel {
-  id                  String                @id @default(uuid())
-  name                String                @unique
-  description         String
-  isArchived          Boolean               @default(false)
-  createdUserId       String
-  user                User                  @relation(fields: [createdUserId], references: [id])
-  ChannelJoin         ChannelJoin[]
-  Message             Message[]
-  ChannelViewableRole ChannelViewableRole[]
-  MessageReadTime     MessageReadTime[]
-  MessageFileAttached MessageFileAttached[]
+  id                   String                @id @default(uuid())
+  name                 String                @unique
+  description          String
+  isArchived           Boolean               @default(false)
+  createdUserId        String
+  user                 User                  @relation(fields: [createdUserId], references: [id])
+  ChannelJoin          ChannelJoin[]
+  Message              Message[]
+  ChannelViewableRole  ChannelViewableRole[]
+  MessageReadTime      MessageReadTime[]
+  MessageFileAttached  MessageFileAttached[]
+  ChannelJoinOnDefault ChannelJoinOnDefault?
 }
 
 model MessageUrlPreview {
@@ -171,6 +172,12 @@ model Invitation {
   expireDate    DateTime @default(dbgenerated("(datetime('now', '+1 day'))"))
   user          User     @relation(fields: [createdUserId], references: [id])
   usedCount     Int      @default(0)
+}
+
+model ChannelJoinOnDefault {
+  id        Int     @id @default(autoincrement())
+  channelId String  @unique
+  channel   Channel @relation(fields: [channelId], references: [id])
 }
 
 model ServerConfig {
