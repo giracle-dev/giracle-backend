@@ -298,7 +298,7 @@ export const user = new Elysia({ prefix: "/user" })
       await unlink(`./STORAGE/icon/${_userId}.jpeg`).catch(() => {});
 
       //アイコンを保存
-      Bun.write(`./STORAGE/icon/${_userId}.${ext}`, icon);
+      await Bun.write(`./STORAGE/icon/${_userId}.${ext}`, icon);
       return {
         message: "Icon changed",
       };
@@ -335,7 +335,7 @@ export const user = new Elysia({ prefix: "/user" })
       await unlink(`./STORAGE/banner/${_userId}.jpeg`).catch(() => {});
 
       //アイコンを保存
-      Bun.write(`./STORAGE/banner/${_userId}.${ext}`, banner);
+      await Bun.write(`./STORAGE/banner/${_userId}.${ext}`, banner);
       return {
         message: "Banner changed",
       };
