@@ -18,10 +18,12 @@ export const server = new Elysia({ prefix: "/server" })
         skip: 1,
       });
       const isFirstUser = firstUser === null;
+      //デフォルトで参加するチャンネル
+      const defaultJoinChannel = await db.channelJoinOnDefault.findMany({});
 
       return {
         message: "Server config fetched",
-        data: { ...config, isFirstUser, id: undefined }, // idは返さない,
+        data: { ...config, isFirstUser, defaultJoinChannel, id: undefined }, // idは返さない,
       };
     },
     {
