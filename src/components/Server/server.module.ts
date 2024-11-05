@@ -18,10 +18,19 @@ export const server = new Elysia({ prefix: "/server" })
         skip: 1,
       });
       const isFirstUser = firstUser === null;
+      //デフォルトで参加するチャンネル
+      const defaultJoinChannelFetched = await db.channelJoinOnDefault.findMany({
+        select: {
+          channel: true,
+        },
+      });
+      const defaultJoinChannel = defaultJoinChannelFetched.map(
+        (c) => c.channel,
+      );
 
       return {
         message: "Server config fetched",
-        data: { ...config, isFirstUser, id: undefined }, // idは返さない,
+        data: { ...config, isFirstUser, defaultJoinChannel, id: undefined }, // idは返さない,
       };
     },
     {
@@ -177,7 +186,12 @@ export const server = new Elysia({ prefix: "/server" })
   .post(
     "/change-config",
     async ({
-      body: { RegisterAvailable, RegisterInviteOnly, MessageMaxLength },
+      body: {
+        RegisterAvailable,
+        RegisterInviteOnly,
+        MessageMaxLength,
+        DefaultJoinChannel,
+      },
       server,
     }) => {
       await db.serverConfig.updateMany({
@@ -187,6 +201,20 @@ export const server = new Elysia({ prefix: "/server" })
           MessageMaxLength,
         },
       });
+
+      //デフォルト参加チャンネル設定もあるなら更新する
+      if (DefaultJoinChannel) {
+        //デフォルト参加チャンネル全部削除
+        await db.channelJoinOnDefault.deleteMany({});
+        //渡されたチャンネルIdごとにDBへ挿入
+        for (const channelId of DefaultJoinChannel) {
+          await db.channelJoinOnDefault.create({
+            data: {
+              channelId,
+            },
+          });
+        }
+      }
 
       //ここでデータ取得
       const serverinfo = await db.serverConfig.findFirst();
@@ -211,6 +239,7 @@ export const server = new Elysia({ prefix: "/server" })
         RegisterAvailable: t.Optional(t.Boolean()),
         RegisterInviteOnly: t.Optional(t.Boolean()),
         MessageMaxLength: t.Optional(t.Number()),
+        DefaultJoinChannel: t.Optional(t.Array(t.String())),
       }),
       detail: {
         description: "サーバーの設定を変更します",

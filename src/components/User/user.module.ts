@@ -76,7 +76,7 @@ export const user = new Elysia({ prefix: "/user" })
       const salt = crypto.randomBytes(16).toString("hex");
       const passwordHashed = await Bun.password.hash(password + salt);
       //DBへユーザー情報を登録
-      await db.user.create({
+      const createdUser = await db.user.create({
         data: {
           name: username,
           selfIntroduction: `こんにちは、${username}です。`,
@@ -93,6 +93,17 @@ export const user = new Elysia({ prefix: "/user" })
           },
         },
       });
+
+      //デフォルトで参加するチャンネルに参加させる
+      const channelJoinOnDefault = await db.channelJoinOnDefault.findMany({});
+      for (const channelIdJson of channelJoinOnDefault) {
+        await db.channelJoin.create({
+          data: {
+            userId: createdUser.id,
+            channelId: channelIdJson.channelId,
+          },
+        });
+      }
 
       return {
         message: "User created",
@@ -130,7 +141,7 @@ export const user = new Elysia({ prefix: "/user" })
       //パスワードが設定されていない場合
       if (!user.password) {
         return error(400, {
-          message: "Interlal error",
+          message: "Internal error",
         });
       }
 
@@ -287,7 +298,7 @@ export const user = new Elysia({ prefix: "/user" })
       await unlink(`./STORAGE/icon/${_userId}.jpeg`).catch(() => {});
 
       //アイコンを保存
-      Bun.write(`./STORAGE/icon/${_userId}.${ext}`, icon);
+      await Bun.write(`./STORAGE/icon/${_userId}.${ext}`, icon);
       return {
         message: "Icon changed",
       };
@@ -324,7 +335,7 @@ export const user = new Elysia({ prefix: "/user" })
       await unlink(`./STORAGE/banner/${_userId}.jpeg`).catch(() => {});
 
       //アイコンを保存
-      Bun.write(`./STORAGE/banner/${_userId}.${ext}`, banner);
+      await Bun.write(`./STORAGE/banner/${_userId}.${ext}`, banner);
       return {
         message: "Banner changed",
       };

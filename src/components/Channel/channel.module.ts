@@ -2,6 +2,7 @@ import { type Message, PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
+import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 import { WSSubscribe, WSUnsubscribe } from "../../ws";
 
 const db = new PrismaClient();
@@ -126,6 +127,34 @@ export const channel = new Elysia({ prefix: "/channel" })
           message: t.Literal("Channel left"),
         }),
         400: t.Literal("You are not joined this channel"),
+      },
+    },
+  )
+  .get(
+    "/get-info/:channelId",
+    async ({ params: { channelId } }) => {
+      const channelData = await db.channel.findUnique({
+        where: {
+          id: channelId,
+        },
+      });
+
+      if (channelData === null) {
+        return error(404, "Channel not found");
+      }
+
+      return {
+        message: "Channel info ready",
+        data: channelData,
+      };
+    },
+    {
+      params: t.Object({
+        channelId: t.String(),
+      }),
+      detail: {
+        description: "チャンネル単体の情報を取得します",
+        tags: ["Channel"],
       },
     },
   )
@@ -336,6 +365,40 @@ export const channel = new Elysia({ prefix: "/channel" })
       ),
       detail: {
         description: "チャンネルのメッセージ履歴を取得します",
+        tags: ["Channel"],
+      },
+    },
+  )
+  .get(
+    "/search",
+    async ({ query: { query }, _userId }) => {
+      //閲覧できるチャンネルをId配列で取得
+      const channelViewable = await GetUserViewableChannel(_userId);
+      const channelIdsViewable = channelViewable.map((c) => c.id);
+
+      //チャンネル検索
+      const channelInfos = await db.channel.findMany({
+        where: {
+          name: {
+            contains: query,
+          },
+          id: {
+            in: channelIdsViewable,
+          },
+        },
+      });
+
+      return {
+        message: "Searched channels",
+        data: channelInfos,
+      };
+    },
+    {
+      query: t.Object({
+        query: t.String(),
+      }),
+      detail: {
+        description: "チャンネル情報を検索します",
         tags: ["Channel"],
       },
     },
