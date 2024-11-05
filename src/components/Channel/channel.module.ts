@@ -344,7 +344,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .get(
     "/search",
-    async ({ params: { query }, _userId }) => {
+    async ({ query: { query }, _userId }) => {
       //閲覧できるチャンネルをId配列で取得
       const channelViewable = await GetUserViewableChannel(_userId);
       const channelIdsViewable = channelViewable.map((c) => c.id);
@@ -367,7 +367,7 @@ export const channel = new Elysia({ prefix: "/channel" })
       };
     },
     {
-      params: t.Object({
+      query: t.Object({
         query: t.String()
       }),
       detail: {
