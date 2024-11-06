@@ -16,7 +16,7 @@
     "@prisma/client": "5.20.0",
     "elysia": "latest",
     "open-graph-scraper": "^6.8.2",
-    "prisma": "^5.21.1",
+    "prisma": "^5.22.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
