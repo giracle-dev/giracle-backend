@@ -106,6 +106,20 @@ const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
           //URLが含まれていないなら何もしない
           if (urlMatched === null) return;
 
+          //TwitterのリンクがあればfxTwitterへ
+          for (const index in urlMatched) {
+            if ( (urlMatched[index].includes("twitter.com") || urlMatched[index].includes("x.com")) && urlMatched[index].includes("status")) {
+              urlMatched[index] = urlMatched[index].replace(
+                "twitter.com",
+                "fxtwitter.com",
+              );
+              urlMatched[index] = urlMatched[index].replace(
+                "x.com",
+                "fxtwitter.com",
+              );
+            }
+          }
+
           //URLプレビュー情報取得、格納
           for (const url of urlMatched) {
             await ogs({ url }).then(async (data) => {
