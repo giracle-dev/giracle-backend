@@ -108,7 +108,11 @@ const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
 
           //TwitterのリンクがあればfxTwitterへ
           for (const index in urlMatched) {
-            if ( (urlMatched[index].includes("twitter.com") || urlMatched[index].includes("x.com")) && urlMatched[index].includes("status")) {
+            if (
+              (urlMatched[index].includes("twitter.com") ||
+                urlMatched[index].includes("x.com")) &&
+              urlMatched[index].includes("status")
+            ) {
               urlMatched[index] = urlMatched[index].replace(
                 "twitter.com",
                 "fxtwitter.com",
