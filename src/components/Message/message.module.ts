@@ -456,6 +456,31 @@ export const message = new Elysia({ prefix: "/message" })
       },
     },
   )
+  .get(
+    "/inbox",
+    async ({ _userId }) => {
+      //通知を取得する
+      const inbox = await db.inbox.findMany({
+        where: {
+          userId: _userId,
+        },
+        include: {
+          Message: true,
+        },
+      });
+
+      return {
+        message: "Fetched inbox",
+        data: inbox,
+      };
+    },
+    {
+      detail: {
+        description: "通知を取得します",
+        tags: ["Message"],
+      },
+    }
+  )
   .post(
     "/inbox/read",
     async ({body: {messageId}, _userId, server}) => {
