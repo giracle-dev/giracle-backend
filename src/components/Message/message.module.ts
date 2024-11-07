@@ -456,6 +456,46 @@ export const message = new Elysia({ prefix: "/message" })
       },
     },
   )
+  .post(
+    "/inbox/read",
+    async ({body: {messageId}, _userId, server}) => {
+      //通知を削除
+      await db.inbox.delete({
+        where: {
+          messageId_userId: {
+            messageId,
+            userId: _userId,
+          },
+        }
+      });
+
+      //WSで通知の既読を通知
+      server?.publish(
+        `user::${_userId}`,
+        JSON.stringify({
+          signal: "inbox::Delete",
+          data: {
+            messageId,
+            type: "mention"
+          },
+        }),
+      );
+
+      return {
+        message: "Inbox read",
+        data: messageId
+      };
+    },
+    {
+      body: t.Object({
+        messageId: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "通知を既読にします",
+        tags: ["Message"],
+      },
+    }
+  )
   .use(urlPreviewControl)
   .post(
     "/send",
@@ -516,6 +556,32 @@ export const message = new Elysia({ prefix: "/message" })
           data: messageSaved,
         }),
       );
+
+      //メッセージから "@<userId>" を検知
+      const mentionedUserIds = message.match(/@<(\w+)>/g)?.map((mention) => mention.slice(2, -1)) || [];
+
+      //メンションされたユーザーに通知
+      for (const mentionedUserId of mentionedUserIds) {
+        //メンションされたユーザーのIdを取得
+        await db.inbox.create({
+          data: {
+            userId: _userId,
+            messageId: messageSaved.id,
+            type: "mention",
+          },
+        });
+        //メンションされたWSで通知
+        server?.publish(
+          `user::${mentionedUserId}`,
+          JSON.stringify({
+            signal: "inbox::Added",
+            data: {
+              message: messageSaved,
+              type: "mention"
+            },
+          }),
+        );
+      }
 
       return {
         message: "Message sent",
