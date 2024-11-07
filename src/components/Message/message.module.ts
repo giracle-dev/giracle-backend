@@ -460,7 +460,7 @@ export const message = new Elysia({ prefix: "/message" })
     "/inbox",
     async ({ _userId }) => {
       //通知を取得する
-      const inbox = await db.inbox.findMany({
+      const inboxAll = await db.inbox.findMany({
         where: {
           userId: _userId,
         },
@@ -471,7 +471,7 @@ export const message = new Elysia({ prefix: "/message" })
 
       return {
         message: "Fetched inbox",
-        data: inbox,
+        data: inboxAll,
       };
     },
     {
@@ -479,11 +479,11 @@ export const message = new Elysia({ prefix: "/message" })
         description: "通知を取得します",
         tags: ["Message"],
       },
-    }
+    },
   )
   .post(
     "/inbox/read",
-    async ({body: {messageId}, _userId, server}) => {
+    async ({ body: { messageId }, _userId, server }) => {
       //通知を削除
       await db.inbox.delete({
         where: {
@@ -491,7 +491,7 @@ export const message = new Elysia({ prefix: "/message" })
             messageId,
             userId: _userId,
           },
-        }
+        },
       });
 
       //WSで通知の既読を通知
@@ -501,14 +501,14 @@ export const message = new Elysia({ prefix: "/message" })
           signal: "inbox::Delete",
           data: {
             messageId,
-            type: "mention"
+            type: "mention",
           },
         }),
       );
 
       return {
         message: "Inbox read",
-        data: messageId
+        data: messageId,
       };
     },
     {
@@ -519,7 +519,7 @@ export const message = new Elysia({ prefix: "/message" })
         description: "通知を既読にします",
         tags: ["Message"],
       },
-    }
+    },
   )
   .use(urlPreviewControl)
   .post(
@@ -583,7 +583,9 @@ export const message = new Elysia({ prefix: "/message" })
       );
 
       //メッセージから "@<userId>" を検知
-      const mentionedUserIds = message.match(/@<(\w+)>/g)?.map((mention) => mention.slice(2, -1)) || [];
+      const mentionedUserIds =
+        message.match(/@<(\w+)>/g)?.map((mention) => mention.slice(2, -1)) ||
+        [];
 
       //メンションされたユーザーに通知
       for (const mentionedUserId of mentionedUserIds) {
@@ -602,7 +604,7 @@ export const message = new Elysia({ prefix: "/message" })
             signal: "inbox::Added",
             data: {
               message: messageSaved,
-              type: "mention"
+              type: "mention",
             },
           }),
         );
