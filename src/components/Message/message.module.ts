@@ -521,6 +521,37 @@ export const message = new Elysia({ prefix: "/message" })
       },
     },
   )
+  .post(
+    "/inbox/clear",
+    async ({ _userId, server }) => {
+      //通知を全部削除
+      await db.inbox.deleteMany({
+        where: {
+          userId: _userId,
+        },
+      });
+
+      //WSで通知の全既読を通知
+      server?.publish(
+        `user::${_userId}`,
+        JSON.stringify({
+          signal: "inbox::Clear",
+          data: null
+        }),
+      );
+
+      return {
+        message: "Inbox cleared",
+        data: null,
+      };
+    },
+    {
+      detail: {
+        description: "通知をすべて既読したとして削除する",
+        tags: ["Message"],
+      },
+    },
+  )
   .use(urlPreviewControl)
   .post(
     "/send",
