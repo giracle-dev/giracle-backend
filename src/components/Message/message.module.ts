@@ -498,7 +498,7 @@ export const message = new Elysia({ prefix: "/message" })
       server?.publish(
         `user::${_userId}`,
         JSON.stringify({
-          signal: "inbox::Delete",
+          signal: "inbox::Deleted",
           data: {
             messageId,
             type: "mention",
