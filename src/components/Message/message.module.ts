@@ -623,7 +623,7 @@ export const message = new Elysia({ prefix: "/message" })
         //メンションされたユーザーのIdを取得
         await db.inbox.create({
           data: {
-            userId: _userId,
+            userId: mentionedUserId,
             messageId: messageSaved.id,
             type: "mention",
           },
