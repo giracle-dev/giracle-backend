@@ -111,7 +111,8 @@ const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
             if (
               (urlMatched[index].includes("twitter.com") ||
                 urlMatched[index].includes("x.com")) &&
-              urlMatched[index].includes("status")
+              urlMatched[index].includes("status") &&
+              !urlMatched[index].includes("fxtwitter.com")
             ) {
               urlMatched[index] = urlMatched[index].replace(
                 "twitter.com",

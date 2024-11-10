@@ -21,6 +21,7 @@ model User {
   Invitation          Invitation[]
   MessageReadTime     MessageReadTime[]
   MessageFileAttached MessageFileAttached[]
+  Inbox               Inbox[]
 }
 
 model Password {
@@ -120,6 +121,18 @@ model MessageFileAttached {
   @@index([userId])
 }
 
+model Inbox {
+  type      String
+  happendAt DateTime @default(now())
+  messageId String
+  Message   Message  @relation(fields: [messageId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@id([messageId, userId])
+  @@index([userId])
+}
+
 model Message {
   id                  String                @id @default(uuid())
   content             String
@@ -131,6 +144,7 @@ model Message {
   createdAt           DateTime              @default(now())
   MessageUrlPreview   MessageUrlPreview[]
   MessageFileAttached MessageFileAttached[]
+  Inbox               Inbox[]
 
   @@index([channelId])
   @@index([userId])
