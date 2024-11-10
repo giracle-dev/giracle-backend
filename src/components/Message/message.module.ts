@@ -615,7 +615,7 @@ export const message = new Elysia({ prefix: "/message" })
 
       //メッセージから "@<userId>" を検知
       const mentionedUserIds =
-        message.match(/@<(\w+)>/g)?.map((mention) => mention.slice(2, -1)) ||
+        message.match(/@<([\w-]+)>/g)?.map((mention) => mention.slice(2, -1)) ||
         [];
 
       //メンションされたユーザーに通知
