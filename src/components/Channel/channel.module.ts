@@ -238,6 +238,11 @@ export const channel = new Elysia({ prefix: "/channel" })
       const { messageIdFrom, fetchDirection, fetchLength, messageTimeFrom } =
         body || {};
 
+      //チャンネルへのアクセス権限があるか調べる
+      if (!(await CheckChannelVisibility(channelId, _userId))) {
+        return error(403, "You don't have permission to access this channel");
+      }
+
       let messageDataFrom: Message | null = null;
       //基準位置になるメッセージIdが指定されているなら
       if (messageIdFrom !== undefined) {
@@ -252,28 +257,11 @@ export const channel = new Elysia({ prefix: "/channel" })
           return error(404, "Message cursor position not found");
         }
       }
-      //基準位置になるメッセージ時間が指定されているなら
-      if (messageTimeFrom !== undefined) {
-        //取得、格納
-        messageDataFrom = await db.message.findFirst({
-          where: {
-            createdAt: new Date(messageTimeFrom),
-          },
-        });
-        //無ければエラー
-        if (!messageDataFrom)
-          return error(404, "Message cursor position not found");
-      }
 
-      //チャンネルへのアクセス権限があるか調べる
-      if (!(await CheckChannelVisibility(channelId, _userId))) {
-        return error(403, "You don't have permission to access this channel");
-      }
-
-      //基準のメッセージIdがあるなら時間を取得、取得設定として設定
+      //基準のメッセージIdか時間指定があるなら時間を取得、取得設定として設定
       let optionDate: { createdAt: { lte: Date } | { gte: Date } } | null =
         null;
-      if (messageDataFrom !== null) {
+      if (messageDataFrom !== null) { //基準のメッセージIdによる取得データがあるなら
         //取得時間方向に合わせて設定を指定
         if (fetchDirection === "older") {
           //古い方向に取得する場合
@@ -287,6 +275,23 @@ export const channel = new Elysia({ prefix: "/channel" })
           optionDate = {
             createdAt: {
               gte: new Date(messageDataFrom.createdAt),
+            },
+          };
+        }
+      } else if (messageTimeFrom !== undefined) { //メッセージId指定がない場合、時間指定を使う
+        //取得時間方向に合わせて設定を指定
+        if (fetchDirection === "older") {
+          //古い方向に取得する場合
+          optionDate = {
+            createdAt: {
+              lte: new Date(messageTimeFrom),
+            },
+          };
+        } else {
+          //新しい方向に取得する場合
+          optionDate = {
+            createdAt: {
+              gte: new Date(messageTimeFrom),
             },
           };
         }
