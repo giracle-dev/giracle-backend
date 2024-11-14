@@ -267,14 +267,29 @@ export const channel = new Elysia({ prefix: "/channel" })
           //古い方向に取得する場合
           optionDate = {
             createdAt: {
-              lte: new Date(messageDataFrom.createdAt),
+              lte: messageDataFrom.createdAt,
             },
           };
         } else {
           //新しい方向に取得する場合
+          //指定時間以降の最初のメッセージを取得
+          const messageTakingFrom = await db.message.findMany({
+            where: {
+              channelId: channelId,
+              createdAt: {
+                gte: messageDataFrom.createdAt,
+              },
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            skip: fetchLength ? fetchLength - 1 : 29,
+            take: 1
+          });
+          //指定時間以降のメッセージの時間より前のメッセージを取得するように設定
           optionDate = {
             createdAt: {
-              gte: new Date(messageDataFrom.createdAt),
+              lte: messageTakingFrom[0].createdAt,
             },
           };
         }
@@ -289,9 +304,25 @@ export const channel = new Elysia({ prefix: "/channel" })
           };
         } else {
           //新しい方向に取得する場合
+          //指定時間以降の最初のメッセージを取得
+          const messageTakingFrom = await db.message.findMany({
+            where: {
+              channelId: channelId,
+              createdAt: {
+                gte: new Date(messageTimeFrom),
+              },
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            skip: fetchLength ? fetchLength - 1 : 29,
+            take: 1
+          });
+          console.log("channel.module :: messageTakingFrom", messageTakingFrom);
+          //指定時間以降のメッセージの時間より前のメッセージを取得するように設定
           optionDate = {
             createdAt: {
-              gte: new Date(messageTimeFrom),
+              lte: messageTakingFrom[0].createdAt,
             },
           };
         }
