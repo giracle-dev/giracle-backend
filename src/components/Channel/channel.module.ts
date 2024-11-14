@@ -281,15 +281,15 @@ export const channel = new Elysia({ prefix: "/channel" })
               },
             },
             orderBy: {
-              createdAt: "asc",
+              createdAt: "desc",
             },
-            skip: fetchLength ? fetchLength - 1 : 29,
-            take: 1
+            take: fetchLength
           });
           //指定時間以降のメッセージの時間より前のメッセージを取得するように設定
           optionDate = {
             createdAt: {
               lte: messageTakingFrom[0].createdAt,
+              gte: messageDataFrom.createdAt,
             },
           };
         }
@@ -313,15 +313,15 @@ export const channel = new Elysia({ prefix: "/channel" })
               },
             },
             orderBy: {
-              createdAt: "asc",
+              createdAt: "desc",
             },
-            skip: fetchLength ? fetchLength - 1 : 29,
-            take: 1
+            take: fetchLength
           });
           //指定時間以降のメッセージの時間より前のメッセージを取得するように設定
           optionDate = {
             createdAt: {
               lte: messageTakingFrom[0].createdAt,
+              gte: new Date(messageTimeFrom),
             },
           };
         }
