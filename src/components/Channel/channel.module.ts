@@ -318,7 +318,6 @@ export const channel = new Elysia({ prefix: "/channel" })
             skip: fetchLength ? fetchLength - 1 : 29,
             take: 1
           });
-          console.log("channel.module :: messageTakingFrom", messageTakingFrom);
           //指定時間以降のメッセージの時間より前のメッセージを取得するように設定
           optionDate = {
             createdAt: {
