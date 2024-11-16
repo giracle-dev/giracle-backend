@@ -285,7 +285,6 @@ export const channel = new Elysia({ prefix: "/channel" })
             },
             take: fetchLength
           });
-          console.log("channel.module :: /get-history/:channelId :: messageTakingFrom", messageTakingFrom);
           //指定時間以降のメッセージの時間より前のメッセージを取得するように設定
           optionDate = {
             createdAt: {
@@ -318,7 +317,6 @@ export const channel = new Elysia({ prefix: "/channel" })
             },
             take: fetchLength
           });
-          console.log("channel.moduke :: /get-history/:channelId :: messageTakingFrom", messageTakingFrom);
           //指定時間以降のメッセージの時間より前のメッセージを取得するように設定
           optionDate = {
             createdAt: {
@@ -352,7 +350,6 @@ export const channel = new Elysia({ prefix: "/channel" })
           createdAt: "asc",
         },
       });
-      console.log("channel.module :: /get-history/:channelId :: firstMessageOfChannel", firstMessageOfChannel);
 
       //取得した履歴が最新まで取得したか、または最初まで取得したかを判別
       let atEnd = false;
