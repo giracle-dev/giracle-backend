@@ -261,7 +261,8 @@ export const channel = new Elysia({ prefix: "/channel" })
       //基準のメッセージIdか時間指定があるなら時間を取得、取得設定として設定
       let optionDate: { createdAt: { lte: Date } | { gte: Date } } | null =
         null;
-      if (messageDataFrom !== null) { //基準のメッセージIdによる取得データがあるなら
+      if (messageDataFrom !== null) {
+        //基準のメッセージIdによる取得データがあるなら
         //取得時間方向に合わせて設定を指定
         if (fetchDirection === "older") {
           //古い方向に取得する場合
@@ -283,17 +284,18 @@ export const channel = new Elysia({ prefix: "/channel" })
             orderBy: {
               createdAt: "asc",
             },
-            take: fetchLength
+            take: fetchLength,
           });
           //指定時間以降のメッセージの時間より前のメッセージを取得するように設定
           optionDate = {
             createdAt: {
-              lte: messageTakingFrom[messageTakingFrom.length-1].createdAt,
+              lte: messageTakingFrom[messageTakingFrom.length - 1].createdAt,
               gte: messageDataFrom.createdAt,
             },
           };
         }
-      } else if (messageTimeFrom !== undefined) { //メッセージId指定がない場合、時間指定を使う
+      } else if (messageTimeFrom !== undefined) {
+        //メッセージId指定がない場合、時間指定を使う
         //取得時間方向に合わせて設定を指定
         if (fetchDirection === "older") {
           //古い方向に取得する場合
@@ -315,12 +317,14 @@ export const channel = new Elysia({ prefix: "/channel" })
             orderBy: {
               createdAt: "asc",
             },
-            take: fetchLength
+            take: fetchLength,
           });
           //指定時間以降のメッセージの時間より前のメッセージを取得するように設定
           optionDate = {
             createdAt: {
-              lte: messageTakingFrom[messageTakingFrom.length-1]?.createdAt || undefined,
+              lte:
+                messageTakingFrom[messageTakingFrom.length - 1]?.createdAt ||
+                undefined,
               gte: new Date(messageTimeFrom),
             },
           };
@@ -380,7 +384,7 @@ export const channel = new Elysia({ prefix: "/channel" })
         data: {
           history,
           atTop,
-          atEnd
+          atEnd,
         },
       };
     },

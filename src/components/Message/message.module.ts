@@ -536,7 +536,7 @@ export const message = new Elysia({ prefix: "/message" })
         `user::${_userId}`,
         JSON.stringify({
           signal: "inbox::Clear",
-          data: null
+          data: null,
         }),
       );
 
