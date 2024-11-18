@@ -218,7 +218,7 @@ export const user = new Elysia({ prefix: "/user" })
   )
   .get(
     "/search",
-    async ({ query:{ username, joinedChannel } }) => {
+    async ({ query: { username, joinedChannel } }) => {
       //ユーザーを検索
       const users = await db.user.findMany({
         where: {
@@ -229,7 +229,7 @@ export const user = new Elysia({ prefix: "/user" })
             some: {
               channelId: joinedChannel,
             },
-          }
+          },
         },
       });
 
@@ -246,8 +246,8 @@ export const user = new Elysia({ prefix: "/user" })
       detail: {
         description: "ユーザーを検索します",
         tags: ["User"],
-      }
-    }
+      },
+    },
   )
   .get(
     "/icon/:userId",
