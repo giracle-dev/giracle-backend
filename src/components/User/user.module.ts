@@ -217,6 +217,39 @@ export const user = new Elysia({ prefix: "/user" })
     },
   )
   .get(
+    "/search",
+    async ({ query:{ username, joinedChannel } }) => {
+      //ユーザーを検索
+      const users = await db.user.findMany({
+        where: {
+          name: {
+            contains: username,
+          },
+          ChannelJoin: {
+            some: {
+              channelId: joinedChannel,
+            },
+          }
+        },
+      });
+
+      return {
+        message: "User search result",
+        data: users,
+      };
+    },
+    {
+      query: t.Object({
+        username: t.Optional(t.String({ minLength: 1 })),
+        joinedChannel: t.Optional(t.String({ minLength: 1 })),
+      }),
+      detail: {
+        description: "ユーザーを検索します",
+        tags: ["User"],
+      }
+    }
+  )
+  .get(
     "/icon/:userId",
     async ({ params: { userId } }) => {
       //アイコン読み取り、存在確認して返す
