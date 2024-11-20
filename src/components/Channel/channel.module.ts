@@ -456,8 +456,8 @@ export const channel = new Elysia({ prefix: "/channel" })
       } = {};
 
       //渡されたデータを調べて適用するデータを格納
-      if (name) updatingValues.name = name;
-      if (description) updatingValues.description = description;
+      if (name !== undefined && name !== "") updatingValues.name = name;
+      if (description !== undefined) updatingValues.description = description;
       if (isArchived !== undefined) updatingValues.isArchived = isArchived;
 
       //チャンネルデータを更新する
