@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@elysiajs/cors": "^1.1.1",
-    "@elysiajs/swagger": "^1.1.5",
+    "@elysiajs/swagger": "^1.1.6",
     "@prisma/client": "5.22.0",
     "elysia": "latest",
     "open-graph-scraper": "^6.8.2",
