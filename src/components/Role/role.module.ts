@@ -299,7 +299,6 @@ export const role = new Elysia({ prefix: "/role" })
       }
 
       return {
-        success: true,
         message: "Role info",
         data: role,
       };

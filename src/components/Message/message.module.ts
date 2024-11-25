@@ -400,7 +400,17 @@ export const message = new Elysia({ prefix: "/message" })
         throw error(404, "Message not found");
       }
       if (messageData.userId !== _userId) {
-        throw error(403, "You are not owner of this message");
+        //メッセージの送信者でないならサーバー管理権限を確認する
+        const canManageServer = await db.roleLink.findFirst({
+          where: {
+            userId: _userId,
+            role: {
+              manageServer: true,
+            }
+          },
+        });
+        
+        if (!canManageServer) throw error(403, "You are not owner of this message");
       }
 
       //URLプレビューの削除
