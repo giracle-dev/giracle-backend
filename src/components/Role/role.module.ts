@@ -102,7 +102,7 @@ export const role = new Elysia({ prefix: "/role" })
   )
   .post(
     "/update",
-    async ({ body: { roleId, roleData }, _userId }) => {
+    async ({ body: { roleId, roleData }, _userId, server }) => {
       if (roleId === "HOST") throw error(400, "You cannot update HOST role");
 
       const roleUpdated = await db.roleInfo.update({
@@ -115,12 +115,15 @@ export const role = new Elysia({ prefix: "/role" })
         },
       });
 
+      //WSで通知
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({ signal: "role::Updated", data: roleUpdated }),
+      );
+
       return {
-        success: true,
         message: "Role updated",
-        data: {
-          roleId: roleUpdated.id,
-        },
+        data: roleUpdated,
       };
     },
     {
