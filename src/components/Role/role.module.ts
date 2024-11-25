@@ -268,12 +268,12 @@ export const role = new Elysia({ prefix: "/role" })
       //WSで通知
       server?.publish(
         "GLOBAL",
-        JSON.stringify({ signal: "role::Deleted", data: { roleId } }),
+        JSON.stringify({ signal: "role::Deleted", data: roleId }),
       );
 
       return {
-        success: true,
         message: "Role deleted",
+        data: roleId
       };
     },
     {
