@@ -66,7 +66,7 @@ export const role = new Elysia({ prefix: "/role" })
 
   .put(
     "/create",
-    async ({ body: { roleName, rolePower }, _userId }) => {
+    async ({ body: { roleName, rolePower }, _userId, server }) => {
       const newRole = await db.roleInfo.create({
         data: {
           name: roleName,
@@ -75,12 +75,15 @@ export const role = new Elysia({ prefix: "/role" })
         },
       });
 
+      //WSで通知
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({ signal: "role::Created", data: newRole }),
+      );
+
       return {
-        success: true,
         message: "Role created",
-        data: {
-          roleId: newRole.id,
-        },
+        data: newRole
       };
     },
     {
