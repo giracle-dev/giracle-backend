@@ -5,6 +5,7 @@ import Elysia, { error, t } from "elysia";
 import CheckToken from "../../Middlewares";
 import { userWSInstance } from "../../ws";
 import { userService } from "./user.service";
+import SendSystemMessage from "../../Utils/SendSystemMessage";
 
 const db = new PrismaClient();
 
@@ -12,7 +13,7 @@ export const user = new Elysia({ prefix: "/user" })
   .use(userService)
   .put(
     "/sign-up",
-    async ({ body: { username, password, inviteCode }, error }) => {
+    async ({ body: { username, password, inviteCode }, error, server }) => {
       //初めてのユーザーかどうか
       let flagFirstUser = false;
       //ユーザー数を取得して最初ならtrue
@@ -103,6 +104,38 @@ export const user = new Elysia({ prefix: "/user" })
             channelId: channelIdJson.channelId,
           },
         });
+      }
+
+      //新規登録を通知するチャンネルId
+      const serverConfigAnnounceChannelId = await db.serverConfig.findFirst({
+        select: {
+          RegisterAnnounceChannelId: true
+        },
+      });
+      //登録通知用チャンネルIdが登録されているならそこへ通知、ないなら他を探して通知
+      if (serverConfigAnnounceChannelId?.RegisterAnnounceChannelId) {
+        SendSystemMessage(
+          serverConfigAnnounceChannelId?.RegisterAnnounceChannelId,
+          createdUser.id,
+          "WELCOME",
+          server
+        );
+      } else {
+        //最初のチャンネルに通知
+        const firstChannel = await db.channel.findFirst({
+          select: {
+            id: true
+          },
+        });
+        if (firstChannel) {
+          SendSystemMessage(
+            firstChannel.id,
+            createdUser.id,
+            "WELCOME",
+            server
+          );
+        }
+        //それでも無いなら通知しない
       }
 
       return {
