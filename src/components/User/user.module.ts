@@ -120,8 +120,8 @@ export const user = new Elysia({ prefix: "/user" })
           "WELCOME",
           server
         );
-      } else {
-        //最初のチャンネルに通知
+      } else { //通知チャンネルが無いなら...
+        //最初のチャンネルを探して通知
         const firstChannel = await db.channel.findFirst({
           select: {
             id: true
