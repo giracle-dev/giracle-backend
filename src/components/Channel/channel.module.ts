@@ -4,6 +4,7 @@ import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 import { WSSubscribe, WSUnsubscribe } from "../../ws";
+import SendSystemMessage from "../../Utils/SendSystemMessage";
 
 const db = new PrismaClient();
 
@@ -45,6 +46,8 @@ export const channel = new Elysia({ prefix: "/channel" })
       //WS登録させる
       //userWSInstance.get(_userId)?.subscribe(`channel::${channelId}`);
       WSSubscribe(_userId, `channel::${channelId}`);
+      //システムメッセージを送信
+      SendSystemMessage(channelId, _userId, "CHANNEL_JOIN");
 
       return {
         message: "Channel joined",
@@ -109,6 +112,8 @@ export const channel = new Elysia({ prefix: "/channel" })
       //WS登録を解除させる
       //userWSInstance.get(_userId)?.unsubscribe(`channel::${channelId}`);
       WSUnsubscribe(_userId, `channel::${channelId}`);
+      //システムメッセージを送信
+      SendSystemMessage(channelId, _userId, "CHANNEL_LEFT");
 
       return {
         message: "Channel left",
