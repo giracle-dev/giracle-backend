@@ -3,9 +3,9 @@ import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken from "../../Middlewares";
+import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { userWSInstance } from "../../ws";
 import { userService } from "./user.service";
-import SendSystemMessage from "../../Utils/SendSystemMessage";
 
 const db = new PrismaClient();
 
@@ -109,31 +109,30 @@ export const user = new Elysia({ prefix: "/user" })
       //新規登録を通知するチャンネルId
       const serverConfigAnnounceChannelId = await db.serverConfig.findFirst({
         select: {
-          RegisterAnnounceChannelId: true
+          RegisterAnnounceChannelId: true,
         },
       });
       //登録通知用チャンネルIdが登録されているならそこへ通知、ないなら他を探して通知
-      if (serverConfigAnnounceChannelId !== null && serverConfigAnnounceChannelId?.RegisterAnnounceChannelId !== "") {
+      if (
+        serverConfigAnnounceChannelId !== null &&
+        serverConfigAnnounceChannelId?.RegisterAnnounceChannelId !== ""
+      ) {
         SendSystemMessage(
           serverConfigAnnounceChannelId.RegisterAnnounceChannelId,
           createdUser.id,
           "WELCOME",
-          server
+          server,
         );
-      } else { //通知チャンネルが無いなら...
+      } else {
+        //通知チャンネルが無いなら...
         //最初のチャンネルを探して通知
         const firstChannel = await db.channel.findFirst({
           select: {
-            id: true
+            id: true,
           },
         });
         if (firstChannel) {
-          SendSystemMessage(
-            firstChannel.id,
-            createdUser.id,
-            "WELCOME",
-            server
-          );
+          SendSystemMessage(firstChannel.id, createdUser.id, "WELCOME", server);
         }
         //それでも無いなら通知しない
       }
