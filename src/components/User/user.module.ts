@@ -113,9 +113,9 @@ export const user = new Elysia({ prefix: "/user" })
         },
       });
       //登録通知用チャンネルIdが登録されているならそこへ通知、ないなら他を探して通知
-      if (serverConfigAnnounceChannelId?.RegisterAnnounceChannelId) {
+      if (serverConfigAnnounceChannelId !== null && serverConfigAnnounceChannelId?.RegisterAnnounceChannelId !== "") {
         SendSystemMessage(
-          serverConfigAnnounceChannelId?.RegisterAnnounceChannelId,
+          serverConfigAnnounceChannelId.RegisterAnnounceChannelId,
           createdUser.id,
           "WELCOME",
           server

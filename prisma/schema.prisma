@@ -78,7 +78,6 @@ model Channel {
   MessageReadTime      MessageReadTime[]
   MessageFileAttached  MessageFileAttached[]
   ChannelJoinOnDefault ChannelJoinOnDefault?
-  ServerConfig         ServerConfig[]
 }
 
 model MessageUrlPreview {
@@ -200,9 +199,8 @@ model ServerConfig {
   name         String
   introduction String
 
-  RegisterAvailable         Boolean @default(true)
-  RegisterInviteOnly        Boolean @default(true)
-  RegisterAnnounceChannelId String
-  channel                   Channel @relation(fields: [RegisterAnnounceChannelId], references: [id])
-  MessageMaxLength          Int     @default(3000)
+  RegisterAvailable         Boolean  @default(true)
+  RegisterInviteOnly        Boolean  @default(true)
+  RegisterAnnounceChannelId String   @default("")
+  MessageMaxLength          Int      @default(3000)
 }
