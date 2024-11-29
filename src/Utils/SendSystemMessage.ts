@@ -13,7 +13,7 @@ export default async function SendSystemMessage(
   _channelId: string,
   _targetUserId: string,
   _messageTerm: TSystemMessageTerm,
-  _server: Server | undefined
+  _server: Server | null = null
 ) {
   //メッセージ内容とするJSON
   const contentJson = {
