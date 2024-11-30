@@ -9,7 +9,6 @@ describe("role", async () => {
   const app = new Elysia().use(user).use(role);
 
   let resultJson: {
-    success: boolean;
     message: string;
     // biome-ignore lint/suspicious/noExplicitAny: データの型は不定
     data: { [key: string]: any };
@@ -70,10 +69,9 @@ describe("role", async () => {
     //console.log("role.test : create : response", response);
     resultJson = await response.json();
     //console.log("role.test :: create : resultJson", resultJson);
-    expect(resultJson.success).toBe(true);
-    expect(resultJson.data.roleId).toBeString();
+    expect(resultJson.data.id).toBeString();
 
-    createdRoleId = resultJson.data.roleId;
+    createdRoleId = resultJson.data.id;
   });
 
   it("role :: link", async () => {
@@ -115,7 +113,6 @@ describe("role", async () => {
     //console.log("role.test : link : response", response);
     resultJson = await response.json();
     //console.log("role.test :: link : resultJson", resultJson);
-    expect(resultJson.success).toBe(true);
     expect(resultJson.message).toBe("Role linked");
 
     //重複するロールIdでのリクエストを送信
@@ -175,7 +172,6 @@ describe("role", async () => {
     //console.log("role.test : link : response", response);
     resultJson = await response.json();
     //console.log("role.test :: link : resultJson", resultJson);
-    expect(resultJson.success).toBe(true);
     expect(resultJson.message).toBe("Role unlinked");
 
     //HOSTのロールIdでのリクエストを送信
@@ -231,7 +227,6 @@ describe("role", async () => {
     //console.log("role.test : delete : response", response);
     resultJson = await response.json();
     //console.log("role.test :: delete : resultJson", resultJson);
-    expect(resultJson.success).toBe(true);
     expect(resultJson.message).toBe("Role deleted");
   });
 });

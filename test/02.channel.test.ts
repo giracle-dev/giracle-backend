@@ -115,7 +115,7 @@ describe("channel", async () => {
         }),
       }),
     );
-    console.log("channel.test : join : responseError", responseError);
+    //console.log("channel.test : join : responseError", responseError);
     expect(responseError.ok).toBe(false);
     expect(responseError.status).toBe(404);
 
@@ -171,7 +171,7 @@ describe("channel", async () => {
         }),
       }),
     );
-    console.log("channel.test : leave : responseError", responseError);
+    //console.log("channel.test : leave : responseError", responseError);
     expect(responseError.ok).toBe(false);
     expect(responseError.status).toBe(400);
 
@@ -263,7 +263,7 @@ describe("channel", async () => {
         }),
       }),
     );
-    //console.log("channel.test : get-history : response", response);
+    //console.log("channel.test : get-history : response", responseUnknwown);
     expect(responseUnknwown.ok).toBe(false);
     expect(responseUnknwown.status).toBe(404);
 
