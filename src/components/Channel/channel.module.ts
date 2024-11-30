@@ -248,6 +248,13 @@ export const channel = new Elysia({ prefix: "/channel" })
         return error(403, "You don't have permission to access this channel");
       }
 
+      //基準位置に時間指定があるなら有効か確認
+      if (messageTimeFrom !== undefined) {
+        if (Number.isNaN(Date.parse(messageTimeFrom))) {
+          return error(400, "Invalid time format");
+        }
+      }
+
       let messageDataFrom: Message | null = null;
       //基準位置になるメッセージIdが指定されているなら
       if (messageIdFrom !== undefined) {
