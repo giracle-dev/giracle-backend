@@ -12,7 +12,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   .use(CheckToken)
   .post(
     "/join",
-    async ({ body: { channelId }, _userId }) => {
+    async ({ body: { channelId }, _userId, server }) => {
       //チャンネル参加データが存在するか確認
       const channelJoined = await db.channelJoin.findFirst({
         where: {
@@ -47,7 +47,7 @@ export const channel = new Elysia({ prefix: "/channel" })
       //userWSInstance.get(_userId)?.subscribe(`channel::${channelId}`);
       WSSubscribe(_userId, `channel::${channelId}`);
       //システムメッセージを送信
-      SendSystemMessage(channelId, _userId, "CHANNEL_JOIN");
+      SendSystemMessage(channelId, _userId, "CHANNEL_JOIN", server);
 
       return {
         message: "Channel joined",
@@ -78,7 +78,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .post(
     "/leave",
-    async ({ body: { channelId }, _userId }) => {
+    async ({ body: { channelId }, _userId, server }) => {
       //チャンネル参加データが存在するか確認
       const channelJoinData = await db.channelJoin.findFirst({
         where: {
@@ -113,7 +113,7 @@ export const channel = new Elysia({ prefix: "/channel" })
       //userWSInstance.get(_userId)?.unsubscribe(`channel::${channelId}`);
       WSUnsubscribe(_userId, `channel::${channelId}`);
       //システムメッセージを送信
-      SendSystemMessage(channelId, _userId, "CHANNEL_LEFT");
+      SendSystemMessage(channelId, _userId, "CHANNEL_LEFT", server);
 
       return {
         message: "Channel left",
