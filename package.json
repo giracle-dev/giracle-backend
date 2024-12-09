@@ -15,7 +15,7 @@
     "@elysiajs/swagger": "^1.1.6",
     "@prisma/client": "5.22.0",
     "elysia": "latest",
-    "open-graph-scraper": "^6.8.2",
+    "open-graph-scraper": "^6.8.3",
     "prisma": "^5.22.0"
   },
   "devDependencies": {
