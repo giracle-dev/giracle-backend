@@ -83,7 +83,7 @@ export const role = new Elysia({ prefix: "/role" })
 
       return {
         message: "Role created",
-        data: newRole
+        data: newRole,
       };
     },
     {
@@ -276,7 +276,7 @@ export const role = new Elysia({ prefix: "/role" })
 
       return {
         message: "Role deleted",
-        data: roleId
+        data: roleId,
       };
     },
     {

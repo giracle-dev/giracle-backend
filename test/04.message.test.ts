@@ -64,7 +64,7 @@ describe("message", async () => {
       }),
     );
     //console.log("message.test :: send : responseMissingChannel->", responseMissingChannel);
-    expect(responseMissingChannel.status).toBe(400);
+    expect(responseMissingChannel.status).toBe(422);
 
     const responseBlank = await app.handle(
       new Request("http://localhost/message/send", {
@@ -80,7 +80,7 @@ describe("message", async () => {
       }),
     );
     //console.log("message.test :: send : responseBlank->", responseBlank);
-    expect(responseBlank.status).toBe(400);
+    expect(responseBlank.status).toBe(422);
 
     const response = await app.handle(
       new Request("http://localhost/message/send", {
@@ -92,12 +92,13 @@ describe("message", async () => {
         body: JSON.stringify({
           channelId: joinedChannel.channelId,
           message: "test message",
+          fileIds: []
         }),
       }),
     );
-    console.log("message.test :: send : response->", responseMissingChannel);
+    //console.log("message.test :: send : response->", responseMissingChannel);
     resultJson = await response.json();
-    console.log("message.test :: send : resultJson->", resultJson);
+    //console.log("message.test :: send : resultJson->", resultJson);
     expect(response.status).toBe(200);
     expect(resultJson.data.id).toBeString();
     // テスト用のIdを保存
@@ -154,7 +155,7 @@ describe("message", async () => {
     );
     //console.log("message.test :: update readtime : response->", response);
     resultJson = await response.json();
-    console.log("message.test :: update readtime : resultJson->", resultJson);
+    //console.log("message.test :: update readtime : resultJson->", resultJson);
     expect(response.status).toBe(200);
     expect(resultJson.data[joinedChannel.channelId]).toBe(true);
   });

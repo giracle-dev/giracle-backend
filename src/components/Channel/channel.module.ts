@@ -3,6 +3,7 @@ import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
+import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { WSSubscribe, WSUnsubscribe } from "../../ws";
 
 const db = new PrismaClient();
@@ -11,7 +12,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   .use(CheckToken)
   .post(
     "/join",
-    async ({ body: { channelId }, _userId }) => {
+    async ({ body: { channelId }, _userId, server }) => {
       //チャンネル参加データが存在するか確認
       const channelJoined = await db.channelJoin.findFirst({
         where: {
@@ -45,6 +46,8 @@ export const channel = new Elysia({ prefix: "/channel" })
       //WS登録させる
       //userWSInstance.get(_userId)?.subscribe(`channel::${channelId}`);
       WSSubscribe(_userId, `channel::${channelId}`);
+      //システムメッセージを送信
+      SendSystemMessage(channelId, _userId, "CHANNEL_JOIN", server);
 
       return {
         message: "Channel joined",
@@ -75,7 +78,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .post(
     "/leave",
-    async ({ body: { channelId }, _userId }) => {
+    async ({ body: { channelId }, _userId, server }) => {
       //チャンネル参加データが存在するか確認
       const channelJoinData = await db.channelJoin.findFirst({
         where: {
@@ -109,6 +112,8 @@ export const channel = new Elysia({ prefix: "/channel" })
       //WS登録を解除させる
       //userWSInstance.get(_userId)?.unsubscribe(`channel::${channelId}`);
       WSUnsubscribe(_userId, `channel::${channelId}`);
+      //システムメッセージを送信
+      SendSystemMessage(channelId, _userId, "CHANNEL_LEFT", server);
 
       return {
         message: "Channel left",
@@ -241,6 +246,13 @@ export const channel = new Elysia({ prefix: "/channel" })
       //チャンネルへのアクセス権限があるか調べる
       if (!(await CheckChannelVisibility(channelId, _userId))) {
         return error(403, "You don't have permission to access this channel");
+      }
+
+      //基準位置に時間指定があるなら有効か確認
+      if (messageTimeFrom !== undefined) {
+        if (Number.isNaN(Date.parse(messageTimeFrom))) {
+          return error(400, "Invalid time format");
+        }
       }
 
       let messageDataFrom: Message | null = null;

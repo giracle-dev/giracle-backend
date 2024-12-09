@@ -189,6 +189,7 @@ export const server = new Elysia({ prefix: "/server" })
       body: {
         RegisterAvailable,
         RegisterInviteOnly,
+        RegisterAnnounceChannelId,
         MessageMaxLength,
         DefaultJoinChannel,
       },
@@ -198,6 +199,7 @@ export const server = new Elysia({ prefix: "/server" })
         data: {
           RegisterAvailable,
           RegisterInviteOnly,
+          RegisterAnnounceChannelId,
           MessageMaxLength,
         },
       });
@@ -238,6 +240,7 @@ export const server = new Elysia({ prefix: "/server" })
       body: t.Object({
         RegisterAvailable: t.Optional(t.Boolean()),
         RegisterInviteOnly: t.Optional(t.Boolean()),
+        RegisterAnnounceChannelId: t.Optional(t.String()),
         MessageMaxLength: t.Optional(t.Number()),
         DefaultJoinChannel: t.Optional(t.Array(t.String())),
       }),

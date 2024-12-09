@@ -406,11 +406,12 @@ export const message = new Elysia({ prefix: "/message" })
             userId: _userId,
             role: {
               manageServer: true,
-            }
+            },
           },
         });
-        
-        if (!canManageServer) throw error(403, "You are not owner of this message");
+
+        if (!canManageServer)
+          throw error(403, "You are not owner of this message");
       }
 
       //URLプレビューの削除
