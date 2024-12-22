@@ -13,14 +13,14 @@
   "dependencies": {
     "@elysiajs/cors": "^1.1.1",
     "@elysiajs/swagger": "^1.1.6",
-    "@prisma/client": "5.22.0",
+    "@prisma/client": "^6.1.0",
     "elysia": "latest",
-    "open-graph-scraper": "^6.8.3",
-    "prisma": "^5.22.0"
+    "open-graph-scraper": "^6.8.3"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.3",
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "prisma": "^6.1.0"
   },
   "module": "src/index.js"
 }
