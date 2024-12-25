@@ -92,7 +92,7 @@ describe("message", async () => {
         body: JSON.stringify({
           channelId: joinedChannel.channelId,
           message: "test message",
-          fileIds: []
+          fileIds: [],
         }),
       }),
     );

@@ -11,8 +11,8 @@
     "seed": "bun ./prisma/seeds.ts"
   },
   "dependencies": {
-    "@elysiajs/cors": "^1.1.1",
-    "@elysiajs/swagger": "^1.1.6",
+    "@elysiajs/cors": "^1.2.0",
+    "@elysiajs/swagger": "^1.2.0",
     "@prisma/client": "^6.1.0",
     "elysia": "latest",
     "open-graph-scraper": "^6.8.3"

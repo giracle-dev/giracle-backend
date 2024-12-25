@@ -41,7 +41,7 @@ export default async function SendSystemMessage(
         }),
       );
     }
-  } catch(e) {
+  } catch (e) {
     console.error("SendSystemMessage :: エラー->", e);
   }
 }

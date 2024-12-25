@@ -21,7 +21,7 @@ export const wsHandler = new Elysia().ws("/ws", {
 
   async open(ws) {
     //トークンを取得して有効か調べる
-    const token = ws.data.cookie.token.value || ws.data.query.token;
+    const token = ws.data.cookie?.token?.value || ws.data.query.token;
     if (!token) {
       ws.send({
         signal: "ERROR",
@@ -79,7 +79,7 @@ export const wsHandler = new Elysia().ws("/ws", {
     //console.log("ws :: WS切断");
 
     //トークンを取得して有効か調べる
-    const token = ws.data.cookie.token.value || ws.data.query.token;
+    const token = ws.data.cookie?.token?.value || ws.data.query?.token;
     if (!token) {
       return;
     }
@@ -148,12 +148,12 @@ function WSremoveUserInstance(userId: string, ws: ElysiaWS<any, any, any>) {
   if (!currentInstance) {
     return;
   }
-  const tokenRemoving = ws.data.cookie.token.value;
+  const tokenRemoving = ws.data.cookie?.token?.value;
   userWSInstance.set(
     userId,
     currentInstance.filter((v) => {
       //console.log("WSremoveUserInstance :: v.data.cookie.token", v.data.cookie.token.value);
-      return v.data.cookie.token.value !== tokenRemoving;
+      return v.data.cookie?.token?.value !== tokenRemoving;
     }),
   );
 }
