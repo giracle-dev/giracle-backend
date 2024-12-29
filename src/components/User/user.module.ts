@@ -6,6 +6,7 @@ import CheckToken from "../../Middlewares";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { userWSInstance } from "../../ws";
 import { userService } from "./user.service";
+import sharp from "sharp";
 
 const db = new PrismaClient();
 
@@ -362,8 +363,19 @@ export const user = new Elysia({ prefix: "/user" })
       await unlink(`./STORAGE/icon/${_userId}.gif`).catch(() => {});
       await unlink(`./STORAGE/icon/${_userId}.jpeg`).catch(() => {});
 
-      //アイコンを保存
-      await Bun.write(`./STORAGE/icon/${_userId}.${ext}`, icon);
+      //画像を圧縮、保存する
+      if (ext === "gif") {
+        sharp(await icon.arrayBuffer(), { animated: true })
+          .resize(125, 125)
+          .gif()
+          .toFile(`./STORAGE/icon/${_userId}.${ext}`)
+      } else {
+        sharp(await icon.arrayBuffer())
+          .resize(125, 125)
+          .jpeg({ mozjpeg: true, quality: 80 })
+          .toFile(`./STORAGE/icon/${_userId}.${ext}`);
+      }
+
       return {
         message: "Icon changed",
       };
