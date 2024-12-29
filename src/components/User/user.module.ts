@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t, file } from "elysia";
+import sharp from "sharp";
 import CheckToken from "../../Middlewares";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { userWSInstance } from "../../ws";
@@ -362,8 +363,19 @@ export const user = new Elysia({ prefix: "/user" })
       await unlink(`./STORAGE/icon/${_userId}.gif`).catch(() => {});
       await unlink(`./STORAGE/icon/${_userId}.jpeg`).catch(() => {});
 
-      //アイコンを保存
-      await Bun.write(`./STORAGE/icon/${_userId}.${ext}`, icon);
+      //画像を圧縮、保存する
+      if (ext === "gif") {
+        sharp(await icon.arrayBuffer(), { animated: true })
+          .resize(125, 125)
+          .gif()
+          .toFile(`./STORAGE/icon/${_userId}.${ext}`);
+      } else {
+        sharp(await icon.arrayBuffer())
+          .resize(125, 125)
+          .jpeg({ mozjpeg: true, quality: 80 })
+          .toFile(`./STORAGE/icon/${_userId}.${ext}`);
+      }
+
       return {
         message: "Icon changed",
       };

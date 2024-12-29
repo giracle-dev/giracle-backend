@@ -1,7 +1,8 @@
 import { mkdir } from "node:fs/promises";
 import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
-import Elysia, { error, t } from "elysia";
+import Elysia, { error, file, t } from "elysia";
+import sharp from "sharp";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
@@ -320,8 +321,20 @@ export const message = new Elysia({ prefix: "/message" })
       //チャンネルIdのディレクトリを作成
       await mkdir(`./STORAGE/file/${channelId}`, { recursive: true });
 
-      //ファイルを保存
-      await Bun.write(`./STORAGE/file/${channelId}/${fileNameGen}`, file);
+      console.log("message.module :: /file/upload : file.type->", file.type);
+      //jpegファイルであるかどうかフラグ
+      let isJpeg = false;
+      //ファイルを保存、GIF以外の画像なら圧縮
+      if (file.type.startsWith("image/") && file.type !== "image/gif") {
+        sharp(await file.arrayBuffer())
+          .jpeg({ quality: 80, mozjpeg: true })
+          .toFile(`./STORAGE/file/${channelId}/${fileNameGen}.jpeg`);
+        //jpegで保存されたことと設定
+        isJpeg = true;
+      } else {
+        //ファイルを保存
+        await Bun.write(`./STORAGE/file/${channelId}/${fileNameGen}`, file);
+      }
 
       //ファイル情報を作成、保存する
       const fileData = await db.messageFileAttached.create({
@@ -329,8 +342,8 @@ export const message = new Elysia({ prefix: "/message" })
           channelId,
           userId: _userId,
           size: file.size,
-          actualFileName: file.name,
-          savedFileName: fileNameGen,
+          actualFileName: isJpeg ? `${file.name}.jpeg` : file.name,
+          savedFileName: isJpeg ? `${fileNameGen}.jpeg` : fileNameGen,
           type: file.type,
         },
       });
@@ -366,16 +379,9 @@ export const message = new Elysia({ prefix: "/message" })
         throw error(404, "File not found");
       }
 
-      const fileBuffer = Bun.file(
+      return file(
         `./STORAGE/file/${fileData.channelId}/${fileData.savedFileName}`,
       );
-
-      //ファイル名を適用させてファイルを返す
-      return new Response(fileBuffer, {
-        headers: {
-          "Content-Disposition": `attachment; filename="${fileData.actualFileName}"`,
-        },
-      });
     },
     {
       params: t.Object({
@@ -427,7 +433,13 @@ export const message = new Elysia({ prefix: "/message" })
         },
       });
       for (const file of fileData) {
-        await unlink(`./STORAGE/file/${file.channelId}/${file.savedFileName}`);
+        try {
+          await unlink(
+            `./STORAGE/file/${file.channelId}/${file.savedFileName}`,
+          );
+        } catch (e) {
+          console.error("message.module :: /message/delete : 削除エラー->", e);
+        }
       }
       //添付ファイル情報の削除
       await db.messageFileAttached.deleteMany({
