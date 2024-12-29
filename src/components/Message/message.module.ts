@@ -5,6 +5,7 @@ import Elysia, { error, t } from "elysia";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
+import sharp from "sharp";
 
 const db = new PrismaClient();
 
@@ -320,8 +321,23 @@ export const message = new Elysia({ prefix: "/message" })
       //チャンネルIdのディレクトリを作成
       await mkdir(`./STORAGE/file/${channelId}`, { recursive: true });
 
-      //ファイルを保存
-      await Bun.write(`./STORAGE/file/${channelId}/${fileNameGen}`, file);
+      console.log("message.module :: /file/upload : file.type->", file.type);
+      //ファイルを保存、画像なら圧縮
+      if (file.type.startsWith("image/")) {
+        //GIFどうかで変換方法を変える
+        if (file.type.startsWith("image/gif")) {
+          sharp(await file.arrayBuffer(), {animated: true})
+            .gif()
+            .toFile(`./STORAGE/file/${channelId}/${fileNameGen}`)
+        } else {
+          sharp(await file.arrayBuffer())
+            .jpeg({quality: 80, mozjpeg: true})
+            .toFile(`./STORAGE/file/${channelId}/${fileNameGen}.jpeg`)
+        }
+      } else {
+        //ファイルを保存
+        await Bun.write(`./STORAGE/file/${channelId}/${fileNameGen}`, file);
+      }
 
       //ファイル情報を作成、保存する
       const fileData = await db.messageFileAttached.create({
@@ -329,8 +345,8 @@ export const message = new Elysia({ prefix: "/message" })
           channelId,
           userId: _userId,
           size: file.size,
-          actualFileName: file.name,
-          savedFileName: fileNameGen,
+          actualFileName: `${file.name}.jpeg`,
+          savedFileName: `${fileNameGen}.jpeg`,
           type: file.type,
         },
       });
