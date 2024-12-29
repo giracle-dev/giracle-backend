@@ -2,10 +2,10 @@ import { mkdir } from "node:fs/promises";
 import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, file, t } from "elysia";
+import sharp from "sharp";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
-import sharp from "sharp";
 
 const db = new PrismaClient();
 
@@ -325,10 +325,10 @@ export const message = new Elysia({ prefix: "/message" })
       //jpegファイルであるかどうかフラグ
       let isJpeg = false;
       //ファイルを保存、GIF以外の画像なら圧縮
-      if (file.type.startsWith("image/") && file.type !== ("image/gif")) {
+      if (file.type.startsWith("image/") && file.type !== "image/gif") {
         sharp(await file.arrayBuffer())
-          .jpeg({quality: 80, mozjpeg: true})
-          .toFile(`./STORAGE/file/${channelId}/${fileNameGen}.jpeg`)
+          .jpeg({ quality: 80, mozjpeg: true })
+          .toFile(`./STORAGE/file/${channelId}/${fileNameGen}.jpeg`);
         //jpegで保存されたことと設定
         isJpeg = true;
       } else {
@@ -379,7 +379,9 @@ export const message = new Elysia({ prefix: "/message" })
         throw error(404, "File not found");
       }
 
-      return file(`./STORAGE/file/${fileData.channelId}/${fileData.savedFileName}`);
+      return file(
+        `./STORAGE/file/${fileData.channelId}/${fileData.savedFileName}`,
+      );
     },
     {
       params: t.Object({
@@ -432,8 +434,10 @@ export const message = new Elysia({ prefix: "/message" })
       });
       for (const file of fileData) {
         try {
-          await unlink(`./STORAGE/file/${file.channelId}/${file.savedFileName}`);
-        } catch(e) {
+          await unlink(
+            `./STORAGE/file/${file.channelId}/${file.savedFileName}`,
+          );
+        } catch (e) {
           console.error("message.module :: /message/delete : 削除エラー->", e);
         }
       }

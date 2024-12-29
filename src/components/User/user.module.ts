@@ -2,11 +2,11 @@ import crypto from "node:crypto";
 import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t, file } from "elysia";
+import sharp from "sharp";
 import CheckToken from "../../Middlewares";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { userWSInstance } from "../../ws";
 import { userService } from "./user.service";
-import sharp from "sharp";
 
 const db = new PrismaClient();
 
@@ -368,7 +368,7 @@ export const user = new Elysia({ prefix: "/user" })
         sharp(await icon.arrayBuffer(), { animated: true })
           .resize(125, 125)
           .gif()
-          .toFile(`./STORAGE/icon/${_userId}.${ext}`)
+          .toFile(`./STORAGE/icon/${_userId}.${ext}`);
       } else {
         sharp(await icon.arrayBuffer())
           .resize(125, 125)
