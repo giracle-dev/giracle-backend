@@ -443,7 +443,11 @@ export const message = new Elysia({ prefix: "/message" })
         },
       });
       for (const file of fileData) {
+        try {
         await unlink(`./STORAGE/file/${file.channelId}/${file.savedFileName}`);
+        } catch(e) {
+          console.error("message.module :: /message/delete : 削除エラー->", e);
+        }
       }
       //添付ファイル情報の削除
       await db.messageFileAttached.deleteMany({
