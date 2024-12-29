@@ -322,18 +322,15 @@ export const message = new Elysia({ prefix: "/message" })
       await mkdir(`./STORAGE/file/${channelId}`, { recursive: true });
 
       console.log("message.module :: /file/upload : file.type->", file.type);
-      //ファイルを保存、画像なら圧縮
-      if (file.type.startsWith("image/")) {
-        //GIFどうかで変換方法を変える
-        if (file.type.startsWith("image/gif")) {
-          sharp(await file.arrayBuffer(), {animated: true})
-            .gif()
-            .toFile(`./STORAGE/file/${channelId}/${fileNameGen}`)
-        } else {
-          sharp(await file.arrayBuffer())
-            .jpeg({quality: 80, mozjpeg: true})
-            .toFile(`./STORAGE/file/${channelId}/${fileNameGen}.jpeg`)
-        }
+      //jpegファイルであるかどうかフラグ
+      let isJpeg = false;
+      //ファイルを保存、GIF以外の画像なら圧縮
+      if (file.type.startsWith("image/") && file.type !== ("image/gif")) {
+        sharp(await file.arrayBuffer())
+          .jpeg({quality: 80, mozjpeg: true})
+          .toFile(`./STORAGE/file/${channelId}/${fileNameGen}.jpeg`)
+        //jpegで保存されたことと設定
+        isJpeg = true;
       } else {
         //ファイルを保存
         await Bun.write(`./STORAGE/file/${channelId}/${fileNameGen}`, file);
@@ -345,8 +342,8 @@ export const message = new Elysia({ prefix: "/message" })
           channelId,
           userId: _userId,
           size: file.size,
-          actualFileName: `${file.name}.jpeg`,
-          savedFileName: `${fileNameGen}.jpeg`,
+          actualFileName: isJpeg ? `${file.name}.jpeg` : file.name,
+          savedFileName: isJpeg ? `${fileNameGen}.jpeg` : fileNameGen,
           type: file.type,
         },
       });
@@ -444,7 +441,7 @@ export const message = new Elysia({ prefix: "/message" })
       });
       for (const file of fileData) {
         try {
-        await unlink(`./STORAGE/file/${file.channelId}/${file.savedFileName}`);
+          await unlink(`./STORAGE/file/${file.channelId}/${file.savedFileName}`);
         } catch(e) {
           console.error("message.module :: /message/delete : 削除エラー->", e);
         }
