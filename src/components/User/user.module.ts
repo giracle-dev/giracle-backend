@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
-import Elysia, { error, t } from "elysia";
+import Elysia, { error, t, file } from "elysia";
 import CheckToken from "../../Middlewares";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { userWSInstance } from "../../ws";
@@ -299,7 +299,7 @@ export const user = new Elysia({ prefix: "/user" })
       }
 
       //存在しない場合はデフォルトアイコンを返す
-      return Bun.file("./STORAGE/icon/default.png");
+      return file("./STORAGE/icon/default.png");
     },
     {
       params: t.Object({
