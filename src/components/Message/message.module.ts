@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
-import Elysia, { error, t } from "elysia";
+import Elysia, { error, file, t } from "elysia";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
@@ -379,16 +379,7 @@ export const message = new Elysia({ prefix: "/message" })
         throw error(404, "File not found");
       }
 
-      const fileBuffer = Bun.file(
-        `./STORAGE/file/${fileData.channelId}/${fileData.savedFileName}`,
-      );
-
-      //ファイル名を適用させてファイルを返す
-      return new Response(fileBuffer, {
-        headers: {
-          "Content-Disposition": `attachment; filename="${fileData.actualFileName}"`,
-        },
-      });
+      return file(`./STORAGE/file/${fileData.channelId}/${fileData.savedFileName}`);
     },
     {
       params: t.Object({
