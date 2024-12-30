@@ -411,8 +411,16 @@ export const user = new Elysia({ prefix: "/user" })
       await unlink(`./STORAGE/banner/${_userId}.gif`).catch(() => {});
       await unlink(`./STORAGE/banner/${_userId}.jpeg`).catch(() => {});
 
-      //アイコンを保存
-      await Bun.write(`./STORAGE/banner/${_userId}.${ext}`, banner);
+      //GIFじゃないなら画像を圧縮、保存する
+      if (ext !== "gif") {
+        sharp(await banner.arrayBuffer())
+          .jpeg({ mozjpeg: true, quality: 80 })
+          .toFile(`./STORAGE/banner/${_userId}.jpeg`);
+      } else {
+        //バナーを保存
+        await Bun.write(`./STORAGE/banner/${_userId}.${ext}`, banner);
+      }
+
       return {
         message: "Banner changed",
       };
