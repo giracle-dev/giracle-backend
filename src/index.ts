@@ -6,15 +6,15 @@ import { channel } from "./components/Channel/channel.module";
 import { message } from "./components/Message/message.module";
 import { role } from "./components/Role/role.module";
 import { user } from "./components/User/user.module";
+import { server } from "./components/Server/server.module";
 import { wsHandler } from "./ws";
 
 //アイコン用のディレクトリ作成
 import { mkdir } from "node:fs/promises";
-import { server } from "./components/Server/server.module";
-await mkdir("./STORAGE", { recursive: true });
-await mkdir("./STORAGE/file", { recursive: true });
-await mkdir("./STORAGE/icon", { recursive: true });
-await mkdir("./STORAGE/banner", { recursive: true });
+await mkdir("./STORAGE", { recursive: true }).catch((e)=>{});
+await mkdir("./STORAGE/file", { recursive: true }).catch((e)=>{});
+await mkdir("./STORAGE/icon", { recursive: true }).catch((e)=>{});
+await mkdir("./STORAGE/banner", { recursive: true }).catch((e)=>{});
 
 export const app = new Elysia()
   .use(
