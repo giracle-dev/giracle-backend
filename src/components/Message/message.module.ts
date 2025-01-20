@@ -460,7 +460,10 @@ export const message = new Elysia({ prefix: "/message" })
         "GLOBAL",
         JSON.stringify({
           signal: "message::MessageDeleted",
-          data: messageData.id,
+          data: {
+            messageId: messageData.id,
+            channelId: messageData.channelId,
+          }
         }),
       );
 
