@@ -526,7 +526,6 @@ export const channel = new Elysia({ prefix: "/channel" })
       });
 
       return {
-        success: true,
         message: "Channel created",
         data: {
           channelId: newChannel.id,
@@ -612,7 +611,6 @@ export const channel = new Elysia({ prefix: "/channel" })
       });
 
       return {
-        success: true,
         message: "Channel deleted",
       };
     },

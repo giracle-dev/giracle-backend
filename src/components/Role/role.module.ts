@@ -189,7 +189,6 @@ export const role = new Elysia({ prefix: "/role" })
       );
 
       return {
-        success: true,
         message: "Role linked",
       };
     },
@@ -232,7 +231,6 @@ export const role = new Elysia({ prefix: "/role" })
       );
 
       return {
-        success: true,
         message: "Role unlinked",
       };
     },
@@ -330,7 +328,6 @@ export const role = new Elysia({ prefix: "/role" })
       }
 
       return {
-        success: true,
         message: "Role list",
         data: roles,
       };
