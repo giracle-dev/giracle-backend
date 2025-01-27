@@ -319,7 +319,7 @@ export const message = new Elysia({ prefix: "/message" })
       //保存するためのファイル名保存
       const fileNameGen = `${Date.now()}_${file.name}`;
       //チャンネルIdのディレクトリを作成
-      await mkdir(`./STORAGE/file/${channelId}`, { recursive: true }).catch((e) => {});
+      await mkdir(`./STORAGE/file/${channelId}`, { recursive: true }).catch(() => {});
 
       console.log("message.module :: /file/upload : file.type->", file.type);
       //jpegファイルであるかどうかフラグ
