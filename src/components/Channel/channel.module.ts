@@ -142,6 +142,13 @@ export const channel = new Elysia({ prefix: "/channel" })
         where: {
           id: channelId,
         },
+        include: {
+          ChannelViewableRole: {
+            select: {
+              roleId: true
+            }
+          },
+        }
       });
 
       if (channelData === null) {
@@ -459,7 +466,7 @@ export const channel = new Elysia({ prefix: "/channel" })
 
   .post(
     "/update",
-    async ({ body: { name, description, isArchived, channelId }, server }) => {
+    async ({ body: { name, description, isArchived, channelId, viewableRole }, server }) => {
       //適用するデータ群のJSON
       const updatingValues: {
         name?: string;
@@ -473,7 +480,7 @@ export const channel = new Elysia({ prefix: "/channel" })
       if (isArchived !== undefined) updatingValues.isArchived = isArchived;
 
       //チャンネルデータを更新する
-      const channelDataUpdated = await db.channel.update({
+      await db.channel.update({
         where: {
           id: channelId,
         },
@@ -482,7 +489,67 @@ export const channel = new Elysia({ prefix: "/channel" })
         },
       });
 
-      //WSで通知
+      //チャンネル閲覧ロールを更新
+      if (viewableRole !== undefined) {
+        // 既存のroleIdを取得
+        const existingRoles = await db.channelViewableRole.findMany({
+          where: {
+            channelId: channelId,
+          },
+          select: {
+            roleId: true,
+          },
+        });
+
+        // 既存のroleIdをセットに変換
+        //const existingRoleIds = new Set(existingRoles.map(role => role.roleId));
+        const _existingRoleIds = existingRoles.map(role => role.roleId);
+        const existingRoleIds = new Set(_existingRoleIds);
+
+        // 新しいroleIdをフィルタリング
+        const newRoleIds = viewableRole.filter(roleId => !existingRoleIds.has(roleId));
+
+        //現在の閲覧可能roleIdを削除
+        await db.channelViewableRole.deleteMany({
+          where: {
+            channelId,
+          },
+        });
+
+        // 新しいroleIdを挿入
+        if (newRoleIds.length > 0) {
+          await db.channel.update({
+            where: {
+              id: channelId,
+            },
+            data: {
+              ChannelViewableRole: {
+                createMany: {
+                  data: newRoleIds.map(roleId => ({
+                    roleId,
+                  })),
+                },
+              },
+            },
+          });
+        }
+      }
+
+      //更新後のデータを取得
+      const channelDataUpdated = await db.channel.findUnique({
+        where: {
+          id: channelId,
+        },
+        include: {
+          ChannelViewableRole: {
+            select: {
+              roleId: true
+            }
+          },
+        }
+      });
+
+        //WSで通知
       server?.publish(
         "GLOBAL",
         JSON.stringify({
@@ -501,6 +568,7 @@ export const channel = new Elysia({ prefix: "/channel" })
         channelId: t.String({ minLength: 1 }),
         name: t.Optional(t.String()),
         description: t.Optional(t.String()),
+        viewableRole: t.Optional(t.Array(t.String())),
         isArchived: t.Optional(t.Boolean()),
       }),
       detail: {
