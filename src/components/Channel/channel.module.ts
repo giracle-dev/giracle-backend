@@ -142,6 +142,13 @@ export const channel = new Elysia({ prefix: "/channel" })
         where: {
           id: channelId,
         },
+        include: {
+          ChannelViewableRole: {
+            select: {
+              roleId: true
+            }
+          },
+        }
       });
 
       if (channelData === null) {
@@ -501,6 +508,7 @@ export const channel = new Elysia({ prefix: "/channel" })
         channelId: t.String({ minLength: 1 }),
         name: t.Optional(t.String()),
         description: t.Optional(t.String()),
+        viewableRole: t.Optional(t.Array(t.String())),
         isArchived: t.Optional(t.Boolean()),
       }),
       detail: {
