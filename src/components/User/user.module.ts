@@ -3,7 +3,7 @@ import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t, file } from "elysia";
 import sharp from "sharp";
-import CheckToken from "../../Middlewares";
+import CheckToken, {checkRoleTerm} from "../../Middlewares";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { userWSInstance } from "../../ws";
 import { userService } from "./user.service";
@@ -668,6 +668,7 @@ export const user = new Elysia({ prefix: "/user" })
       },
     },
   )
+  .use(checkRoleTerm)
   .post(
     "/ban",
     async ({ body: { userId }, server }) => {
@@ -703,6 +704,7 @@ export const user = new Elysia({ prefix: "/user" })
         description: "ユーザーをBANします",
         tags: ["User"],
       },
+      checkRoleTerm: "manageUser",
     }
   )
   .post(
@@ -740,5 +742,6 @@ export const user = new Elysia({ prefix: "/user" })
         description: "ユーザーのBANを解除します",
         tags: ["User"],
       },
+      checkRoleTerm: "manageUser",
     }
   );
