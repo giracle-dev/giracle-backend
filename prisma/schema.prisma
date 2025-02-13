@@ -11,6 +11,7 @@ model User {
   id                  String                @id @default(uuid())
   name                String?               @unique
   selfIntroduction    String
+  isBanned            Boolean               @default(false)
   password            Password?
   Token               Token[]
   Channel             Channel[]
@@ -199,8 +200,8 @@ model ServerConfig {
   name         String
   introduction String
 
-  RegisterAvailable         Boolean  @default(true)
-  RegisterInviteOnly        Boolean  @default(true)
-  RegisterAnnounceChannelId String   @default("")
-  MessageMaxLength          Int      @default(3000)
+  RegisterAvailable         Boolean @default(true)
+  RegisterInviteOnly        Boolean @default(true)
+  RegisterAnnounceChannelId String  @default("")
+  MessageMaxLength          Int     @default(3000)
 }

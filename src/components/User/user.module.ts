@@ -3,10 +3,11 @@ import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t, file } from "elysia";
 import sharp from "sharp";
-import CheckToken from "../../Middlewares";
+import CheckToken, {checkRoleTerm} from "../../Middlewares";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { userWSInstance } from "../../ws";
 import { userService } from "./user.service";
+import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
 
 const db = new PrismaClient();
 
@@ -175,6 +176,12 @@ export const user = new Elysia({ prefix: "/user" })
       if (!user.password) {
         return error(400, {
           message: "Internal error",
+        });
+      }
+      //ユーザーがBANされている場合
+      if (user.isBanned) {
+        return error(401, {
+          message: "User is banned",
         });
       }
 
@@ -667,4 +674,103 @@ export const user = new Elysia({ prefix: "/user" })
         tags: ["User"],
       },
     },
+  )
+  .use(checkRoleTerm)
+  .post(
+    "/ban",
+    async ({ body: { userId }, server, _userId }) => {
+      //HOSTをBANすることはできない
+      if (userId === "HOST") {
+        return error(400, "You can't ban HOST");
+      }
+      //自分自身をBANすることはできない
+      if (userId === _userId) {
+        return error(400, "You can't ban yourself");
+      }
+      //ロールレベルが対象より低いとBANできない
+      if (await getUsersRoleLevel(_userId) < await getUsersRoleLevel(userId)) {
+        return error(400, "You can't ban higher role level user");
+      }
+
+      //BANする
+      const userBanned = await db.user.update({
+        where: {
+          id: userId
+        },
+        data: {
+          isBanned: true,
+        }
+      });
+
+      //WSで全体へ通知
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "user::ProfileUpdate",
+          data: userBanned,
+        }),
+      );
+
+      return {
+        message: "User banned",
+        data: userId,
+      };
+    },
+    {
+      body: t.Object({
+        userId: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "ユーザーをBANします",
+        tags: ["User"],
+      },
+      checkRoleTerm: "manageUser",
+    }
+  )
+  .post(
+    "/unban",
+    async ({ body: { userId }, server, _userId }) => {
+      //自分自身をUNBANすることはできない
+      if (userId === _userId) {
+        return error(400, "You can't unban yourself");
+      }
+      //ロールレベルが対象より低いとBAN解除できない
+      if (await getUsersRoleLevel(_userId) < await getUsersRoleLevel(userId)) {
+        return error(400, "You can't unban higher role level user");
+      }
+
+      //BANを解除
+      const userUnbanned = await db.user.update({
+        where: {
+          id: userId
+        },
+        data: {
+          isBanned: false,
+        }
+      });
+
+      //WSで全体へ通知
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "user::ProfileUpdate",
+          data: userUnbanned,
+        }),
+      );
+
+      return {
+        message: "User unbanned",
+        data: userId,
+      };
+    },
+    {
+      body: t.Object({
+        userId: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "ユーザーのBANを解除します",
+        tags: ["User"],
+      },
+      checkRoleTerm: "manageUser",
+    }
   );
