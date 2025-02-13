@@ -688,7 +688,7 @@ export const user = new Elysia({ prefix: "/user" })
         return error(400, "You can't ban yourself");
       }
       //ロールレベルが対象より低いとBANできない
-      if (getUsersRoleLevel(_userId) < getUsersRoleLevel(userId)) {
+      if (await getUsersRoleLevel(_userId) < await getUsersRoleLevel(userId)) {
         return error(400, "You can't ban higher role level user");
       }
 
@@ -735,7 +735,7 @@ export const user = new Elysia({ prefix: "/user" })
         return error(400, "You can't unban yourself");
       }
       //ロールレベルが対象より低いとBAN解除できない
-      if (getUsersRoleLevel(_userId) < getUsersRoleLevel(userId)) {
+      if (await getUsersRoleLevel(_userId) < await getUsersRoleLevel(userId)) {
         return error(400, "You can't unban higher role level user");
       }
 
