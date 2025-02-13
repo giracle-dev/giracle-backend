@@ -714,7 +714,7 @@ export const user = new Elysia({ prefix: "/user" })
   )
   .post(
     "/unban",
-    async ({ body: { userId }, server }) => {
+    async ({ body: { userId }, server, _userId }) => {
       //自分自身をUNBANすることはできない
       if (userId === _userId) {
         return error(400, "You can't unban yourself");
