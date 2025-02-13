@@ -671,7 +671,12 @@ export const user = new Elysia({ prefix: "/user" })
   .use(checkRoleTerm)
   .post(
     "/ban",
-    async ({ body: { userId }, server }) => {
+    async ({ body: { userId }, server, _userId }) => {
+      //自分自身をBANすることはできない
+      if (userId === _userId) {
+        return error(400, "You can't ban yourself");
+      }
+
       //BANする
       const userBanned = await db.user.update({
         where: {
@@ -710,6 +715,11 @@ export const user = new Elysia({ prefix: "/user" })
   .post(
     "/unban",
     async ({ body: { userId }, server }) => {
+      //自分自身をUNBANすることはできない
+      if (userId === _userId) {
+        return error(400, "You can't unban yourself");
+      }
+
       //BANを解除
       const userUnbanned = await db.user.update({
         where: {
