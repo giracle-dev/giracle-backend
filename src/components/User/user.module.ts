@@ -678,6 +678,10 @@ export const user = new Elysia({ prefix: "/user" })
   .post(
     "/ban",
     async ({ body: { userId }, server, _userId }) => {
+      //HOSTをBANすることはできない
+      if (userId === "HOST") {
+        return error(400, "You can't ban HOST");
+      }
       //自分自身をBANすることはできない
       if (userId === _userId) {
         return error(400, "You can't ban yourself");
