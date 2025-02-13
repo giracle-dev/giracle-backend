@@ -22,10 +22,18 @@ const CheckToken = new Elysia({ name: "CheckToken" })
       where: {
         token: token.value,
       },
+      include: {
+        user: true,
+      }
     });
 
+    //トークンが無効ならエラー
     if (tokenData === null) {
       return error(401, "Invalid token");
+    }
+    //BAN確認
+    if (tokenData.user.isBanned) {
+      return error(401, "User is banned");
     }
 
     return {
@@ -71,29 +79,18 @@ const checkRoleTerm = new Elysia({ name: "checkRoleTerm" })
     },
   }));
 
-//URLプレビューを操作するミドルウェア
-const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
+//URLプレビュー生成
+const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
   .guard({
     body: t.Object({
       channelId: t.String({ minLength: 1 }),
       message: t.String({ minLength: 1 }),
     }),
-    response: t.Object({
-      message: t.Literal("Message sent"),
-      data: t.Object({
-        id: t.String({ minLength: 1 }),
-        channelId: t.String({ minLength: 1 }),
-        userId: t.String({ minLength: 1 }),
-        content: t.String({ minLength: 1 }),
-        createdAt: t.String({ minLength: 1 }),
-        updatedAt: t.String({ minLength: 1 }),
-      }),
-    }),
   })
-  .macro(({ onAfterResponse }) => {
-    return {
-      async bindUrlPreview(isEnabled: boolean) {
-        onAfterResponse(async ({ body, server, response }) => {
+  .macro({
+    bindUrlPreview(isEnabled: boolean) {
+      return {
+        async afterResponse({body, server, response}) {
           //URLプレビューが無効あるいはレスポンスが存在しないなら何もしない
           if (!isEnabled || response === undefined) return;
           //メッセージId取り出し
@@ -127,7 +124,7 @@ const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
 
           //URLプレビュー情報取得、格納
           for (const url of urlMatched) {
-            await ogs({ url }).then(async (data) => {
+            await ogs({url}).then(async (data) => {
               if (data.error) {
                 //console.error("Middleware :: urlPreviewControl : URLプレビュー情報取得エラー->", data.error);
                 return;
@@ -174,9 +171,9 @@ const urlPreviewControl = new Elysia({ name: "addUrlPreview" })
               data: message,
             }),
           );
-        });
-      },
-    };
+        }
+      }
+    }
   });
 
 export default CheckToken;
