@@ -177,6 +177,12 @@ export const user = new Elysia({ prefix: "/user" })
           message: "Internal error",
         });
       }
+      //ユーザーがBANされている場合
+      if (user.isBanned) {
+        return error(401, {
+          message: "User is banned",
+        });
+      }
 
       //パスワードのハッシュ化
       const passwordCheckResult = await Bun.password.verify(
