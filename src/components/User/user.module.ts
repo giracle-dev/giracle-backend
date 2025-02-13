@@ -667,4 +667,78 @@ export const user = new Elysia({ prefix: "/user" })
         tags: ["User"],
       },
     },
+  )
+  .post(
+    "/ban",
+    async ({ body: { userId }, server }) => {
+      //BANする
+      const userBanned = await db.user.update({
+        where: {
+          id: userId
+        },
+        data: {
+          isBanned: true,
+        }
+      });
+
+      //WSで全体へ通知
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "user::ProfileUpdate",
+          data: userBanned,
+        }),
+      );
+
+      return {
+        message: "User banned",
+        data: userId,
+      };
+    },
+    {
+      body: t.Object({
+        userId: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "ユーザーをBANします",
+        tags: ["User"],
+      },
+    }
+  )
+  .post(
+    "/unban",
+    async ({ body: { userId }, server }) => {
+      //BANを解除
+      const userUnbanned = await db.user.update({
+        where: {
+          id: userId
+        },
+        data: {
+          isBanned: false,
+        }
+      });
+
+      //WSで全体へ通知
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "user::ProfileUpdate",
+          data: userUnbanned,
+        }),
+      );
+
+      return {
+        message: "User unbanned",
+        data: userId,
+      };
+    },
+    {
+      body: t.Object({
+        userId: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "ユーザーのBANを解除します",
+        tags: ["User"],
+      },
+    }
   );
