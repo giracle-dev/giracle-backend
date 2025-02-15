@@ -5,7 +5,7 @@ import type { ElysiaWS } from "elysia/dist/ws";
 const db = new PrismaClient();
 //ユーザーごとのWSインスタンス管理 ( Map <UserId, WSインスタンス>)
 // biome-ignore lint/suspicious/noExplicitAny: どのwsインスタンスでも受け付けるためにany
-export const userWSInstance = new Map<string, ElysiaWS<any, any, any>[]>();
+export const userWSInstance = new Map<string, ElysiaWS<any, any>[]>();
 
 /**
  * WebSocket用 ハンドラ
@@ -125,7 +125,7 @@ export const wsHandler = new Elysia().ws("/ws", {
  * @returns
  */
 // biome-ignore lint/suspicious/noExplicitAny: どのwsインスタンスでも受け付けるためにany
-function WSaddUserInstance(userId: string, ws: ElysiaWS<any, any, any>) {
+function WSaddUserInstance(userId: string, ws: ElysiaWS<any, any>) {
   const currentInstance = userWSInstance.get(userId);
   //存在しない場合普通にset
   if (!currentInstance) {
@@ -142,7 +142,7 @@ function WSaddUserInstance(userId: string, ws: ElysiaWS<any, any, any>) {
  * @returns
  */
 // biome-ignore lint/suspicious/noExplicitAny: どのwsインスタンスでも受け付けるためにany
-function WSremoveUserInstance(userId: string, ws: ElysiaWS<any, any, any>) {
+function WSremoveUserInstance(userId: string, ws: ElysiaWS<any, any>) {
   const currentInstance = userWSInstance.get(userId);
   //存在しない場合スルー
   if (!currentInstance) {
