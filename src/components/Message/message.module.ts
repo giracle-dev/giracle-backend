@@ -736,5 +736,6 @@ export const message = new Elysia({ prefix: "/message" })
         description: "メッセージを編集します",
         tags: ["Message"],
       },
+      bindUrlPreview: true,
     },
   );
