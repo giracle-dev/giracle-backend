@@ -93,7 +93,7 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
   .macro({
     bindUrlPreview(isEnabled: boolean) {
       return {
-        async afterResponse({body, server, response}) {
+        async afterResponse({server, response}) {
           //URLプレビューが無効あるいはレスポンスが存在しないなら何もしない
           if (!isEnabled || response === undefined) return;
           //メッセージId取り出し
@@ -176,7 +176,7 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
           });
           //WSで通知
           server?.publish(
-            `channel::${body.channelId}`,
+            `channel::${response.data.channelId}`,
             JSON.stringify({
               signal: "message::UpdateMessage",
               data: message,
