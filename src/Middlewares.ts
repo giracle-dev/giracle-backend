@@ -87,6 +87,9 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
       message: t.String({ minLength: 1 }),
     }),
   })
+  .onError(({ error }) => {
+    console.error("Middleware :: urlPreviewControl : エラー->", error);
+  })
   .macro({
     bindUrlPreview(isEnabled: boolean) {
       return {
@@ -99,7 +102,7 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
           //URLを抽出
           const urlRegex: RegExp =
             /https?:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#\u3000-\u30FE\u4E00-\u9FA0\uFF01-\uFFE3]+/g;
-          const urlMatched = body.message.match(urlRegex);
+          const urlMatched = response.data.content.match(urlRegex);
 
           //URLが含まれていないなら何もしない
           if (urlMatched === null) return;
