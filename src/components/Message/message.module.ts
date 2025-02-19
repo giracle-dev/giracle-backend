@@ -684,4 +684,57 @@ export const message = new Elysia({ prefix: "/message" })
       },
       bindUrlPreview: true,
     },
+  )
+  .post(
+    "/edit",
+    async ({body: {messageId, content}, _userId, server}) => {
+      const msg = await db.message.findUnique({
+        where: {
+          id: messageId,
+        }
+      });
+      //メッセージが無かった時エラー
+      if (msg === null) {
+        throw error(404, "Message not found");
+      }
+      //送信者が自分と違うならエラー
+      if (msg.userId !== _userId) {
+        throw error(403, "You are not sender of this message");
+      }
+
+      //メッセージデータを更新する
+      const msgUpdated = await db.message.update({
+        where: {
+          id: messageId,
+        },
+        data: {
+          content,
+          isEdited: true,
+        }
+      });
+
+      //WSで通知
+      server?.publish(
+        `channel::${msg.channelId}`,
+        JSON.stringify({
+          signal: "message::UpdateMessage",
+          data: msgUpdated,
+        }),
+      );
+
+      return {
+        message: "Message edited",
+        data: msgUpdated,
+      };
+    },
+    {
+      body: t.Object({
+        messageId: t.String({ minLength: 1 }),
+        content: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "メッセージを編集します",
+        tags: ["Message"],
+      },
+    },
   );
