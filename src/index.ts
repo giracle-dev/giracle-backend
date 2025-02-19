@@ -25,7 +25,7 @@ export const app = new Elysia()
   .use(swagger())
   .onError(({ error, code }) => {
     if (code === "NOT_FOUND") return "Not Found :(";
-    console.error(error);
+    console.error("index :: エラー->", error);
   })
   .use(wsHandler)
   .use(user)
