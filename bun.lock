@@ -6,7 +6,7 @@
       "dependencies": {
         "@elysiajs/cors": "^1.2.0",
         "@elysiajs/swagger": "^1.2.0",
-        "@prisma/client": "^6.3.0",
+        "@prisma/client": "^6.3.1",
         "elysia": "latest",
         "open-graph-scraper": "^6.9.0",
         "sharp": "^0.33.5",
@@ -14,7 +14,7 @@
       "devDependencies": {
         "@biomejs/biome": "1.9.3",
         "bun-types": "latest",
-        "prisma": "^6.3.0",
+        "prisma": "^6.3.1",
       },
     },
   },
