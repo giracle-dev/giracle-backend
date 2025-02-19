@@ -100,6 +100,7 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
           const urlRegex: RegExp =
             /https?:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#\u3000-\u30FE\u4E00-\u9FA0\uFF01-\uFFE3]+/g;
           const urlMatched = body.message.match(urlRegex);
+
           //URLが含まれていないなら何もしない
           if (urlMatched === null) return;
 
@@ -121,6 +122,13 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
               );
             }
           }
+
+          //編集された時用に現在のURLプレビュー情報を削除
+          await db.messageUrlPreview.deleteMany({
+            where: {
+              messageId,
+            },
+          });
 
           //URLプレビュー情報取得、格納
           for (const url of urlMatched) {
@@ -154,6 +162,7 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
             });
           }
 
+          //現在のメッセージを取得
           const message = await db.message.findUnique({
             where: {
               id: messageId,
@@ -162,7 +171,6 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
               MessageUrlPreview: true,
             },
           });
-
           //WSで通知
           server?.publish(
             `channel::${body.channelId}`,
