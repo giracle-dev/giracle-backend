@@ -1,6 +1,6 @@
 {
   "name": "giracle-backend",
-  "version": "0.15.0-alpha",
+  "version": "0.16.0-alpha",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts",
@@ -13,7 +13,7 @@
   "dependencies": {
     "@elysiajs/cors": "^1.2.0",
     "@elysiajs/swagger": "^1.2.0",
-    "@prisma/client": "^6.3.1",
+    "@prisma/client": "^6.4.0",
     "elysia": "latest",
     "open-graph-scraper": "^6.9.0",
     "sharp": "^0.33.5"
@@ -21,7 +21,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.3",
     "bun-types": "latest",
-    "prisma": "^6.3.1"
+    "prisma": "^6.4.0"
   },
   "module": "src/index.js"
 }
