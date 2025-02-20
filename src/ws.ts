@@ -105,7 +105,7 @@ export const wsHandler = new Elysia().ws("/ws", {
     WSremoveUserInstance(user.id, ws);
 
     //console.log("ws :: close : userWSInstance.get(user.id)?.length", userWSInstance.get(user.id)?.length);
-    if (userWSInstance.get(user.id)?.length === 0) {
+    if (!userWSInstance.has(user.id)) {
       //ユーザー接続通知
       ws.publish(
         "GLOBAL",
@@ -156,6 +156,10 @@ function WSremoveUserInstance(userId: string, ws: ElysiaWS<any, any>) {
       return v.data.cookie?.token?.value !== tokenRemoving;
     }),
   );
+  //もしインスタンスが0になったら削除
+  if (userWSInstance.get(userId)?.length === 0) {
+    userWSInstance.delete(userId);
+  }
 }
 
 /**
