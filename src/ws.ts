@@ -3,9 +3,9 @@ import Elysia, { t } from "elysia";
 import type { ElysiaWS } from "elysia/dist/ws";
 
 const db = new PrismaClient();
-//ユーザーごとのWSインスタンス管理 ( Map <UserId, WSインスタンス>)
-// biome-ignore lint/suspicious/noExplicitAny: どのwsインスタンスでも受け付けるためにany
-export const userWSInstance = new Map<string, ElysiaWS<any, any>[]>();
+
+//ユーザーごとのWSキー管理 ( Map <UserId, WSインスタンスキー("sec-websocket-key")>)
+export const userWSInstance = new Map<string, string[]>();
 
 /**
  * WebSocket用 ハンドラ
@@ -129,10 +129,10 @@ function WSaddUserInstance(userId: string, ws: ElysiaWS<any, any>) {
   const currentInstance = userWSInstance.get(userId);
   //存在しない場合普通にset
   if (!currentInstance) {
-    userWSInstance.set(userId, [ws]);
+    userWSInstance.set(userId, [ws.data.headers["sec-websocket-key"]]);
     return;
   }
-  userWSInstance.set(userId, [...currentInstance, ws]);
+  userWSInstance.set(userId, [...currentInstance, ws.data.headers["sec-websocket-key"]]);
 }
 
 /**
@@ -148,14 +148,15 @@ function WSremoveUserInstance(userId: string, ws: ElysiaWS<any, any>) {
   if (!currentInstance) {
     return;
   }
-  const tokenRemoving = ws.data.cookie?.token?.value;
+  const socketKeyRemoving = ws.data.headers["sec-websocket-key"];
   userWSInstance.set(
     userId,
-    currentInstance.filter((v) => {
+    currentInstance.filter(v => {
       //console.log("WSremoveUserInstance :: v.data.cookie.token", v.data.cookie.token.value);
-      return v.data.cookie?.token?.value !== tokenRemoving;
+      return v !== socketKeyRemoving;
     }),
   );
+
   //もしインスタンスが0になったら削除
   if (userWSInstance.get(userId)?.length === 0) {
     userWSInstance.delete(userId);
