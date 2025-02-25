@@ -578,7 +578,49 @@ export const message = new Elysia({ prefix: "/message" })
       },
     },
   )
+
+  .post(
+    "/emoji-reaction",
+    async ({body: {messageId, channelId, emojiCode}, _userId, server}) => {
+      //リアクションを格納
+      const reaction = await db.messageReaction.create({
+        data: {
+          messageId,
+          userId: _userId,
+          channelId,
+          emojiCode
+        }
+      });
+
+      //WSで通知
+      server?.publish(
+        `channel::${channelId}`,
+        JSON.stringify({
+          signal: "message::addReaction",
+          data: reaction,
+        }),
+      );
+
+      return {
+        message: "Message reacted.",
+        data: reaction,
+      };
+    },
+    {
+      body: t.Object({
+        messageId: t.String({ minLength: 1 }),
+        channelId: t.String({ minLength: 1 }),
+        emojiCode: t.String({ minLength: 2 }),
+      }),
+      detail: {
+        description: "通知をすべて既読したとして削除する",
+        tags: ["Message"],
+      }
+    }
+  )
+
   .use(urlPreviewControl)
+
   .post(
     "/send",
     async ({ body: { channelId, message, fileIds }, _userId, server }) => {
