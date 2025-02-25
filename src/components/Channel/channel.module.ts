@@ -1,10 +1,10 @@
-import { type Message, PrismaClient } from "@prisma/client";
-import Elysia, { error, t } from "elysia";
-import CheckToken, { checkRoleTerm } from "../../Middlewares";
+import {type Message, PrismaClient} from "@prisma/client";
+import Elysia, {error, t} from "elysia";
+import CheckToken, {checkRoleTerm} from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
-import { WSSubscribe, WSUnsubscribe } from "../../ws";
+import {WSSubscribe, WSUnsubscribe} from "../../ws";
 
 const db = new PrismaClient();
 
@@ -359,11 +359,6 @@ export const channel = new Elysia({ prefix: "/channel" })
         include: {
           MessageUrlPreview: true,
           MessageFileAttached: true,
-          MessageReaction: {
-            where: {
-              channelId
-            }
-          }
         },
         take: fetchLength,
         orderBy: { createdAt: "desc" },
@@ -401,6 +396,41 @@ export const channel = new Elysia({ prefix: "/channel" })
           atEnd = true;
         }
         atTop = history.length < (fetchLength || 30);
+      }
+
+      //最後にメッセージごとにリアクションの合計数をそれぞれ格納する
+      for (const index in history) {
+        //結果用JSON
+        const emojiTotalJson:{
+          emojiCode: string,
+          count: number
+        }[] = [];
+
+        //絵文字リアクションを取得、総合数計算
+        const reactionSummary = await db.messageReaction.groupBy({
+          by: ['messageId', 'emojiCode'], // messageIdとemojiCodeでグループ化
+          where: {
+            messageId: { in: [history[index].id] }, // 取得したメッセージIDに限定
+          },
+          _count: {
+            emojiCode: true, // 各emojiCodeの出現数をカウント
+          },
+        });
+        //パースして配列にし、参照しやすいように
+        for (const react of reactionSummary) {
+
+          emojiTotalJson.push({
+            emojiCode: react.emojiCode,
+            count: react._count.emojiCode
+          });
+        }
+
+        //結果をこのメッセージ部分に格納する
+        history[index] = {
+          ...history[index],
+          // @ts-ignore - reactionSummaryの追加
+          reactionSummary: emojiTotalJson
+        };
       }
 
       return {
