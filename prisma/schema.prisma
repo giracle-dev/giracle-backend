@@ -24,6 +24,7 @@ model User {
   MessageFileAttached MessageFileAttached[]
   Inbox               Inbox[]
   MessageReaction     MessageReaction[]
+  CustomEmoji         CustomEmoji[]
 }
 
 model Password {
@@ -169,6 +170,15 @@ model Message {
 
   @@index([channelId])
   @@index([userId])
+}
+
+model CustomEmoji {
+  id             String @id @default(uuid())
+  code           String @unique
+  uploadedUserId String
+  user           User   @relation(fields: [uploadedUserId], references: [id])
+
+  @@index([uploadedUserId])
 }
 
 model RoleLink {
