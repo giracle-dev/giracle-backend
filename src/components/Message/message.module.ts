@@ -441,6 +441,12 @@ export const message = new Elysia({ prefix: "/message" })
           console.error("message.module :: /message/delete : 削除エラー->", e);
         }
       }
+      //リアクションデータを削除
+      await db.messageReaction.deleteMany({
+        where: {
+          messageId
+        }
+      });
       //添付ファイル情報の削除
       await db.messageFileAttached.deleteMany({
         where: {
