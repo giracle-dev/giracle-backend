@@ -5,7 +5,7 @@
       "name": "giracle-backend",
       "dependencies": {
         "@elysiajs/cors": "^1.2.0",
-        "@elysiajs/swagger": "^1.2.1",
+        "@elysiajs/swagger": "^1.2.2",
         "@prisma/client": "^6.4.1",
         "elysia": "latest",
         "open-graph-scraper": "^6.9.0",
