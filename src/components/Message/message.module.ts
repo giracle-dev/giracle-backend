@@ -578,7 +578,6 @@ export const message = new Elysia({ prefix: "/message" })
       },
     },
   )
-
   .post(
     "/emoji-reaction",
     async ({body: {messageId, channelId, emojiCode}, _userId, server}) => {
