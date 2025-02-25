@@ -701,6 +701,10 @@ export const message = new Elysia({ prefix: "/message" })
       if (msg.userId !== _userId) {
         throw error(403, "You are not sender of this message");
       }
+      //内容が同じならエラー
+      if (msg.content === content) {
+        throw error(400, "Message is already same");
+      }
 
       //メッセージデータを更新する
       const msgUpdated = await db.message.update({

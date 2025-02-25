@@ -1,6 +1,6 @@
 {
   "name": "giracle-backend",
-  "version": "0.16.1-alpha",
+  "version": "0.16.2-alpha",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts",
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@elysiajs/cors": "^1.2.0",
-    "@elysiajs/swagger": "^1.2.1",
+    "@elysiajs/swagger": "^1.2.2",
     "@prisma/client": "^6.4.1",
     "elysia": "latest",
     "open-graph-scraper": "^6.9.0",
