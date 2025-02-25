@@ -23,6 +23,7 @@ model User {
   MessageReadTime     MessageReadTime[]
   MessageFileAttached MessageFileAttached[]
   Inbox               Inbox[]
+  MessageReaction     MessageReaction[]
 }
 
 model Password {
@@ -79,6 +80,7 @@ model Channel {
   MessageReadTime      MessageReadTime[]
   MessageFileAttached  MessageFileAttached[]
   ChannelJoinOnDefault ChannelJoinOnDefault?
+  MessageReaction      MessageReaction[]
 }
 
 model MessageUrlPreview {
@@ -119,6 +121,22 @@ model MessageFileAttached {
   messageId      String?
 
   @@index([channelId])
+  @@index([messageId])
+  @@index([userId])
+}
+
+model MessageReaction {
+  id        String   @id @default(uuid())
+  channelId String
+  channel   Channel  @relation(fields: [channelId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  emojiCode String
+  Message   Message? @relation(fields: [messageId], references: [id])
+  messageId String?
+
+  @@index([channelId])
+  @@index([messageId])
   @@index([userId])
 }
 
@@ -147,6 +165,7 @@ model Message {
   MessageUrlPreview   MessageUrlPreview[]
   MessageFileAttached MessageFileAttached[]
   Inbox               Inbox[]
+  MessageReaction     MessageReaction[]
 
   @@index([channelId])
   @@index([userId])
