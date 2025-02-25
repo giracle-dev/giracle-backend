@@ -136,7 +136,7 @@ model MessageReaction {
   Message   Message? @relation(fields: [messageId], references: [id])
   messageId String?
 
-  @@index([channelId, messageId])
+  @@index([channelId])
   @@index([messageId])
   @@index([userId])
 }
