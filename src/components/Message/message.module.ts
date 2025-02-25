@@ -618,8 +618,8 @@ export const message = new Elysia({ prefix: "/message" })
         emojiCode: t.String({ minLength: 2 }),
       }),
       detail: {
-        description: "通知をすべて既読したとして削除する",
-        tags: ["Message"],
+        description: "絵文字リアクションをする",
+        tags: ["Message"]
       }
     }
   )
