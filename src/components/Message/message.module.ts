@@ -587,6 +587,18 @@ export const message = new Elysia({ prefix: "/message" })
   .post(
     "/emoji-reaction",
     async ({body: {messageId, channelId, emojiCode}, _userId, server}) => {
+      //自分がすでに同じリアクションをしているならエラー
+      const hasMyReaction = await db.messageReaction.findFirst({
+        where: {
+          messageId,
+          userId: _userId,
+          emojiCode,
+        }
+      });
+      if (hasMyReaction !== null) {
+        throw error(400, "You already reacted this message");
+      }
+
       //リアクションを格納
       const reaction = await db.messageReaction.create({
         data: {
