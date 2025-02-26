@@ -291,6 +291,45 @@ export const server = new Elysia({ prefix: "/server" })
       checkRoleTerm: "manageServer",
     },
   )
+  .get(
+    "/custom-emoji/:id",
+    async ({ params: {id} }) => {
+      //アイコン読み取り、存在確認して返す
+      const emojiGif = Bun.file(`./STORAGE/custom-emoji/${id}.gif`);
+      if (await emojiGif.exists()) return emojiGif;
+
+      const emojiJpeg = Bun.file(`./STORAGE/custom-emoji/${id}.jpeg`);
+      if (await emojiJpeg.exists()) return emojiJpeg;
+
+      return error(404, "Custom emoji not found");
+    },
+    {
+      params: t.Object({
+        id: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "指定のカスタム絵文字を取得します",
+        tags: ["Server"],
+      }
+    }
+  )
+  .get(
+    "/custom-emoji",
+    async () => {
+      const customEmojis = await db.customEmoji.findMany();
+
+      return {
+        message: "Custom emojis fetched",
+        data: customEmojis,
+      };
+    },
+    {
+      detail: {
+        description: "カスタム絵文字一覧を取得します",
+        tags: ["Server"],
+      }
+    }
+  )
   .put(
     "/custom-emoji/upload",
     async ({ body:{ emoji, emojiCode }, _userId }) => {
