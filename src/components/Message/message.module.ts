@@ -613,7 +613,7 @@ export const message = new Elysia({ prefix: "/message" })
       server?.publish(
         `channel::${channelId}`,
         JSON.stringify({
-          signal: "message::addReaction",
+          signal: "message::AddReaction",
           data: reaction,
         }),
       );
