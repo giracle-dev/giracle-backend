@@ -305,6 +305,14 @@ export const server = new Elysia({ prefix: "/server" })
         return error(400, "File type is invalid");
       }
 
+      //DBに登録
+      const emojiUploaded = await db.customEmoji.create({
+        data: {
+          code: emojiCode,
+          uploadedUserId: _userId,
+        }
+      });
+
       //拡張子取得
       const ext = emoji.type.split("/")[1];
       //拡張子に合わせて画像を変換
@@ -312,24 +320,17 @@ export const server = new Elysia({ prefix: "/server" })
         await sharp(await emoji.arrayBuffer(), { animated: true })
           .resize(32, 32)
           .gif()
-          .toFile(`./STORAGE/icon/${_userId}.${ext}`);
+          .toFile(`./STORAGE/custom-emoji/${emojiUploaded.id}.${ext}`);
       } else {
         await sharp(await emoji.arrayBuffer())
           .resize(32, 32)
           .jpeg({ mozjpeg: true, quality: 80 })
-          .toFile(`./STORAGE/icon/${_userId}.${ext}`);
+          .toFile(`./STORAGE/custom-emoji/${emojiUploaded.id}.jpeg`);
       }
 
-      //DBに登録
-      await db.customEmoji.create({
-        data: {
-          code: emojiCode,
-          uploadedUserId: _userId,
-        }
-      });
-
       return {
-        message: "Emoji uploaded"
+        message: "Emoji uploaded",
+        data: emojiUploaded
       };
     },
     {
