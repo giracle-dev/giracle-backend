@@ -635,6 +635,54 @@ export const message = new Elysia({ prefix: "/message" })
       }
     }
   )
+  .delete(
+    "/delete-emoji-reaction",
+    async ({body: {messageId, channelId, emojiCode}, _userId, server}) => {
+      //自分のリアクションを取得して無ければエラー
+      const hasMyReaction = await db.messageReaction.findFirst({
+        where: {
+          messageId,
+          userId: _userId,
+          emojiCode,
+        }
+      });
+      if (hasMyReaction === null) {
+        throw error(404, "Reaction does not exists");
+      }
+
+      //リアクションを削除
+      const reactionDeleted = await db.messageReaction.delete({
+        where: {
+          id: hasMyReaction.id,
+        }
+      });
+
+      //WSで通知
+      server?.publish(
+        `channel::${channelId}`,
+        JSON.stringify({
+          signal: "message::DeleteReaction",
+          data: reactionDeleted,
+        }),
+      );
+
+      return {
+        message: "Reaction deleted.",
+        data: reactionDeleted,
+      };
+    },
+    {
+      body: t.Object({
+        messageId: t.String({ minLength: 1 }),
+        channelId: t.String({ minLength: 1 }),
+        emojiCode: t.String({ minLength: 2 }),
+      }),
+      detail: {
+        description: "自分の絵文字リアクションを削除する",
+        tags: ["Message"]
+      }
+    }
+  )
 
   .use(urlPreviewControl)
 
