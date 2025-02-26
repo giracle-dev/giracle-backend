@@ -4,6 +4,7 @@ import * as path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
+import sharp from "sharp";
 
 const db = new PrismaClient();
 
@@ -289,6 +290,58 @@ export const server = new Elysia({ prefix: "/server" })
       },
       checkRoleTerm: "manageServer",
     },
+  )
+  .put(
+    "/custom-emoji/upload",
+    async ({ body:{ emoji, emojiCode }, _userId }) => {
+      if (emoji.size > 8 * 1024 * 1024) {
+        return error(400, "Emoji's file size is too large");
+      }
+      if (
+        emoji.type !== "image/png" &&
+        emoji.type !== "image/gif" &&
+        emoji.type !== "image/jpeg"
+      ) {
+        return error(400, "File type is invalid");
+      }
+
+      //拡張子取得
+      const ext = emoji.type.split("/")[1];
+      //拡張子に合わせて画像を変換
+      if (ext === "gif") {
+        await sharp(await emoji.arrayBuffer(), { animated: true })
+          .resize(32, 32)
+          .gif()
+          .toFile(`./STORAGE/icon/${_userId}.${ext}`);
+      } else {
+        await sharp(await emoji.arrayBuffer())
+          .resize(32, 32)
+          .jpeg({ mozjpeg: true, quality: 80 })
+          .toFile(`./STORAGE/icon/${_userId}.${ext}`);
+      }
+
+      //DBに登録
+      await db.customEmoji.create({
+        data: {
+          code: emojiCode,
+          uploadedUserId: _userId,
+        }
+      });
+
+      return {
+        message: "Emoji uploaded"
+      };
+    },
+    {
+      body: t.Object({
+        emojiCode: t.String({ minLength: 1 }),
+        emoji: t.File(),
+      }),
+      detail: {
+        description: "カスタム絵文字を追加します",
+        tags: ["Server"],
+      }
+    }
   )
   .get(
     "/storage-usage",
