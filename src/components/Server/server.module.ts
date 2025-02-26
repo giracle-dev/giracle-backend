@@ -292,20 +292,27 @@ export const server = new Elysia({ prefix: "/server" })
     },
   )
   .get(
-    "/custom-emoji/:id",
-    async ({ params: {id} }) => {
-      //アイコン読み取り、存在確認して返す
-      const emojiGif = Bun.file(`./STORAGE/custom-emoji/${id}.gif`);
-      if (await emojiGif.exists()) return emojiGif;
+    "/custom-emoji/:code",
+    async ({ params: {code} }) => {
+      //絵文字データを取得、無ければエラー
+      const emoji = await db.customEmoji.findFirst({
+        where: {
+          code,
+        },
+      });
+      if (emoji === null) return error(404, "Custom emoji not found");
 
-      const emojiJpeg = Bun.file(`./STORAGE/custom-emoji/${id}.jpeg`);
+      //アイコン読み取り、存在確認して返す
+      const emojiGif = Bun.file(`./STORAGE/custom-emoji/${emoji.id}.gif`);
+      if (await emojiGif.exists()) return emojiGif;
+      const emojiJpeg = Bun.file(`./STORAGE/custom-emoji/${emoji.id}.jpeg`);
       if (await emojiJpeg.exists()) return emojiJpeg;
 
       return error(404, "Custom emoji not found");
     },
     {
       params: t.Object({
-        id: t.String({ minLength: 1 }),
+        code: t.String({ minLength: 1 }),
       }),
       detail: {
         description: "指定のカスタム絵文字を取得します",
