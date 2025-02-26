@@ -5,6 +5,7 @@ import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
 import {WSSubscribe, WSUnsubscribe} from "../../ws";
+import CalculateReactionTotal from "../../Utils/CalculateReactionTotal";
 
 const db = new PrismaClient();
 
@@ -400,40 +401,7 @@ export const channel = new Elysia({ prefix: "/channel" })
 
       //最後にメッセージごとにリアクションの合計数をそれぞれ格納する
       for (const index in history) {
-        //結果用JSON
-        const emojiTotalJson:{
-          emojiCode: string,
-          count: number,
-          includingYou: boolean
-        }[] = [];
-
-        //絵文字リアクションを取得、総合数計算
-        const reactionSummary = await db.messageReaction.groupBy({
-          by: ['messageId', 'emojiCode'], // messageIdとemojiCodeでグループ化
-          where: {
-            messageId: { in: [history[index].id] }, // 取得したメッセージIDに限定
-          },
-          _count: {
-            emojiCode: true, // 各emojiCodeの出現数をカウント
-          },
-        });
-        //パースして配列にし、参照しやすいように
-        for (const react of reactionSummary) {
-          //自分がリアクションしていたかどうかを調べてそれも追加
-          const didYouReact = await db.messageReaction.findFirst({
-            where: {
-              messageId: history[index].id,
-              emojiCode: react.emojiCode,
-              userId: _userId,
-            },
-          });
-          //結果に格納
-          emojiTotalJson.push({
-            emojiCode: react.emojiCode,
-            count: react._count.emojiCode,
-            includingYou: didYouReact !== null,
-          });
-        }
+        const emojiTotalJson = await CalculateReactionTotal(history[index].id, _userId);
 
         //結果をこのメッセージ部分に格納する
         history[index] = {
