@@ -403,7 +403,8 @@ export const channel = new Elysia({ prefix: "/channel" })
         //結果用JSON
         const emojiTotalJson:{
           emojiCode: string,
-          count: number
+          count: number,
+          includingYou: boolean
         }[] = [];
 
         //絵文字リアクションを取得、総合数計算
@@ -418,10 +419,19 @@ export const channel = new Elysia({ prefix: "/channel" })
         });
         //パースして配列にし、参照しやすいように
         for (const react of reactionSummary) {
-
+          //自分がリアクションしていたかどうかを調べてそれも追加
+          const didYouReact = await db.messageReaction.findFirst({
+            where: {
+              messageId: history[index].id,
+              emojiCode: react.emojiCode,
+              userId: _userId,
+            },
+          });
+          //結果に格納
           emojiTotalJson.push({
             emojiCode: react.emojiCode,
-            count: react._count.emojiCode
+            count: react._count.emojiCode,
+            includingYou: didYouReact !== null,
           });
         }
 
