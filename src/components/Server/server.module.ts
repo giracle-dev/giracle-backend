@@ -370,7 +370,7 @@ export const server = new Elysia({ prefix: "/server" })
       } else {
         await sharp(await emoji.arrayBuffer())
           .resize(32, 32)
-          .jpeg({ mozjpeg: true, quality: 80 })
+          .jpeg({ mozjpeg: true, quality: 90 })
           .toFile(`./STORAGE/custom-emoji/${emojiUploaded.id}.jpeg`);
       }
 
