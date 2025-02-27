@@ -366,7 +366,7 @@ export const server = new Elysia({ prefix: "/server" })
         await sharp(await emoji.arrayBuffer(), { animated: true })
           .resize(32, 32)
           .gif()
-          .toFile(`./STORAGE/custom-emoji/${emojiUploaded.id}.${ext}`);
+          .toFile(`./STORAGE/custom-emoji/${emojiUploaded.id}.gif`);
       } else {
         await sharp(await emoji.arrayBuffer())
           .resize(32, 32)
