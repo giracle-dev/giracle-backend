@@ -94,6 +94,7 @@ export const role = new Elysia({ prefix: "/role" })
           manageChannel: t.Optional(t.Boolean()),
           manageRole: t.Optional(t.Boolean()),
           manageUser: t.Optional(t.Boolean()),
+          manageEmoji: t.Optional(t.Boolean()),
         }),
       }),
       detail: {
@@ -139,6 +140,7 @@ export const role = new Elysia({ prefix: "/role" })
           manageChannel: t.Optional(t.Boolean()),
           manageRole: t.Optional(t.Boolean()),
           manageUser: t.Optional(t.Boolean()),
+          manageEmoji: t.Optional(t.Boolean()),
         }),
       }),
       detail: {

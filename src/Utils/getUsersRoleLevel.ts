@@ -46,6 +46,9 @@ export default async function getUsersRoleLevel(
     if (roleData.role.manageChannel && userRoleLevel < 2) {
       userRoleLevel = 2;
     }
+    if (roleData.role.manageEmoji && userRoleLevel < 1) {
+      userRoleLevel = 1;
+    }
   }
 
   return userRoleLevel;
