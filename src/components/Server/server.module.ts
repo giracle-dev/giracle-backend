@@ -407,6 +407,40 @@ export const server = new Elysia({ prefix: "/server" })
       }
     }
   )
+  .delete(
+    "/custom-emoji/delete",
+    async ({ body: {emojiCode}, server }) => {
+      //絵文字を削除しデータ取得
+      const emojiDeleted = await db.customEmoji.delete({
+        where: {
+          code: emojiCode,
+        }
+      });
+
+      //WSで通知
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "server::CustomEmojiDeleted",
+          data: emojiDeleted,
+        })
+      );
+
+      return {
+        message: "Emoji deleted",
+        data: emojiDeleted
+      };
+    },
+    {
+      body: t.Object({
+        emojiCode: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "カスタム絵文字を削除します",
+        tags: ["Server"],
+      }
+    }
+  )
   .get(
     "/storage-usage",
     async () => {
