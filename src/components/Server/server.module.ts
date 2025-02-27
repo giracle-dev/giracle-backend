@@ -351,6 +351,10 @@ export const server = new Elysia({ prefix: "/server" })
         return error(400, "File type is invalid");
       }
 
+      //絵文字コードのバリデーション
+      if (emojiCode.includes(" ")) return error(400, "Emoji code cannot contain spaces");
+      if ((/[^\u0020-\u007E]/).test(emojiCode)) return error(400, "Emoji code cannot contain full-width characters");
+
       //絵文字コードが既に存在するか確認
       const emojiExist = await db.customEmoji.findFirst({
         where: {
