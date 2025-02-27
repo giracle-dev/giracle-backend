@@ -339,7 +339,7 @@ export const server = new Elysia({ prefix: "/server" })
   )
   .put(
     "/custom-emoji/upload",
-    async ({ body:{ emoji, emojiCode }, _userId }) => {
+    async ({ body:{ emoji, emojiCode }, server, _userId }) => {
       if (emoji.size > 8 * 1024 * 1024) {
         return error(400, "Emoji's file size is too large");
       }
@@ -381,6 +381,15 @@ export const server = new Elysia({ prefix: "/server" })
           .jpeg({ mozjpeg: true, quality: 90 })
           .toFile(`./STORAGE/custom-emoji/${emojiUploaded.id}.jpeg`);
       }
+
+      //WSで通知
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "server::CustomEmojiUploaded",
+          data: emojiUploaded,
+        })
+      );
 
       return {
         message: "Emoji uploaded",
