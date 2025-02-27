@@ -4,6 +4,7 @@ import * as path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
+import sharp from "sharp";
 
 const db = new PrismaClient();
 
@@ -289,6 +290,164 @@ export const server = new Elysia({ prefix: "/server" })
       },
       checkRoleTerm: "manageServer",
     },
+  )
+  .get(
+    "/custom-emoji/:code",
+    async ({ params: {code} }) => {
+      //絵文字データを取得、無ければエラー
+      const emoji = await db.customEmoji.findFirst({
+        where: {
+          code,
+        },
+      });
+      if (emoji === null) return error(404, "Custom emoji not found");
+
+      //アイコン読み取り、存在確認して返す
+      const emojiGif = Bun.file(`./STORAGE/custom-emoji/${emoji.id}.gif`);
+      if (await emojiGif.exists()) return emojiGif;
+      const emojiJpeg = Bun.file(`./STORAGE/custom-emoji/${emoji.id}.jpeg`);
+      if (await emojiJpeg.exists()) return emojiJpeg;
+
+      return error(404, "Custom emoji not found");
+    },
+    {
+      params: t.Object({
+        code: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "指定のカスタム絵文字を取得します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageEmoji",
+    }
+  )
+  .get(
+    "/custom-emoji",
+    async () => {
+      const customEmojis = await db.customEmoji.findMany();
+
+      return {
+        message: "Custom emojis fetched",
+        data: customEmojis,
+      };
+    },
+    {
+      detail: {
+        description: "カスタム絵文字一覧を取得します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageEmoji",
+    }
+  )
+  .put(
+    "/custom-emoji/upload",
+    async ({ body:{ emoji, emojiCode }, server, _userId }) => {
+      if (emoji.size > 8 * 1024 * 1024) {
+        return error(400, "Emoji's file size is too large");
+      }
+      if (
+        emoji.type !== "image/png" &&
+        emoji.type !== "image/gif" &&
+        emoji.type !== "image/jpeg"
+      ) {
+        return error(400, "File type is invalid");
+      }
+
+      //絵文字コードのバリデーション
+      if (emojiCode.includes(" ")) return error(400, "Emoji code cannot contain spaces");
+      if ((/[^\u0020-\u007E]/).test(emojiCode)) return error(400, "Emoji code cannot contain full-width characters");
+
+      //絵文字コードが既に存在するか確認
+      const emojiExist = await db.customEmoji.findFirst({
+        where: {
+          code: emojiCode,
+        },
+      });
+      if (emojiExist !== null) return error(400, "Emoji code already exists");
+
+      //DBに登録
+      const emojiUploaded = await db.customEmoji.create({
+        data: {
+          code: emojiCode,
+          uploadedUserId: _userId,
+        }
+      });
+
+      //拡張子取得
+      const ext = emoji.type.split("/")[1];
+      //拡張子に合わせて画像を変換
+      if (ext === "gif") {
+        await sharp(await emoji.arrayBuffer(), { animated: true })
+          .resize(32, 32)
+          .gif()
+          .toFile(`./STORAGE/custom-emoji/${emojiUploaded.id}.gif`);
+      } else {
+        await sharp(await emoji.arrayBuffer())
+          .resize(32, 32)
+          .jpeg({ mozjpeg: true, quality: 90 })
+          .toFile(`./STORAGE/custom-emoji/${emojiUploaded.id}.jpeg`);
+      }
+
+      //WSで通知
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "server::CustomEmojiUploaded",
+          data: emojiUploaded,
+        })
+      );
+
+      return {
+        message: "Emoji uploaded",
+        data: emojiUploaded
+      };
+    },
+    {
+      body: t.Object({
+        emojiCode: t.String({ minLength: 1 }),
+        emoji: t.File(),
+      }),
+      detail: {
+        description: "カスタム絵文字を追加します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageEmoji",
+    }
+  )
+  .delete(
+    "/custom-emoji/delete",
+    async ({ body: {emojiCode}, server }) => {
+      //絵文字を削除しデータ取得
+      const emojiDeleted = await db.customEmoji.delete({
+        where: {
+          code: emojiCode,
+        }
+      });
+
+      //WSで通知
+      server?.publish(
+        "GLOBAL",
+        JSON.stringify({
+          signal: "server::CustomEmojiDeleted",
+          data: emojiDeleted,
+        })
+      );
+
+      return {
+        message: "Emoji deleted",
+        data: emojiDeleted
+      };
+    },
+    {
+      body: t.Object({
+        emojiCode: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "カスタム絵文字を削除します",
+        tags: ["Server"],
+      },
+      checkRoleTerm: "manageEmoji",
+    }
   )
   .get(
     "/storage-usage",

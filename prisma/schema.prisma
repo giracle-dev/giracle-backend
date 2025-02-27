@@ -23,6 +23,8 @@ model User {
   MessageReadTime     MessageReadTime[]
   MessageFileAttached MessageFileAttached[]
   Inbox               Inbox[]
+  MessageReaction     MessageReaction[]
+  CustomEmoji         CustomEmoji[]
 }
 
 model Password {
@@ -79,6 +81,7 @@ model Channel {
   MessageReadTime      MessageReadTime[]
   MessageFileAttached  MessageFileAttached[]
   ChannelJoinOnDefault ChannelJoinOnDefault?
+  MessageReaction      MessageReaction[]
 }
 
 model MessageUrlPreview {
@@ -119,6 +122,22 @@ model MessageFileAttached {
   messageId      String?
 
   @@index([channelId])
+  @@index([messageId])
+  @@index([userId])
+}
+
+model MessageReaction {
+  id        String   @id @default(uuid())
+  channelId String
+  channel   Channel  @relation(fields: [channelId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  emojiCode String
+  Message   Message? @relation(fields: [messageId], references: [id])
+  messageId String?
+
+  @@index([channelId])
+  @@index([messageId])
   @@index([userId])
 }
 
@@ -147,9 +166,19 @@ model Message {
   MessageUrlPreview   MessageUrlPreview[]
   MessageFileAttached MessageFileAttached[]
   Inbox               Inbox[]
+  MessageReaction     MessageReaction[]
 
   @@index([channelId])
   @@index([userId])
+}
+
+model CustomEmoji {
+  id             String @id @default(uuid())
+  code           String @unique
+  uploadedUserId String
+  user           User   @relation(fields: [uploadedUserId], references: [id])
+
+  @@index([uploadedUserId])
 }
 
 model RoleLink {
@@ -176,6 +205,7 @@ model RoleInfo {
   manageChannel Boolean @default(false)
   manageUser    Boolean @default(false)
   manageRole    Boolean @default(false)
+  manageEmoji   Boolean @default(false)
 
   RoleLink            RoleLink[]
   ChannelViewableRole ChannelViewableRole[]

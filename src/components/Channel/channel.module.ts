@@ -1,10 +1,11 @@
-import { type Message, PrismaClient } from "@prisma/client";
-import Elysia, { error, t } from "elysia";
-import CheckToken, { checkRoleTerm } from "../../Middlewares";
+import {type Message, PrismaClient} from "@prisma/client";
+import Elysia, {error, t} from "elysia";
+import CheckToken, {checkRoleTerm} from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
-import { WSSubscribe, WSUnsubscribe } from "../../ws";
+import {WSSubscribe, WSUnsubscribe} from "../../ws";
+import CalculateReactionTotal from "../../Utils/CalculateReactionTotal";
 
 const db = new PrismaClient();
 
@@ -396,6 +397,18 @@ export const channel = new Elysia({ prefix: "/channel" })
           atEnd = true;
         }
         atTop = history.length < (fetchLength || 30);
+      }
+
+      //最後にメッセージごとにリアクションの合計数をそれぞれ格納する
+      for (const index in history) {
+        const emojiTotalJson = await CalculateReactionTotal(history[index].id, _userId);
+
+        //結果をこのメッセージ部分に格納する
+        history[index] = {
+          ...history[index],
+          // @ts-ignore - reactionSummaryの追加
+          reactionSummary: emojiTotalJson
+        };
       }
 
       return {

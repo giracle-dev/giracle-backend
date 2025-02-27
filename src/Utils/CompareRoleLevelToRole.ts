@@ -3,9 +3,10 @@ import getUsersRoleLevel from "./getUsersRoleLevel";
 
 const levelIndex = {
   manageServer: 5,
-  manageChannel: 2,
   manageRole: 4,
   manageUser: 3,
+  manageChannel: 2,
+  manageEmoji: 1,
 };
 
 /**
@@ -48,6 +49,9 @@ export default async function CompareRoleLevelToRole(
   }
   if (role.manageChannel && targetRoleLevel < 2) {
     targetRoleLevel = 2;
+  }
+  if (role.manageEmoji && targetRoleLevel < 1) {
+    targetRoleLevel = 1;
   }
 
   console.log(

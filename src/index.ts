@@ -15,6 +15,7 @@ await mkdir("./STORAGE", { recursive: true }).catch((e)=>{});
 await mkdir("./STORAGE/file", { recursive: true }).catch((e)=>{});
 await mkdir("./STORAGE/icon", { recursive: true }).catch((e)=>{});
 await mkdir("./STORAGE/banner", { recursive: true }).catch((e)=>{});
+await mkdir("./STORAGE/custom-emoji", { recursive: true }).catch((e)=>{});
 
 export const app = new Elysia()
   .use(
