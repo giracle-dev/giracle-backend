@@ -351,6 +351,14 @@ export const server = new Elysia({ prefix: "/server" })
         return error(400, "File type is invalid");
       }
 
+      //絵文字コードが既に存在するか確認
+      const emojiExist = await db.customEmoji.findFirst({
+        where: {
+          code: emojiCode,
+        },
+      });
+      if (emojiExist !== null) return error(400, "Emoji code already exists");
+
       //DBに登録
       const emojiUploaded = await db.customEmoji.create({
         data: {
