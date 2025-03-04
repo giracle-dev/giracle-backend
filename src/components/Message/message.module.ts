@@ -627,7 +627,7 @@ export const message = new Elysia({ prefix: "/message" })
       body: t.Object({
         messageId: t.String({ minLength: 1 }),
         channelId: t.String({ minLength: 1 }),
-        emojiCode: t.String({ minLength: 2 }),
+        emojiCode: t.String({ minLength: 1 }),
       }),
       detail: {
         description: "絵文字リアクションをする",
@@ -675,7 +675,7 @@ export const message = new Elysia({ prefix: "/message" })
       body: t.Object({
         messageId: t.String({ minLength: 1 }),
         channelId: t.String({ minLength: 1 }),
-        emojiCode: t.String({ minLength: 2 }),
+        emojiCode: t.String({ minLength: 1 }),
       }),
       detail: {
         description: "自分の絵文字リアクションを削除する",
