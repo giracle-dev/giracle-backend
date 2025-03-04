@@ -36,6 +36,10 @@ export const channel = new Elysia({ prefix: "/channel" })
       if (channelData === null) {
         throw error(404, "Channel not found");
       }
+      //チャンネルを見られないようなユーザーだと存在しないとしてエラーを出す
+      if (!(await CheckChannelVisibility(channelId, _userId))) {
+        throw error(404, "Channel not found")
+      }
 
       await db.channelJoin.create({
         data: {
@@ -138,7 +142,12 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .get(
     "/get-info/:channelId",
-    async ({ params: { channelId } }) => {
+    async ({ params: { channelId }, _userId }) => {
+      //チャンネルを見られないようなユーザーだと存在しないとしてエラーを出す
+      if (!(await CheckChannelVisibility(channelId, _userId))) {
+        throw error(404, "Channel not found")
+      }
+
       const channelData = await db.channel.findUnique({
         where: {
           id: channelId,
