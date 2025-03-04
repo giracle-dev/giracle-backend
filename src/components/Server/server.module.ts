@@ -318,7 +318,6 @@ export const server = new Elysia({ prefix: "/server" })
         description: "指定のカスタム絵文字を取得します",
         tags: ["Server"],
       },
-      checkRoleTerm: "manageEmoji",
     }
   )
   .get(
@@ -336,7 +335,6 @@ export const server = new Elysia({ prefix: "/server" })
         description: "カスタム絵文字一覧を取得します",
         tags: ["Server"],
       },
-      checkRoleTerm: "manageEmoji",
     }
   )
   .put(
