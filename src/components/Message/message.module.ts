@@ -319,7 +319,9 @@ export const message = new Elysia({ prefix: "/message" })
       //保存するためのファイル名保存
       const fileNameGen = `${Date.now()}_${file.name}`;
       //チャンネルIdのディレクトリを作成
-      await mkdir(`./STORAGE/file/${channelId}`, { recursive: true }).catch(() => {});
+      await mkdir(`./STORAGE/file/${channelId}`, { recursive: true }).catch(
+        () => {},
+      );
 
       console.log("message.module :: /file/upload : file.type->", file.type);
       //jpegファイルであるかどうかフラグ
@@ -444,8 +446,8 @@ export const message = new Elysia({ prefix: "/message" })
       //リアクションデータを削除
       await db.messageReaction.deleteMany({
         where: {
-          messageId
-        }
+          messageId,
+        },
       });
       //添付ファイル情報の削除
       await db.messageFileAttached.deleteMany({
@@ -469,7 +471,7 @@ export const message = new Elysia({ prefix: "/message" })
           data: {
             messageId: messageData.id,
             channelId: messageData.channelId,
-          }
+          },
         }),
       );
 
@@ -586,17 +588,21 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .post(
     "/emoji-reaction",
-    async ({body: {messageId, channelId, emojiCode}, _userId, server}) => {
-      //自分がすでに同じリアクションをしているならエラー
-      const hasMyReaction = await db.messageReaction.findFirst({
+    async ({ body: { messageId, channelId, emojiCode }, _userId, server }) => {
+      //自分のリアクションデータを取得して条件確認する
+      const MyReactions = await db.messageReaction.findMany({
         where: {
           messageId,
           userId: _userId,
-          emojiCode,
-        }
+        },
       });
-      if (hasMyReaction !== null) {
+      //同じ絵文字コードのリアクションがあればエラー
+      if (MyReactions.some((r) => r.emojiCode === emojiCode)) {
         throw error(400, "You already reacted this message");
+      }
+      //同じユーザーリアクションが10以上ならエラー
+      if (MyReactions.length >= 10) {
+        throw error(400, "You can't react more than 10 times");
       }
 
       //リアクションを格納
@@ -605,8 +611,8 @@ export const message = new Elysia({ prefix: "/message" })
           messageId,
           userId: _userId,
           channelId,
-          emojiCode
-        }
+          emojiCode,
+        },
       });
 
       //WSで通知
@@ -631,20 +637,20 @@ export const message = new Elysia({ prefix: "/message" })
       }),
       detail: {
         description: "絵文字リアクションをする",
-        tags: ["Message"]
-      }
-    }
+        tags: ["Message"],
+      },
+    },
   )
   .delete(
     "/delete-emoji-reaction",
-    async ({body: {messageId, channelId, emojiCode}, _userId, server}) => {
+    async ({ body: { messageId, channelId, emojiCode }, _userId, server }) => {
       //自分のリアクションを取得して無ければエラー
       const hasMyReaction = await db.messageReaction.findFirst({
         where: {
           messageId,
           userId: _userId,
           emojiCode,
-        }
+        },
       });
       if (hasMyReaction === null) {
         throw error(404, "Reaction does not exists");
@@ -654,7 +660,7 @@ export const message = new Elysia({ prefix: "/message" })
       const reactionDeleted = await db.messageReaction.delete({
         where: {
           id: hasMyReaction.id,
-        }
+        },
       });
 
       //WSで通知
@@ -679,9 +685,9 @@ export const message = new Elysia({ prefix: "/message" })
       }),
       detail: {
         description: "自分の絵文字リアクションを削除する",
-        tags: ["Message"]
-      }
-    }
+        tags: ["Message"],
+      },
+    },
   )
 
   .use(urlPreviewControl)
@@ -794,11 +800,11 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .post(
     "/edit",
-    async ({body: {messageId, content}, _userId, server}) => {
+    async ({ body: { messageId, content }, _userId, server }) => {
       const msg = await db.message.findUnique({
         where: {
           id: messageId,
-        }
+        },
       });
       //メッセージが無かった時エラー
       if (msg === null) {
@@ -821,7 +827,7 @@ export const message = new Elysia({ prefix: "/message" })
         data: {
           content,
           isEdited: true,
-        }
+        },
       });
 
       //WSで通知
