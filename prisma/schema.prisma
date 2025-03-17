@@ -12,19 +12,19 @@ model User {
   name                String?               @unique
   selfIntroduction    String
   isBanned            Boolean               @default(false)
-  password            Password?
-  Token               Token[]
   Channel             Channel[]
+  ChannelJoin         ChannelJoin[]
+  CustomEmoji         CustomEmoji[]
+  Inbox               Inbox[]
+  Invitation          Invitation[]
+  Message             Message[]
+  MessageFileAttached MessageFileAttached[]
+  MessageReaction     MessageReaction[]
+  MessageReadTime     MessageReadTime[]
+  password            Password?
   RoleInfo            RoleInfo[]
   RoleLink            RoleLink[]
-  ChannelJoin         ChannelJoin[]
-  Message             Message[]
-  Invitation          Invitation[]
-  MessageReadTime     MessageReadTime[]
-  MessageFileAttached MessageFileAttached[]
-  Inbox               Inbox[]
-  MessageReaction     MessageReaction[]
-  CustomEmoji         CustomEmoji[]
+  Token               Token[]
 }
 
 model Password {
@@ -47,9 +47,9 @@ model Token {
 
 model ChannelViewableRole {
   channelId String
-  channel   Channel  @relation(fields: [channelId], references: [id])
   roleId    String
   role      RoleInfo @relation(fields: [roleId], references: [id])
+  channel   Channel  @relation(fields: [channelId], references: [id])
 
   @@id([channelId, roleId])
   @@index([roleId])
@@ -59,9 +59,9 @@ model ChannelViewableRole {
 model ChannelJoin {
   channelJoinedAt DateTime @default(now())
   channelId       String
-  channel         Channel  @relation(fields: [channelId], references: [id])
   userId          String
   user            User     @relation(fields: [userId], references: [id])
+  channel         Channel  @relation(fields: [channelId], references: [id])
 
   @@id([userId, channelId])
   @@index([userId])
@@ -76,12 +76,12 @@ model Channel {
   createdUserId        String
   user                 User                  @relation(fields: [createdUserId], references: [id])
   ChannelJoin          ChannelJoin[]
-  Message              Message[]
-  ChannelViewableRole  ChannelViewableRole[]
-  MessageReadTime      MessageReadTime[]
-  MessageFileAttached  MessageFileAttached[]
   ChannelJoinOnDefault ChannelJoinOnDefault?
+  ChannelViewableRole  ChannelViewableRole[]
+  Message              Message[]
+  MessageFileAttached  MessageFileAttached[]
   MessageReaction      MessageReaction[]
+  MessageReadTime      MessageReadTime[]
 }
 
 model MessageUrlPreview {
@@ -89,20 +89,20 @@ model MessageUrlPreview {
   url         String
   type        String
   messageId   String
-  message     Message @relation(fields: [messageId], references: [id])
   title       String
   description String?
   faviconLink String?
   imageLink   String?
   videoLink   String?
+  message     Message @relation(fields: [messageId], references: [id])
 }
 
 model MessageReadTime {
   readTime  DateTime
   channelId String
-  channel   Channel  @relation(fields: [channelId], references: [id])
   userId    String
   user      User     @relation(fields: [userId], references: [id])
+  channel   Channel  @relation(fields: [channelId], references: [id])
 
   @@id([channelId, userId])
   @@index([userId])
@@ -112,15 +112,15 @@ model MessageReadTime {
 model MessageFileAttached {
   id             String   @id @default(uuid())
   channelId      String
-  channel        Channel  @relation(fields: [channelId], references: [id])
   userId         String
-  user           User     @relation(fields: [userId], references: [id])
   actualFileName String
   savedFileName  String
   size           Int
   type           String
-  Message        Message? @relation(fields: [messageId], references: [id])
   messageId      String?
+  Message        Message? @relation(fields: [messageId], references: [id])
+  user           User     @relation(fields: [userId], references: [id])
+  channel        Channel  @relation(fields: [channelId], references: [id])
 
   @@index([channelId])
   @@index([messageId])
@@ -130,12 +130,12 @@ model MessageFileAttached {
 model MessageReaction {
   id        String   @id @default(uuid())
   channelId String
-  channel   Channel  @relation(fields: [channelId], references: [id])
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   emojiCode String
-  Message   Message? @relation(fields: [messageId], references: [id])
   messageId String?
+  Message   Message? @relation(fields: [messageId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  channel   Channel  @relation(fields: [channelId], references: [id])
 
   @@index([channelId])
   @@index([messageId])
@@ -146,9 +146,9 @@ model Inbox {
   type      String
   happendAt DateTime @default(now())
   messageId String
-  Message   Message  @relation(fields: [messageId], references: [id])
   userId    String
   user      User     @relation(fields: [userId], references: [id])
+  Message   Message  @relation(fields: [messageId], references: [id])
 
   @@id([messageId, userId])
   @@index([userId])
@@ -160,14 +160,14 @@ model Message {
   isSystemMessage     Boolean               @default(false)
   isEdited            Boolean               @default(false)
   userId              String
-  user                User                  @relation(fields: [userId], references: [id])
   channelId           String
-  channel             Channel               @relation(fields: [channelId], references: [id])
   createdAt           DateTime              @default(now())
-  MessageUrlPreview   MessageUrlPreview[]
-  MessageFileAttached MessageFileAttached[]
   Inbox               Inbox[]
+  channel             Channel               @relation(fields: [channelId], references: [id])
+  user                User                  @relation(fields: [userId], references: [id])
+  MessageFileAttached MessageFileAttached[]
   MessageReaction     MessageReaction[]
+  MessageUrlPreview   MessageUrlPreview[]
 
   @@index([channelId])
   @@index([userId])
@@ -184,10 +184,10 @@ model CustomEmoji {
 
 model RoleLink {
   roleId       String
-  role         RoleInfo @relation(fields: [roleId], references: [id])
   roleLinkedAt DateTime @default(now())
   userId       String
   user         User     @relation(fields: [userId], references: [id])
+  role         RoleInfo @relation(fields: [roleId], references: [id])
 
   @@id([userId, roleId])
   @@index([userId])
@@ -195,30 +195,28 @@ model RoleLink {
 }
 
 model RoleInfo {
-  id            String   @id @default(uuid())
-  name          String   @unique
-  createdUserId String
-  color         String   @default("#fff")
-  createdAt     DateTime @default(now())
-  user          User     @relation(fields: [createdUserId], references: [id])
-
-  manageServer  Boolean @default(false)
-  manageChannel Boolean @default(false)
-  manageUser    Boolean @default(false)
-  manageRole    Boolean @default(false)
-  manageEmoji   Boolean @default(false)
-
-  RoleLink            RoleLink[]
+  id                  String                @id @default(uuid())
+  name                String                @unique
+  createdUserId       String
+  color               String                @default("#fff")
+  createdAt           DateTime              @default(now())
+  manageServer        Boolean               @default(false)
+  manageChannel       Boolean               @default(false)
+  manageUser          Boolean               @default(false)
+  manageRole          Boolean               @default(false)
+  manageEmoji         Boolean               @default(false)
   ChannelViewableRole ChannelViewableRole[]
+  user                User                  @relation(fields: [createdUserId], references: [id])
+  RoleLink            RoleLink[]
 }
 
 model Invitation {
   id            Int      @id @default(autoincrement())
   inviteCode    String   @unique
   createdUserId String
-  expireDate    DateTime @default(dbgenerated("(datetime('now', '+1 day'))"))
-  user          User     @relation(fields: [createdUserId], references: [id])
+  expireDate    DateTime @default(dbgenerated("datetime('now', '+1 day')"))
   usedCount     Int      @default(0)
+  user          User     @relation(fields: [createdUserId], references: [id])
 }
 
 model ChannelJoinOnDefault {
@@ -228,10 +226,9 @@ model ChannelJoinOnDefault {
 }
 
 model ServerConfig {
-  id           Int    @id @default(autoincrement())
-  name         String
-  introduction String
-
+  id                        Int     @id @default(autoincrement())
+  name                      String
+  introduction              String
   RegisterAvailable         Boolean @default(true)
   RegisterInviteOnly        Boolean @default(true)
   RegisterAnnounceChannelId String  @default("")
