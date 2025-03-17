@@ -455,6 +455,14 @@ export const message = new Elysia({ prefix: "/message" })
           messageId,
         },
       });
+      //Inboxからも削除
+      await db.inbox.deleteMany({
+        where: {
+          messageId,
+        },
+      });
+
+      console.log("message.module :: /message/delete : related data deleted");
 
       //メッセージの削除
       await db.message.delete({

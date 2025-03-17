@@ -94,6 +94,7 @@ model MessageUrlPreview {
   description String?
   faviconLink String?
   imageLink   String?
+  videoLink String?
 }
 
 model MessageReadTime {
