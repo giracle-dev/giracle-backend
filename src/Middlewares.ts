@@ -24,7 +24,7 @@ const CheckToken = new Elysia({ name: "CheckToken" })
       },
       include: {
         user: true,
-      }
+      },
     });
 
     //トークンが無効ならエラー
@@ -93,7 +93,7 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
   .macro({
     bindUrlPreview(isEnabled: boolean) {
       return {
-        async afterResponse({server, response}) {
+        async afterResponse({ server, response }) {
           //URLプレビューが無効あるいはレスポンスが存在しないなら何もしない
           if (!isEnabled || response === undefined) return;
           //メッセージId取り出し
@@ -135,7 +135,7 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
 
           //URLプレビュー情報取得、格納
           for (const url of urlMatched) {
-            await ogs({url}).then(async (data) => {
+            await ogs({ url }).then(async (data) => {
               if (data.error) {
                 //console.error("Middleware :: urlPreviewControl : URLプレビュー情報取得エラー->", data.error);
                 return;
@@ -157,6 +157,10 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
                       imageLink:
                         data.result.ogImage !== undefined
                           ? data.result.ogImage[0].url
+                          : null,
+                      videoLink:
+                        data.result.ogVideo !== undefined
+                          ? data.result.ogVideo[0].url
                           : null,
                     },
                   },
@@ -182,9 +186,9 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
               data: message,
             }),
           );
-        }
-      }
-    }
+        },
+      };
+    },
   });
 
 export default CheckToken;
