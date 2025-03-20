@@ -641,6 +641,48 @@ export const message = new Elysia({ prefix: "/message" })
       },
     },
   )
+  .get(
+    "/who-reacted",
+    async ({ query: { messageId, emojiCode }, _userId }) => {
+      //メッセージが存在するか確認
+      const message = await db.message.findUnique({
+        where: {
+          id: messageId,
+        },
+        include: {
+          MessageReaction: {
+            where: {
+              emojiCode,
+            },
+          },
+        },
+      });
+      if (message === null) {
+        throw error(400, "Message not found or is private.");
+      }
+
+      //チャンネルの閲覧制限があるか確認
+      const viewable = await CheckChannelVisibility(message.channelId, _userId);
+      if (!viewable) {
+        throw error(400, "You are not allowed to view this channel");
+      }
+
+      return {
+        message: "Fetched reactions",
+        data: message.MessageReaction.map((r) => r.userId),
+      };
+    },
+    {
+      query: t.Object({
+        messageId: t.String({ minLength: 1 }),
+        emojiCode: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "絵文字リアクションをしたユーザーを取得する",
+        tags: ["Message"],
+      },
+    },
+  )
   .delete(
     "/delete-emoji-reaction",
     async ({ body: { messageId, channelId, emojiCode }, _userId, server }) => {
