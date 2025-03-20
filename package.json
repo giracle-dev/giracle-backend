@@ -16,12 +16,12 @@
     "@prisma/client": "^6.5.0",
     "elysia": "latest",
     "open-graph-scraper": "^6.9.0",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "prisma": "^6.5.0"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.3",
-    "bun-types": "latest",
-    "prisma": "^6.5.0"
+    "bun-types": "latest"
   },
   "module": "src/index.js"
 }
