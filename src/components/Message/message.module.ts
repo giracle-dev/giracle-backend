@@ -664,7 +664,7 @@ export const message = new Elysia({ prefix: "/message" })
       //チャンネルの閲覧制限があるか確認
       const viewable = await CheckChannelVisibility(message.channelId, _userId);
       if (!viewable) {
-        throw error(400, "You are not allowed to view this channel");
+        throw error(400, "Message not found or is private.");
       }
 
       return {
