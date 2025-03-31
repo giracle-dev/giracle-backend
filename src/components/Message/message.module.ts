@@ -643,7 +643,7 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .get(
     "/who-reacted",
-    async ({ query: { messageId, emojiCode }, _userId }) => {
+    async ({ query: { messageId, emojiCode, length }, _userId }) => {
       //メッセージが存在するか確認
       const message = await db.message.findUnique({
         where: {
@@ -651,7 +651,7 @@ export const message = new Elysia({ prefix: "/message" })
         },
         include: {
           MessageReaction: {
-            take: 5,
+            take: length,
             where: {
               emojiCode,
             },
@@ -677,6 +677,7 @@ export const message = new Elysia({ prefix: "/message" })
       query: t.Object({
         messageId: t.String({ minLength: 1 }),
         emojiCode: t.String({ minLength: 1 }),
+        length: t.Number({ minimum: 1, default: 5 }),
       }),
       detail: {
         description: "絵文字リアクションをしたユーザーを取得する",
