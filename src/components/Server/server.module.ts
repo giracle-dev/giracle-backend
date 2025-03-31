@@ -108,7 +108,7 @@ export const server = new Elysia({ prefix: "/server" })
     {
       body: t.Object({
         inviteCode: t.String({ minLength: 1 }),
-        expireDate: t.Optional(t.Date()),
+        expireDate: t.Date(),
       }),
       detail: {
         description: "サーバーの招待コードを作成します",
@@ -293,7 +293,7 @@ export const server = new Elysia({ prefix: "/server" })
   )
   .get(
     "/custom-emoji/:code",
-    async ({ params: {code} }) => {
+    async ({ params: { code } }) => {
       //絵文字データを取得、無ければエラー
       const emoji = await db.customEmoji.findFirst({
         where: {
@@ -318,7 +318,7 @@ export const server = new Elysia({ prefix: "/server" })
         description: "指定のカスタム絵文字を取得します",
         tags: ["Server"],
       },
-    }
+    },
   )
   .get(
     "/custom-emoji",
@@ -335,11 +335,11 @@ export const server = new Elysia({ prefix: "/server" })
         description: "カスタム絵文字一覧を取得します",
         tags: ["Server"],
       },
-    }
+    },
   )
   .put(
     "/custom-emoji/upload",
-    async ({ body:{ emoji, emojiCode }, server, _userId }) => {
+    async ({ body: { emoji, emojiCode }, server, _userId }) => {
       if (emoji.size > 8 * 1024 * 1024) {
         return error(400, "Emoji's file size is too large");
       }
@@ -352,8 +352,10 @@ export const server = new Elysia({ prefix: "/server" })
       }
 
       //絵文字コードのバリデーション
-      if (emojiCode.includes(" ")) return error(400, "Emoji code cannot contain spaces");
-      if ((/[^\u0020-\u007E]/).test(emojiCode)) return error(400, "Emoji code cannot contain full-width characters");
+      if (emojiCode.includes(" "))
+        return error(400, "Emoji code cannot contain spaces");
+      if (/[^\u0020-\u007E]/.test(emojiCode))
+        return error(400, "Emoji code cannot contain full-width characters");
 
       //絵文字コードが既に存在するか確認
       const emojiExist = await db.customEmoji.findFirst({
@@ -368,7 +370,7 @@ export const server = new Elysia({ prefix: "/server" })
         data: {
           code: emojiCode,
           uploadedUserId: _userId,
-        }
+        },
       });
 
       //拡張子取得
@@ -392,12 +394,12 @@ export const server = new Elysia({ prefix: "/server" })
         JSON.stringify({
           signal: "server::CustomEmojiUploaded",
           data: emojiUploaded,
-        })
+        }),
       );
 
       return {
         message: "Emoji uploaded",
-        data: emojiUploaded
+        data: emojiUploaded,
       };
     },
     {
@@ -410,16 +412,16 @@ export const server = new Elysia({ prefix: "/server" })
         tags: ["Server"],
       },
       checkRoleTerm: "manageEmoji",
-    }
+    },
   )
   .delete(
     "/custom-emoji/delete",
-    async ({ body: {emojiCode}, server }) => {
+    async ({ body: { emojiCode }, server }) => {
       //絵文字を削除しデータ取得
       const emojiDeleted = await db.customEmoji.delete({
         where: {
           code: emojiCode,
-        }
+        },
       });
 
       //WSで通知
@@ -428,12 +430,12 @@ export const server = new Elysia({ prefix: "/server" })
         JSON.stringify({
           signal: "server::CustomEmojiDeleted",
           data: emojiDeleted,
-        })
+        }),
       );
 
       return {
         message: "Emoji deleted",
-        data: emojiDeleted
+        data: emojiDeleted,
       };
     },
     {
@@ -445,7 +447,7 @@ export const server = new Elysia({ prefix: "/server" })
         tags: ["Server"],
       },
       checkRoleTerm: "manageEmoji",
-    }
+    },
   )
   .get(
     "/storage-usage",

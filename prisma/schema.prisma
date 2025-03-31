@@ -214,7 +214,7 @@ model Invitation {
   id            Int      @id @default(autoincrement())
   inviteCode    String   @unique
   createdUserId String
-  expireDate    DateTime @default(dbgenerated("datetime('now', '+1 day')"))
+  expireDate    DateTime @default(now())
   usedCount     Int      @default(0)
   user          User     @relation(fields: [createdUserId], references: [id])
 }
