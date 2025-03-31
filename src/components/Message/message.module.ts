@@ -651,6 +651,7 @@ export const message = new Elysia({ prefix: "/message" })
         },
         include: {
           MessageReaction: {
+            take: 5,
             where: {
               emojiCode,
             },
