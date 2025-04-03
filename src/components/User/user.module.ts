@@ -3,7 +3,7 @@ import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import Elysia, { error, t, file } from "elysia";
 import sharp from "sharp";
-import CheckToken, {checkRoleTerm} from "../../Middlewares";
+import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { userWSInstance } from "../../ws";
 import { userService } from "./user.service";
@@ -45,12 +45,6 @@ export const user = new Elysia({ prefix: "/user" })
           });
           //招待コードが無効な場合
           if (Invite === null) {
-            return error(400, {
-              message: "Invite code is invalid",
-            });
-          }
-          //招待コードが期限切れの場合
-          if (Invite.expireDate < new Date()) {
             return error(400, {
               message: "Invite code is invalid",
             });
@@ -688,18 +682,20 @@ export const user = new Elysia({ prefix: "/user" })
         return error(400, "You can't ban yourself");
       }
       //ロールレベルが対象より低いとBANできない
-      if (await getUsersRoleLevel(_userId) < await getUsersRoleLevel(userId)) {
+      if (
+        (await getUsersRoleLevel(_userId)) < (await getUsersRoleLevel(userId))
+      ) {
         return error(400, "You can't ban higher role level user");
       }
 
       //BANする
       const userBanned = await db.user.update({
         where: {
-          id: userId
+          id: userId,
         },
         data: {
           isBanned: true,
-        }
+        },
       });
 
       //WSで全体へ通知
@@ -725,7 +721,7 @@ export const user = new Elysia({ prefix: "/user" })
         tags: ["User"],
       },
       checkRoleTerm: "manageUser",
-    }
+    },
   )
   .post(
     "/unban",
@@ -735,18 +731,20 @@ export const user = new Elysia({ prefix: "/user" })
         return error(400, "You can't unban yourself");
       }
       //ロールレベルが対象より低いとBAN解除できない
-      if (await getUsersRoleLevel(_userId) < await getUsersRoleLevel(userId)) {
+      if (
+        (await getUsersRoleLevel(_userId)) < (await getUsersRoleLevel(userId))
+      ) {
         return error(400, "You can't unban higher role level user");
       }
 
       //BANを解除
       const userUnbanned = await db.user.update({
         where: {
-          id: userId
+          id: userId,
         },
         data: {
           isBanned: false,
-        }
+        },
       });
 
       //WSで全体へ通知
@@ -772,5 +770,5 @@ export const user = new Elysia({ prefix: "/user" })
         tags: ["User"],
       },
       checkRoleTerm: "manageUser",
-    }
+    },
   );
