@@ -91,12 +91,11 @@ export const server = new Elysia({ prefix: "/server" })
   )
   .put(
     "/create-invite",
-    async ({ body: { inviteCode, expireDate }, _userId }) => {
+    async ({ body: { inviteCode }, _userId }) => {
       const newInvite = await db.invitation.create({
         data: {
           inviteCode,
           createdUserId: _userId,
-          expireDate,
         },
       });
 
@@ -108,7 +107,6 @@ export const server = new Elysia({ prefix: "/server" })
     {
       body: t.Object({
         inviteCode: t.String({ minLength: 1 }),
-        expireDate: t.Date(),
       }),
       detail: {
         description: "サーバーの招待コードを作成します",
