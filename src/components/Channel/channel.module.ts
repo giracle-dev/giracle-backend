@@ -526,9 +526,11 @@ export const channel = new Elysia({ prefix: "/channel" })
           channelId,
         },
       });
-
       //WSチャンネルを登録させる
       WSSubscribe(userId, `channel::${channelId}`);
+
+      //システムメッセージを送信
+      SendSystemMessage(channelId, userId, "CHANNEL_INVITED");
 
       return {
         message: "User invited",

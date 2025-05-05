@@ -46,4 +46,8 @@ export default async function SendSystemMessage(
   }
 }
 
-type TSystemMessageTerm = "WELCOME" | "CHANNEL_JOIN" | "CHANNEL_LEFT";
+type TSystemMessageTerm =
+  | "WELCOME"
+  | "CHANNEL_JOIN"
+  | "CHANNEL_LEFT"
+  | "CHANNEL_INVITED";
