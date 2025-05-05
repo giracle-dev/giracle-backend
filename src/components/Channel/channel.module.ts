@@ -507,6 +507,31 @@ export const channel = new Elysia({ prefix: "/channel" })
       if (!requestUser.ChannelJoin.some((c) => c.channelId === channelId)) {
         return error(403, "You are not joined this channel");
       }
+
+      //対象ユーザーがすでに参加しているかどうかを確認
+      const targetUserJoinedData = await db.channelJoin.findFirst({
+        where: {
+          userId,
+          channelId,
+        },
+      });
+      if (targetUserJoinedData !== null) {
+        return error(400, "Already joined");
+      }
+
+      //チャンネル参加させる
+      await db.channelJoin.create({
+        data: {
+          userId,
+          channelId,
+        },
+      });
+
+      // TODO :: チャンネル参加者のWSをチャンネルへ参加させたい...
+
+      return {
+        message: "User invited",
+      };
     },
     {
       body: t.Object({
