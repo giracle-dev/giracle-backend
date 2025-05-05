@@ -489,17 +489,37 @@ export const channel = new Elysia({ prefix: "/channel" })
 
   .use(checkRoleTerm)
 
-  .post("/invite", async ({ body: { channelId, userId } }) => {}, {
-    body: t.Object({
-      channelId: t.String(),
-      userId: t.String(),
-    }),
-    detail: {
-      description: "チャンネルにユーザーを招待します",
-      tags: ["Channel"],
+  .post(
+    "/invite",
+    async ({ body: { channelId, userId }, _userId }) => {
+      //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
+      const requestUser = await db.user.findUnique({
+        where: {
+          id: _userId,
+        },
+        include: {
+          ChannelJoin: true,
+        },
+      });
+      if (!requestUser) {
+        return error(404, "User not found");
+      }
+      if (!requestUser.ChannelJoin.some((c) => c.channelId === channelId)) {
+        return error(403, "You are not joined this channel");
+      }
     },
-    checkRoleTerm: "manageChannel",
-  })
+    {
+      body: t.Object({
+        channelId: t.String(),
+        userId: t.String(),
+      }),
+      detail: {
+        description: "チャンネルにユーザーを招待します",
+        tags: ["Channel"],
+      },
+      checkRoleTerm: "manageChannel",
+    },
+  )
   .post(
     "/update",
     async ({
