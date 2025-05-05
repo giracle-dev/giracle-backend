@@ -12,7 +12,7 @@ export const userWSInstance = new Map<string, ElysiaWS<any, any>[]>();
  */
 export const wsHandler = new Elysia().ws("/ws", {
   body: t.Object({
-    signal: t.Literal("subscribeChannel"),
+    signal: t.String({ minLength: 1 }),
     data: t.String({ minLength: 1 }),
   }),
   query: t.Object({
