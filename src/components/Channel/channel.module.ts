@@ -491,7 +491,7 @@ export const channel = new Elysia({ prefix: "/channel" })
 
   .post(
     "/invite",
-    async ({ body: { channelId, userId }, _userId }) => {
+    async ({ body: { channelId, userId }, _userId, server }) => {
       //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
       const requestUser = await db.user.findUnique({
         where: {
@@ -530,7 +530,7 @@ export const channel = new Elysia({ prefix: "/channel" })
       WSSubscribe(userId, `channel::${channelId}`);
 
       //システムメッセージを送信
-      SendSystemMessage(channelId, userId, "CHANNEL_INVITED");
+      SendSystemMessage(channelId, userId, "CHANNEL_INVITED", server);
 
       return {
         message: "User invited",
@@ -550,7 +550,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   )
   .post(
     "/kick",
-    async ({ body: { channelId, userId }, _userId }) => {
+    async ({ body: { channelId, userId }, _userId, server }) => {
       //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
       const requestUser = await db.user.findUnique({
         where: {
@@ -589,7 +589,7 @@ export const channel = new Elysia({ prefix: "/channel" })
       WSUnsubscribe(userId, `channel::${channelId}`);
 
       //システムメッセージを送信
-      SendSystemMessage(channelId, userId, "CHANNEL_KICKED");
+      SendSystemMessage(channelId, userId, "CHANNEL_KICKED", server);
 
       return {
         message: "User kicked",
