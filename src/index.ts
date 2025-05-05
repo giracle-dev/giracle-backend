@@ -9,13 +9,13 @@ import { user } from "./components/User/user.module";
 import { server } from "./components/Server/server.module";
 import { wsHandler } from "./ws";
 
-//アイコン用のディレクトリ作成
+//ユーザーアップロード用のディレクトリ作成
 import { mkdir } from "node:fs/promises";
-await mkdir("./STORAGE", { recursive: true }).catch((e)=>{});
-await mkdir("./STORAGE/file", { recursive: true }).catch((e)=>{});
-await mkdir("./STORAGE/icon", { recursive: true }).catch((e)=>{});
-await mkdir("./STORAGE/banner", { recursive: true }).catch((e)=>{});
-await mkdir("./STORAGE/custom-emoji", { recursive: true }).catch((e)=>{});
+await mkdir("./STORAGE", { recursive: true }).catch((e) => {});
+await mkdir("./STORAGE/file", { recursive: true }).catch((e) => {});
+await mkdir("./STORAGE/icon", { recursive: true }).catch((e) => {});
+await mkdir("./STORAGE/banner", { recursive: true }).catch((e) => {});
+await mkdir("./STORAGE/custom-emoji", { recursive: true }).catch((e) => {});
 
 export const app = new Elysia()
   .use(
