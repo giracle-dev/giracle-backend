@@ -527,7 +527,8 @@ export const channel = new Elysia({ prefix: "/channel" })
         },
       });
 
-      // TODO :: チャンネル参加者のWSをチャンネルへ参加させたい...
+      //WSチャンネルを登録させる
+      WSSubscribe(userId, `channel::${channelId}`);
 
       return {
         message: "User invited",
