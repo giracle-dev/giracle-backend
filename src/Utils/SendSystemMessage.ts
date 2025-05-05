@@ -50,4 +50,5 @@ type TSystemMessageTerm =
   | "WELCOME"
   | "CHANNEL_JOIN"
   | "CHANNEL_LEFT"
-  | "CHANNEL_INVITED";
+  | "CHANNEL_INVITED"
+  | "CHANNEL_KICKED";

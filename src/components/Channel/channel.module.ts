@@ -549,6 +549,65 @@ export const channel = new Elysia({ prefix: "/channel" })
     },
   )
   .post(
+    "/kick",
+    async ({ body: { channelId, userId }, _userId }) => {
+      //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
+      const requestUser = await db.user.findUnique({
+        where: {
+          id: _userId,
+        },
+        include: {
+          ChannelJoin: true,
+        },
+      });
+      if (!requestUser) {
+        return error(404, "User not found");
+      }
+      if (!requestUser.ChannelJoin.some((c) => c.channelId === channelId)) {
+        return error(403, "You are not joined this channel");
+      }
+
+      //対象ユーザーが参加しているかどうかを確認
+      const targetUserJoinedData = await db.channelJoin.findFirst({
+        where: {
+          userId,
+          channelId,
+        },
+      });
+      if (targetUserJoinedData !== null) {
+        return error(400, "This user is not joined this channel");
+      }
+
+      //チャンネル参加データを削除(退出させる)
+      await db.channelJoin.deleteMany({
+        where: {
+          userId,
+          channelId,
+        },
+      });
+      //WSチャンネルを登録解除
+      WSUnsubscribe(userId, `channel::${channelId}`);
+
+      //システムメッセージを送信
+      SendSystemMessage(channelId, userId, "CHANNEL_KICKED");
+
+      return {
+        message: "User kicked",
+      };
+    },
+    {
+      body: t.Object({
+        channelId: t.String(),
+        userId: t.String(),
+      }),
+      detail: {
+        description: "チャンネルからユーザーをキックします",
+        tags: ["Channel"],
+      },
+      checkRoleTerm: "manageChannel",
+    },
+  )
+  .post(
     "/update",
     async ({
       body: { name, description, isArchived, channelId, viewableRole },
