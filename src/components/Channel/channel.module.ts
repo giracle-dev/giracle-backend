@@ -1,10 +1,10 @@
-import {type Message, PrismaClient} from "@prisma/client";
-import Elysia, {error, t} from "elysia";
-import CheckToken, {checkRoleTerm} from "../../Middlewares";
+import { type Message, PrismaClient } from "@prisma/client";
+import Elysia, { error, t } from "elysia";
+import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
-import {WSSubscribe, WSUnsubscribe} from "../../ws";
+import { WSSubscribe, WSUnsubscribe } from "../../ws";
 import CalculateReactionTotal from "../../Utils/CalculateReactionTotal";
 
 const db = new PrismaClient();
@@ -38,7 +38,7 @@ export const channel = new Elysia({ prefix: "/channel" })
       }
       //チャンネルを見られないようなユーザーだと存在しないとしてエラーを出す
       if (!(await CheckChannelVisibility(channelId, _userId))) {
-        throw error(404, "Channel not found")
+        throw error(404, "Channel not found");
       }
 
       await db.channelJoin.create({
@@ -145,7 +145,7 @@ export const channel = new Elysia({ prefix: "/channel" })
     async ({ params: { channelId }, _userId }) => {
       //チャンネルを見られないようなユーザーだと存在しないとしてエラーを出す
       if (!(await CheckChannelVisibility(channelId, _userId))) {
-        throw error(404, "Channel not found")
+        throw error(404, "Channel not found");
       }
 
       const channelData = await db.channel.findUnique({
@@ -155,10 +155,10 @@ export const channel = new Elysia({ prefix: "/channel" })
         include: {
           ChannelViewableRole: {
             select: {
-              roleId: true
-            }
+              roleId: true,
+            },
           },
-        }
+        },
       });
 
       if (channelData === null) {
@@ -410,13 +410,16 @@ export const channel = new Elysia({ prefix: "/channel" })
 
       //最後にメッセージごとにリアクションの合計数をそれぞれ格納する
       for (const index in history) {
-        const emojiTotalJson = await CalculateReactionTotal(history[index].id, _userId);
+        const emojiTotalJson = await CalculateReactionTotal(
+          history[index].id,
+          _userId,
+        );
 
         //結果をこのメッセージ部分に格納する
         history[index] = {
           ...history[index],
           // @ts-ignore - reactionSummaryの追加
-          reactionSummary: emojiTotalJson
+          reactionSummary: emojiTotalJson,
         };
       }
 
@@ -486,9 +489,23 @@ export const channel = new Elysia({ prefix: "/channel" })
 
   .use(checkRoleTerm)
 
+  .post("/invite", async ({ body: { channelId, userId } }) => {}, {
+    body: t.Object({
+      channelId: t.String(),
+      userId: t.String(),
+    }),
+    detail: {
+      description: "チャンネルにユーザーを招待します",
+      tags: ["Channel"],
+    },
+    checkRoleTerm: "manageChannel",
+  })
   .post(
     "/update",
-    async ({ body: { name, description, isArchived, channelId, viewableRole }, server }) => {
+    async ({
+      body: { name, description, isArchived, channelId, viewableRole },
+      server,
+    }) => {
       //適用するデータ群のJSON
       const updatingValues: {
         name?: string;
@@ -525,11 +542,13 @@ export const channel = new Elysia({ prefix: "/channel" })
 
         // 既存のroleIdをセットに変換
         //const existingRoleIds = new Set(existingRoles.map(role => role.roleId));
-        const _existingRoleIds = existingRoles.map(role => role.roleId);
+        const _existingRoleIds = existingRoles.map((role) => role.roleId);
         const existingRoleIds = new Set(_existingRoleIds);
 
         // 新しいroleIdをフィルタリング
-        const newRoleIds = viewableRole.filter(roleId => !existingRoleIds.has(roleId));
+        const newRoleIds = viewableRole.filter(
+          (roleId) => !existingRoleIds.has(roleId),
+        );
 
         //現在の閲覧可能roleIdを削除
         await db.channelViewableRole.deleteMany({
@@ -547,7 +566,7 @@ export const channel = new Elysia({ prefix: "/channel" })
             data: {
               ChannelViewableRole: {
                 createMany: {
-                  data: newRoleIds.map(roleId => ({
+                  data: newRoleIds.map((roleId) => ({
                     roleId,
                   })),
                 },
@@ -565,13 +584,13 @@ export const channel = new Elysia({ prefix: "/channel" })
         include: {
           ChannelViewableRole: {
             select: {
-              roleId: true
-            }
+              roleId: true,
+            },
           },
-        }
+        },
       });
 
-        //WSで通知
+      //WSで通知
       server?.publish(
         "GLOBAL",
         JSON.stringify({
