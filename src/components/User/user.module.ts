@@ -252,9 +252,16 @@ export const user = new Elysia({ prefix: "/user" })
   )
   .get(
     "/search",
-    async ({ query: { username, joinedChannel } }) => {
+    async ({ query: { username, joinedChannel, cursor } }) => {
+      //もしcursorがundefinedなら0にする
+      if (cursor === undefined) {
+        cursor = 0;
+      }
+
       //ユーザーを検索
       const users = await db.user.findMany({
+        take: 30,
+        skip: cursor * 30,
         where: {
           name: {
             contains: username,
@@ -276,6 +283,7 @@ export const user = new Elysia({ prefix: "/user" })
       query: t.Object({
         username: t.Optional(t.String({ minLength: 1 })),
         joinedChannel: t.Optional(t.String({ minLength: 1 })),
+        cursor: t.Optional(t.Number({ default: 0 })),
       }),
       detail: {
         description: "ユーザーを検索します",
