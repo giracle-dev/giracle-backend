@@ -281,7 +281,7 @@ export const user = new Elysia({ prefix: "/user" })
     },
     {
       query: t.Object({
-        username: t.Optional(t.String({ minLength: 1 })),
+        username: t.Optional(t.String({ minLength: 0 })),
         joinedChannel: t.Optional(t.String({ minLength: 1 })),
         cursor: t.Optional(t.Number({ default: 0 })),
       }),
