@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
-import Elysia, { error, file, t } from "elysia";
+import Elysia, { status, file, t } from "elysia";
 import sharp from "sharp";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
@@ -21,7 +21,7 @@ export const message = new Elysia({ prefix: "/message" })
       });
       //メッセージが見つからなければエラー
       if (messageData === null) {
-        return error(404, "Message not found");
+        return status(404, "Message not found");
       }
 
       //チャンネルの閲覧制限があるか確認してから返す
@@ -32,7 +32,7 @@ export const message = new Elysia({ prefix: "/message" })
         };
       }
 
-      return error(404, "Message not found");
+      return status(404, "Message not found");
     },
     {
       params: t.Object({
@@ -135,7 +135,7 @@ export const message = new Elysia({ prefix: "/message" })
       });
       //既読時間がない場合はエラー
       if (readTime === null) {
-        throw error(404, "Read time not found");
+        throw status(404, "Read time not found");
       }
 
       return {
@@ -166,7 +166,7 @@ export const message = new Elysia({ prefix: "/message" })
         readTimeSaved !== null &&
         readTimeSaved.readTime.valueOf() > readTime.valueOf()
       ) {
-        //throw error(400, "Read time is already newer");
+        //throw status(400, "Read time is already newer");
         return {
           message: "Read time is already newer",
           data: readTimeSaved,
@@ -240,7 +240,7 @@ export const message = new Elysia({ prefix: "/message" })
       if (channelId) {
         //チャンネルの閲覧制限があるか確認
         if (!(await CheckChannelVisibility(channelId, _userId))) {
-          throw error(403, "You are not allowed to view this channel");
+          throw status(403, "You are not allowed to view this channel");
         }
       } else {
         const viewableChannels = await GetUserViewableChannel(_userId, false);
@@ -313,7 +313,7 @@ export const message = new Elysia({ prefix: "/message" })
     async ({ body: { channelId, file }, _userId }) => {
       //ファイルサイズが500MBを超える場合はエラー
       if (file.size > 1024 * 1024 * 500) {
-        throw error(400, "File size is too large");
+        throw status(400, "File size is too large");
       }
 
       //保存するためのファイル名保存
@@ -378,7 +378,7 @@ export const message = new Elysia({ prefix: "/message" })
       });
 
       if (fileData === null) {
-        throw error(404, "File not found");
+        throw status(404, "File not found");
       }
 
       return file(
@@ -405,7 +405,7 @@ export const message = new Elysia({ prefix: "/message" })
         },
       });
       if (messageData === null) {
-        throw error(404, "Message not found");
+        throw status(404, "Message not found");
       }
       if (messageData.userId !== _userId) {
         //メッセージの送信者でないならサーバー管理権限を確認する
@@ -419,7 +419,7 @@ export const message = new Elysia({ prefix: "/message" })
         });
 
         if (!canManageServer)
-          throw error(403, "You are not owner of this message");
+          throw status(403, "You are not owner of this message");
       }
 
       //URLプレビューの削除
@@ -598,11 +598,11 @@ export const message = new Elysia({ prefix: "/message" })
       });
       //同じ絵文字コードのリアクションがあればエラー
       if (MyReactions.some((r) => r.emojiCode === emojiCode)) {
-        throw error(400, "You already reacted this message");
+        throw status(400, "You already reacted this message");
       }
       //同じユーザーリアクションが10以上ならエラー
       if (MyReactions.length >= 10) {
-        throw error(400, "You can't react more than 10 times");
+        throw status(400, "You can't react more than 10 times");
       }
 
       //リアクションを格納
@@ -659,13 +659,13 @@ export const message = new Elysia({ prefix: "/message" })
         },
       });
       if (message === null) {
-        throw error(400, "Message not found or is private.");
+        throw status(400, "Message not found or is private.");
       }
 
       //チャンネルの閲覧制限があるか確認
       const viewable = await CheckChannelVisibility(message.channelId, _userId);
       if (!viewable) {
-        throw error(400, "Message not found or is private.");
+        throw status(400, "Message not found or is private.");
       }
 
       return {
@@ -697,7 +697,7 @@ export const message = new Elysia({ prefix: "/message" })
         },
       });
       if (hasMyReaction === null) {
-        throw error(404, "Reaction does not exists");
+        throw status(404, "Reaction does not exists");
       }
 
       //リアクションを削除
@@ -745,7 +745,7 @@ export const message = new Elysia({ prefix: "/message" })
         (message.match(/　/g) || "").length +
         (message.match(/\n/g) || "").length;
       if (spaceCount === message.length && fileIds.length === 0)
-        throw error(400, "Message is empty");
+        throw status(400, "Message is empty");
 
       //チャンネル参加情報を取得
       const channelJoined = await db.channelJoin.findFirst({
@@ -756,7 +756,7 @@ export const message = new Elysia({ prefix: "/message" })
       });
       //チャンネルに参加していない
       if (channelJoined === null) {
-        throw error(400, "You are not joined this channel");
+        throw status(400, "You are not joined this channel");
       }
 
       //アップロードしているファイルId配列があるならファイル情報を取得
@@ -852,15 +852,15 @@ export const message = new Elysia({ prefix: "/message" })
       });
       //メッセージが無かった時エラー
       if (msg === null) {
-        throw error(404, "Message not found");
+        throw status(404, "Message not found");
       }
       //送信者が自分と違うならエラー
       if (msg.userId !== _userId) {
-        throw error(403, "You are not sender of this message");
+        throw status(403, "You are not sender of this message");
       }
       //内容が同じならエラー
       if (msg.content === content) {
-        throw error(400, "Message is already same");
+        throw status(400, "Message is already same");
       }
 
       //メッセージデータを更新する

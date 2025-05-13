@@ -2,7 +2,7 @@ import fs from "node:fs";
 import { unlink } from "node:fs/promises";
 import * as path from "node:path";
 import { PrismaClient } from "@prisma/client";
-import Elysia, { error, t } from "elysia";
+import Elysia, { status, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import sharp from "sharp";
 
@@ -59,7 +59,7 @@ export const server = new Elysia({ prefix: "/server" })
       }
 
       //存在しない場合はデフォルトアイコンを返す
-      return error(404, "Server banner not found");
+      return status(404, "Server banner not found");
     },
     {
       detail: {
@@ -154,7 +154,7 @@ export const server = new Elysia({ prefix: "/server" })
 
       //ここでデータ取得
       const serverinfo = await db.serverConfig.findFirst();
-      if (serverinfo === null) return error(500, "Server config not found");
+      if (serverinfo === null) return status(500, "Server config not found");
 
       //WSで全体へ通知
       server?.publish(
@@ -219,7 +219,7 @@ export const server = new Elysia({ prefix: "/server" })
 
       //ここでデータ取得
       const serverinfo = await db.serverConfig.findFirst();
-      if (serverinfo === null) return error(500, "Server config not found");
+      if (serverinfo === null) return status(500, "Server config not found");
 
       //WSで全体へ通知
       server?.publish(
@@ -254,14 +254,14 @@ export const server = new Elysia({ prefix: "/server" })
     "/change-banner",
     async ({ body: { banner } }) => {
       if (banner.size > 15 * 1024 * 1024) {
-        return error(400, "File size is too large");
+        return status(400, "File size is too large");
       }
       if (
         banner.type !== "image/png" &&
         banner.type !== "image/gif" &&
         banner.type !== "image/jpeg"
       ) {
-        return error(400, "File type is invalid");
+        return status(400, "File type is invalid");
       }
 
       //拡張子取得
@@ -298,7 +298,7 @@ export const server = new Elysia({ prefix: "/server" })
           code,
         },
       });
-      if (emoji === null) return error(404, "Custom emoji not found");
+      if (emoji === null) return status(404, "Custom emoji not found");
 
       //アイコン読み取り、存在確認して返す
       const emojiGif = Bun.file(`./STORAGE/custom-emoji/${emoji.id}.gif`);
@@ -306,7 +306,7 @@ export const server = new Elysia({ prefix: "/server" })
       const emojiJpeg = Bun.file(`./STORAGE/custom-emoji/${emoji.id}.jpeg`);
       if (await emojiJpeg.exists()) return emojiJpeg;
 
-      return error(404, "Custom emoji not found");
+      return status(404, "Custom emoji not found");
     },
     {
       params: t.Object({
@@ -339,21 +339,21 @@ export const server = new Elysia({ prefix: "/server" })
     "/custom-emoji/upload",
     async ({ body: { emoji, emojiCode }, server, _userId }) => {
       if (emoji.size > 8 * 1024 * 1024) {
-        return error(400, "Emoji's file size is too large");
+        return status(400, "Emoji's file size is too large");
       }
       if (
         emoji.type !== "image/png" &&
         emoji.type !== "image/gif" &&
         emoji.type !== "image/jpeg"
       ) {
-        return error(400, "File type is invalid");
+        return status(400, "File type is invalid");
       }
 
       //絵文字コードのバリデーション
       if (emojiCode.includes(" "))
-        return error(400, "Emoji code cannot contain spaces");
+        return status(400, "Emoji code cannot contain spaces");
       if (/[^\u0020-\u007E]/.test(emojiCode))
-        return error(400, "Emoji code cannot contain full-width characters");
+        return status(400, "Emoji code cannot contain full-width characters");
 
       //絵文字コードが既に存在するか確認
       const emojiExist = await db.customEmoji.findFirst({
@@ -361,7 +361,7 @@ export const server = new Elysia({ prefix: "/server" })
           code: emojiCode,
         },
       });
-      if (emojiExist !== null) return error(400, "Emoji code already exists");
+      if (emojiExist !== null) return status(400, "Emoji code already exists");
 
       //DBに登録
       const emojiUploaded = await db.customEmoji.create({

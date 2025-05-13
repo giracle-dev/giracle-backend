@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { unlink } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
-import Elysia, { error, t, file } from "elysia";
+import Elysia, { status, t, file } from "elysia";
 import sharp from "sharp";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
@@ -29,13 +29,13 @@ export const user = new Elysia({ prefix: "/user" })
         //サーバーの設定を取得して招待関連の条件を確認
         const serverConfig = await db.serverConfig.findFirst();
         if (!serverConfig?.RegisterAvailable) {
-          return error(400, {
+          return status(400, {
             message: "Registration is disabled",
           });
         }
         if (serverConfig?.RegisterInviteOnly) {
           if (inviteCode === undefined) {
-            return error(400, {
+            return status(400, {
               message: "Invite code is invalid",
             });
           }
@@ -45,7 +45,7 @@ export const user = new Elysia({ prefix: "/user" })
           });
           //招待コードが無効な場合
           if (Invite === null) {
-            return error(400, {
+            return status(400, {
               message: "Invite code is invalid",
             });
           }
@@ -64,7 +64,7 @@ export const user = new Elysia({ prefix: "/user" })
         where: { name: username },
       });
       if (user) {
-        return error(400, {
+        return status(400, {
           message: "User already exists",
         });
       }
@@ -162,19 +162,19 @@ export const user = new Elysia({ prefix: "/user" })
 
       //ユーザーが存在しない場合
       if (!user) {
-        return error(400, {
+        return status(400, {
           message: "Auth info is incorrect",
         });
       }
       //パスワードが設定されていない場合
       if (!user.password) {
-        return error(400, {
+        return status(400, {
           message: "Internal error",
         });
       }
       //ユーザーがBANされている場合
       if (user.isBanned) {
-        return error(401, {
+        return status(401, {
           message: "User is banned",
         });
       }
@@ -187,7 +187,7 @@ export const user = new Elysia({ prefix: "/user" })
 
       //パスワードが一致しない場合
       if (!passwordCheckResult) {
-        return error(400, {
+        return status(400, {
           message: "Auth info is incorrect",
         });
       }
@@ -331,7 +331,7 @@ export const user = new Elysia({ prefix: "/user" })
       }
 
       //存在しない場合はデフォルトアイコンを返す
-      return error(404, "User banner not found");
+      return status(404, "User banner not found");
     },
     {
       params: t.Object({
@@ -347,14 +347,14 @@ export const user = new Elysia({ prefix: "/user" })
     "/change-icon",
     async ({ body: { icon }, _userId }) => {
       if (icon.size > 8 * 1024 * 1024) {
-        return error(400, "File size is too large");
+        return status(400, "File size is too large");
       }
       if (
         icon.type !== "image/png" &&
         icon.type !== "image/gif" &&
         icon.type !== "image/jpeg"
       ) {
-        return error(400, "File type is invalid");
+        return status(400, "File type is invalid");
       }
       //拡張子取得
       const ext = icon.type.split("/")[1];
@@ -395,14 +395,14 @@ export const user = new Elysia({ prefix: "/user" })
     "/change-banner",
     async ({ _userId, body: { banner } }) => {
       if (banner.size > 10 * 1024 * 1024) {
-        return error(400, "File size is too large");
+        return status(400, "File size is too large");
       }
       if (
         banner.type !== "image/png" &&
         banner.type !== "image/gif" &&
         banner.type !== "image/jpeg"
       ) {
-        return error(400, "File type is invalid");
+        return status(400, "File type is invalid");
       }
       //拡張子取得
       const ext = banner.type.split("/")[1];
@@ -443,7 +443,7 @@ export const user = new Elysia({ prefix: "/user" })
       });
       //ユーザー情報、またはその中のパスワードが取得できない場合
       if (userdata === null || userdata.password === null) {
-        return error(500, "Internal Server Error");
+        return status(500, "Internal Server Error");
       }
 
       //現在のパスワードが正しいか確認
@@ -453,7 +453,7 @@ export const user = new Elysia({ prefix: "/user" })
       );
       //パスワードが一致しない場合
       if (!passwordCheckResult) {
-        return error(401, {
+        return status(401, {
           message: "Current password is incorrect",
         });
       }
@@ -497,7 +497,7 @@ export const user = new Elysia({ prefix: "/user" })
       });
       //ユーザーが存在しない場合
       if (!user) {
-        return error(404, "User not found");
+        return status(404, "User not found");
       }
 
       // 更新データの準備
@@ -572,7 +572,7 @@ export const user = new Elysia({ prefix: "/user" })
     ({ _userId, error }) => {
       //もし空ならトークンが無効
       if (_userId === "") {
-        throw error(401, "Token is invalid");
+        throw status(401, "Token is invalid");
       }
 
       //トークンが有効
@@ -621,7 +621,7 @@ export const user = new Elysia({ prefix: "/user" })
       });
       //ユーザーが存在しない場合
       if (!user) {
-        return error(404, "User not found");
+        return status(404, "User not found");
       }
 
       return {
@@ -675,17 +675,17 @@ export const user = new Elysia({ prefix: "/user" })
     async ({ body: { userId }, server, _userId }) => {
       //HOSTをBANすることはできない
       if (userId === "HOST") {
-        return error(400, "You can't ban HOST");
+        return status(400, "You can't ban HOST");
       }
       //自分自身をBANすることはできない
       if (userId === _userId) {
-        return error(400, "You can't ban yourself");
+        return status(400, "You can't ban yourself");
       }
       //ロールレベルが対象より低いとBANできない
       if (
         (await getUsersRoleLevel(_userId)) < (await getUsersRoleLevel(userId))
       ) {
-        return error(400, "You can't ban higher role level user");
+        return status(400, "You can't ban higher role level user");
       }
 
       //BANする
@@ -728,13 +728,13 @@ export const user = new Elysia({ prefix: "/user" })
     async ({ body: { userId }, server, _userId }) => {
       //自分自身をUNBANすることはできない
       if (userId === _userId) {
-        return error(400, "You can't unban yourself");
+        return status(400, "You can't unban yourself");
       }
       //ロールレベルが対象より低いとBAN解除できない
       if (
         (await getUsersRoleLevel(_userId)) < (await getUsersRoleLevel(userId))
       ) {
-        return error(400, "You can't unban higher role level user");
+        return status(400, "You can't unban higher role level user");
       }
 
       //BANを解除
