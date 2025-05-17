@@ -272,6 +272,18 @@ export const user = new Elysia({ prefix: "/user" })
             },
           },
         },
+        include: {
+          ChannelJoin: {
+            select: {
+              channelId: true,
+            },
+          },
+          RoleLink: {
+            select: {
+              roleId: true,
+            },
+          },
+        },
       });
 
       return {
