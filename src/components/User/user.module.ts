@@ -268,7 +268,7 @@ export const user = new Elysia({ prefix: "/user" })
           },
           ChannelJoin: {
             some: {
-              channelId: joinedChannel,
+              channelId: joinedChannel === "" ? undefined : joinedChannel,
             },
           },
         },
@@ -282,7 +282,7 @@ export const user = new Elysia({ prefix: "/user" })
     {
       query: t.Object({
         username: t.Optional(t.String({ minLength: 0 })),
-        joinedChannel: t.Optional(t.String({ minLength: 1 })),
+        joinedChannel: t.Optional(t.String()),
         cursor: t.Optional(t.Number({ default: 0 })),
       }),
       detail: {
