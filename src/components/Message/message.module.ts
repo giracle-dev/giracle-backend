@@ -329,7 +329,7 @@ export const message = new Elysia({ prefix: "/message" })
       //ファイルを保存、GIF以外の画像なら圧縮
       if (file.type.startsWith("image/") && file.type !== "image/gif") {
         sharp(await file.arrayBuffer())
-          .jpeg({ quality: 80, mozjpeg: true })
+          .jpeg({ quality: 95, mozjpeg: true })
           .toFile(`./STORAGE/file/${channelId}/${fileNameGen}.jpeg`);
         //jpegで保存されたことと設定
         isJpeg = true;
