@@ -1,10 +1,10 @@
-import {type Message, PrismaClient} from "@prisma/client";
-import Elysia, {error, t} from "elysia";
-import CheckToken, {checkRoleTerm} from "../../Middlewares";
+import { type Message, PrismaClient } from "@prisma/client";
+import Elysia, { error, t } from "elysia";
+import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
-import {WSSubscribe, WSUnsubscribe} from "../../ws";
+import { WSSubscribe, WSUnsubscribe } from "../../ws";
 import CalculateReactionTotal from "../../Utils/CalculateReactionTotal";
 
 const db = new PrismaClient();
@@ -38,7 +38,7 @@ export const channel = new Elysia({ prefix: "/channel" })
       }
       //チャンネルを見られないようなユーザーだと存在しないとしてエラーを出す
       if (!(await CheckChannelVisibility(channelId, _userId))) {
-        throw error(404, "Channel not found")
+        throw error(404, "Channel not found");
       }
 
       await db.channelJoin.create({
@@ -53,6 +53,17 @@ export const channel = new Elysia({ prefix: "/channel" })
       WSSubscribe(_userId, `channel::${channelId}`);
       //システムメッセージを送信
       SendSystemMessage(channelId, _userId, "CHANNEL_JOIN", server);
+
+      //WSでチャンネル参加を通知
+      server?.publish(
+        `user::${_userId}`,
+        JSON.stringify({
+          signal: "channel::Join",
+          data: {
+            channelId,
+          },
+        }),
+      );
 
       return {
         message: "Channel joined",
@@ -120,6 +131,17 @@ export const channel = new Elysia({ prefix: "/channel" })
       //システムメッセージを送信
       SendSystemMessage(channelId, _userId, "CHANNEL_LEFT", server);
 
+      //WSでチャンネル退出を通知
+      server?.publish(
+        `user::${_userId}`,
+        JSON.stringify({
+          signal: "channel::Left",
+          data: {
+            channelId,
+          },
+        }),
+      );
+
       return {
         message: "Channel left",
       };
@@ -145,7 +167,7 @@ export const channel = new Elysia({ prefix: "/channel" })
     async ({ params: { channelId }, _userId }) => {
       //チャンネルを見られないようなユーザーだと存在しないとしてエラーを出す
       if (!(await CheckChannelVisibility(channelId, _userId))) {
-        throw error(404, "Channel not found")
+        throw error(404, "Channel not found");
       }
 
       const channelData = await db.channel.findUnique({
@@ -155,10 +177,10 @@ export const channel = new Elysia({ prefix: "/channel" })
         include: {
           ChannelViewableRole: {
             select: {
-              roleId: true
-            }
+              roleId: true,
+            },
           },
-        }
+        },
       });
 
       if (channelData === null) {
@@ -410,13 +432,16 @@ export const channel = new Elysia({ prefix: "/channel" })
 
       //最後にメッセージごとにリアクションの合計数をそれぞれ格納する
       for (const index in history) {
-        const emojiTotalJson = await CalculateReactionTotal(history[index].id, _userId);
+        const emojiTotalJson = await CalculateReactionTotal(
+          history[index].id,
+          _userId,
+        );
 
         //結果をこのメッセージ部分に格納する
         history[index] = {
           ...history[index],
           // @ts-ignore - reactionSummaryの追加
-          reactionSummary: emojiTotalJson
+          reactionSummary: emojiTotalJson,
         };
       }
 
@@ -487,8 +512,151 @@ export const channel = new Elysia({ prefix: "/channel" })
   .use(checkRoleTerm)
 
   .post(
+    "/invite",
+    async ({ body: { channelId, userId }, _userId, server }) => {
+      //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
+      const requestUser = await db.user.findUnique({
+        where: {
+          id: _userId,
+        },
+        include: {
+          ChannelJoin: true,
+        },
+      });
+      if (!requestUser) {
+        return error(404, "User not found");
+      }
+      if (!requestUser.ChannelJoin.some((c) => c.channelId === channelId)) {
+        return error(403, "You are not joined this channel");
+      }
+
+      //対象ユーザーがすでに参加しているかどうかを確認
+      const targetUserJoinedData = await db.channelJoin.findFirst({
+        where: {
+          userId,
+          channelId,
+        },
+      });
+      if (targetUserJoinedData !== null) {
+        return error(400, "Already joined");
+      }
+
+      //チャンネル参加させる
+      await db.channelJoin.create({
+        data: {
+          userId,
+          channelId,
+        },
+      });
+      //WSチャンネルを登録させる
+      WSSubscribe(userId, `channel::${channelId}`);
+
+      //システムメッセージを送信
+      SendSystemMessage(channelId, userId, "CHANNEL_INVITED", server);
+
+      //チャンネル参加を本人にWSで通知
+      server?.publish(
+        `user::${userId}`,
+        JSON.stringify({
+          signal: "channel::Join",
+          data: {
+            channelId,
+          },
+        }),
+      );
+
+      return {
+        message: "User invited",
+      };
+    },
+    {
+      body: t.Object({
+        channelId: t.String(),
+        userId: t.String(),
+      }),
+      detail: {
+        description: "チャンネルにユーザーを招待します",
+        tags: ["Channel"],
+      },
+      checkRoleTerm: "manageChannel",
+    },
+  )
+  .post(
+    "/kick",
+    async ({ body: { channelId, userId }, _userId, server }) => {
+      //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
+      const requestUser = await db.user.findUnique({
+        where: {
+          id: _userId,
+        },
+        include: {
+          ChannelJoin: true,
+        },
+      });
+      if (!requestUser) {
+        return error(404, "User not found");
+      }
+      if (!requestUser.ChannelJoin.some((c) => c.channelId === channelId)) {
+        return error(403, "You are not joined this channel");
+      }
+
+      //対象ユーザーが参加しているかどうかを確認
+      const targetUserJoinedData = await db.channelJoin.findFirst({
+        where: {
+          userId,
+          channelId,
+        },
+      });
+      if (targetUserJoinedData === null) {
+        return error(400, "This user is not joined this channel");
+      }
+
+      //チャンネル参加データを削除(退出させる)
+      await db.channelJoin.deleteMany({
+        where: {
+          userId,
+          channelId,
+        },
+      });
+      //WSチャンネルを登録解除
+      WSUnsubscribe(userId, `channel::${channelId}`);
+
+      //システムメッセージを送信
+      SendSystemMessage(channelId, userId, "CHANNEL_KICKED", server);
+
+      //チャンネル退出を本人にWSで通知
+      server?.publish(
+        `user::${userId}`,
+        JSON.stringify({
+          signal: "channel::Left",
+          data: {
+            channelId,
+          },
+        }),
+      );
+
+      return {
+        message: "User kicked",
+      };
+    },
+    {
+      body: t.Object({
+        channelId: t.String(),
+        userId: t.String(),
+      }),
+      detail: {
+        description: "チャンネルからユーザーをキックします",
+        tags: ["Channel"],
+      },
+      checkRoleTerm: "manageChannel",
+    },
+  )
+  .post(
     "/update",
-    async ({ body: { name, description, isArchived, channelId, viewableRole }, server }) => {
+    async ({
+      body: { name, description, isArchived, channelId, viewableRole },
+      server,
+    }) => {
       //適用するデータ群のJSON
       const updatingValues: {
         name?: string;
@@ -525,11 +693,13 @@ export const channel = new Elysia({ prefix: "/channel" })
 
         // 既存のroleIdをセットに変換
         //const existingRoleIds = new Set(existingRoles.map(role => role.roleId));
-        const _existingRoleIds = existingRoles.map(role => role.roleId);
+        const _existingRoleIds = existingRoles.map((role) => role.roleId);
         const existingRoleIds = new Set(_existingRoleIds);
 
         // 新しいroleIdをフィルタリング
-        const newRoleIds = viewableRole.filter(roleId => !existingRoleIds.has(roleId));
+        const newRoleIds = viewableRole.filter(
+          (roleId) => !existingRoleIds.has(roleId),
+        );
 
         //現在の閲覧可能roleIdを削除
         await db.channelViewableRole.deleteMany({
@@ -547,7 +717,7 @@ export const channel = new Elysia({ prefix: "/channel" })
             data: {
               ChannelViewableRole: {
                 createMany: {
-                  data: newRoleIds.map(roleId => ({
+                  data: newRoleIds.map((roleId) => ({
                     roleId,
                   })),
                 },
@@ -565,13 +735,13 @@ export const channel = new Elysia({ prefix: "/channel" })
         include: {
           ChannelViewableRole: {
             select: {
-              roleId: true
-            }
+              roleId: true,
+            },
           },
-        }
+        },
       });
 
-        //WSで通知
+      //WSで通知
       server?.publish(
         "GLOBAL",
         JSON.stringify({

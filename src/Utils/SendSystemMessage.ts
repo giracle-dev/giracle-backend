@@ -8,6 +8,7 @@ const db = new PrismaClient();
  * @param _channelId 記録するチャンネルId
  * @param _targetUserId 通知される対象のユーザーId
  * @param _messageTerm 送信するメッセージ項目
+ * @param _server WS通信をするためのServerインスタンス、なければWS通知をしない
  */
 export default async function SendSystemMessage(
   _channelId: string,
@@ -46,4 +47,9 @@ export default async function SendSystemMessage(
   }
 }
 
-type TSystemMessageTerm = "WELCOME" | "CHANNEL_JOIN" | "CHANNEL_LEFT";
+type TSystemMessageTerm =
+  | "WELCOME"
+  | "CHANNEL_JOIN"
+  | "CHANNEL_LEFT"
+  | "CHANNEL_INVITED"
+  | "CHANNEL_KICKED";
