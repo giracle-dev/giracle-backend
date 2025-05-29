@@ -54,6 +54,17 @@ export const channel = new Elysia({ prefix: "/channel" })
       //システムメッセージを送信
       SendSystemMessage(channelId, _userId, "CHANNEL_JOIN", server);
 
+      //WSでチャンネル参加を通知
+      server?.publish(
+        `user::${_userId}`,
+        JSON.stringify({
+          signal: "channel::Join",
+          data: {
+            channelId,
+          },
+        }),
+      );
+
       return {
         message: "Channel joined",
         data: {
@@ -119,6 +130,17 @@ export const channel = new Elysia({ prefix: "/channel" })
       WSUnsubscribe(_userId, `channel::${channelId}`);
       //システムメッセージを送信
       SendSystemMessage(channelId, _userId, "CHANNEL_LEFT", server);
+
+      //WSでチャンネル退出を通知
+      server?.publish(
+        `user::${_userId}`,
+        JSON.stringify({
+          signal: "channel::Left",
+          data: {
+            channelId,
+          },
+        }),
+      );
 
       return {
         message: "Channel left",
@@ -489,6 +511,146 @@ export const channel = new Elysia({ prefix: "/channel" })
 
   .use(checkRoleTerm)
 
+  .post(
+    "/invite",
+    async ({ body: { channelId, userId }, _userId, server }) => {
+      //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
+      const requestUser = await db.user.findUnique({
+        where: {
+          id: _userId,
+        },
+        include: {
+          ChannelJoin: true,
+        },
+      });
+      if (!requestUser) {
+        return error(404, "User not found");
+      }
+      if (!requestUser.ChannelJoin.some((c) => c.channelId === channelId)) {
+        return error(403, "You are not joined this channel");
+      }
+
+      //対象ユーザーがすでに参加しているかどうかを確認
+      const targetUserJoinedData = await db.channelJoin.findFirst({
+        where: {
+          userId,
+          channelId,
+        },
+      });
+      if (targetUserJoinedData !== null) {
+        return error(400, "Already joined");
+      }
+
+      //チャンネル参加させる
+      await db.channelJoin.create({
+        data: {
+          userId,
+          channelId,
+        },
+      });
+      //WSチャンネルを登録させる
+      WSSubscribe(userId, `channel::${channelId}`);
+
+      //システムメッセージを送信
+      SendSystemMessage(channelId, userId, "CHANNEL_INVITED", server);
+
+      //チャンネル参加を本人にWSで通知
+      server?.publish(
+        `user::${userId}`,
+        JSON.stringify({
+          signal: "channel::Join",
+          data: {
+            channelId,
+          },
+        }),
+      );
+
+      return {
+        message: "User invited",
+      };
+    },
+    {
+      body: t.Object({
+        channelId: t.String(),
+        userId: t.String(),
+      }),
+      detail: {
+        description: "チャンネルにユーザーを招待します",
+        tags: ["Channel"],
+      },
+      checkRoleTerm: "manageChannel",
+    },
+  )
+  .post(
+    "/kick",
+    async ({ body: { channelId, userId }, _userId, server }) => {
+      //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
+      const requestUser = await db.user.findUnique({
+        where: {
+          id: _userId,
+        },
+        include: {
+          ChannelJoin: true,
+        },
+      });
+      if (!requestUser) {
+        return error(404, "User not found");
+      }
+      if (!requestUser.ChannelJoin.some((c) => c.channelId === channelId)) {
+        return error(403, "You are not joined this channel");
+      }
+
+      //対象ユーザーが参加しているかどうかを確認
+      const targetUserJoinedData = await db.channelJoin.findFirst({
+        where: {
+          userId,
+          channelId,
+        },
+      });
+      if (targetUserJoinedData === null) {
+        return error(400, "This user is not joined this channel");
+      }
+
+      //チャンネル参加データを削除(退出させる)
+      await db.channelJoin.deleteMany({
+        where: {
+          userId,
+          channelId,
+        },
+      });
+      //WSチャンネルを登録解除
+      WSUnsubscribe(userId, `channel::${channelId}`);
+
+      //システムメッセージを送信
+      SendSystemMessage(channelId, userId, "CHANNEL_KICKED", server);
+
+      //チャンネル退出を本人にWSで通知
+      server?.publish(
+        `user::${userId}`,
+        JSON.stringify({
+          signal: "channel::Left",
+          data: {
+            channelId,
+          },
+        }),
+      );
+
+      return {
+        message: "User kicked",
+      };
+    },
+    {
+      body: t.Object({
+        channelId: t.String(),
+        userId: t.String(),
+      }),
+      detail: {
+        description: "チャンネルからユーザーをキックします",
+        tags: ["Channel"],
+      },
+      checkRoleTerm: "manageChannel",
+    },
+  )
   .post(
     "/update",
     async ({
