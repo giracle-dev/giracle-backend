@@ -54,6 +54,17 @@ export const channel = new Elysia({ prefix: "/channel" })
       //システムメッセージを送信
       SendSystemMessage(channelId, _userId, "CHANNEL_JOIN", server);
 
+      //WSでチャンネル参加を通知
+      server?.publish(
+        `user::${_userId}`,
+        JSON.stringify({
+          signal: "channel::Join",
+          data: {
+            channelId,
+          },
+        }),
+      );
+
       return {
         message: "Channel joined",
         data: {
@@ -119,6 +130,17 @@ export const channel = new Elysia({ prefix: "/channel" })
       WSUnsubscribe(_userId, `channel::${channelId}`);
       //システムメッセージを送信
       SendSystemMessage(channelId, _userId, "CHANNEL_LEFT", server);
+
+      //WSでチャンネル退出を通知
+      server?.publish(
+        `user::${_userId}`,
+        JSON.stringify({
+          signal: "channel::Left",
+          data: {
+            channelId,
+          },
+        }),
+      );
 
       return {
         message: "Channel left",
