@@ -554,6 +554,17 @@ export const channel = new Elysia({ prefix: "/channel" })
       //システムメッセージを送信
       SendSystemMessage(channelId, userId, "CHANNEL_INVITED", server);
 
+      //チャンネル参加を本人にWSで通知
+      server?.publish(
+        `user::${userId}`,
+        JSON.stringify({
+          signal: "channel::Join",
+          data: {
+            channelId,
+          },
+        }),
+      );
+
       return {
         message: "User invited",
       };
@@ -612,6 +623,17 @@ export const channel = new Elysia({ prefix: "/channel" })
 
       //システムメッセージを送信
       SendSystemMessage(channelId, userId, "CHANNEL_KICKED", server);
+
+      //チャンネル退出を本人にWSで通知
+      server?.publish(
+        `user::${userId}`,
+        JSON.stringify({
+          signal: "channel::Left",
+          data: {
+            channelId,
+          },
+        }),
+      );
 
       return {
         message: "User kicked",
