@@ -524,10 +524,10 @@ export const channel = new Elysia({ prefix: "/channel" })
         },
       });
       if (!requestUser) {
-        return error(404, "User not found");
+        return status(404, "User not found");
       }
       if (!requestUser.ChannelJoin.some((c) => c.channelId === channelId)) {
-        return error(403, "You are not joined this channel");
+        return status(403, "You are not joined this channel");
       }
 
       //対象ユーザーがすでに参加しているかどうかを確認
@@ -538,7 +538,7 @@ export const channel = new Elysia({ prefix: "/channel" })
         },
       });
       if (targetUserJoinedData !== null) {
-        return error(400, "Already joined");
+        return status(400, "Already joined");
       }
 
       //チャンネル参加させる
@@ -594,10 +594,10 @@ export const channel = new Elysia({ prefix: "/channel" })
         },
       });
       if (!requestUser) {
-        return error(404, "User not found");
+        return status(404, "User not found");
       }
       if (!requestUser.ChannelJoin.some((c) => c.channelId === channelId)) {
-        return error(403, "You are not joined this channel");
+        return status(403, "You are not joined this channel");
       }
 
       //対象ユーザーが参加しているかどうかを確認
@@ -608,7 +608,7 @@ export const channel = new Elysia({ prefix: "/channel" })
         },
       });
       if (targetUserJoinedData === null) {
-        return error(400, "This user is not joined this channel");
+        return status(400, "This user is not joined this channel");
       }
 
       //チャンネル参加データを削除(退出させる)

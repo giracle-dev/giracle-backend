@@ -1,5 +1,5 @@
 import { type Message, PrismaClient } from "@prisma/client";
-import { Elysia, error, t } from "elysia";
+import { Elysia, status, t } from "elysia";
 import ogs from "open-graph-scraper";
 
 const db = new PrismaClient();
@@ -14,7 +14,7 @@ const CheckToken = new Elysia({ name: "CheckToken" })
   .resolve({ as: "scoped" }, async ({ cookie: { token } }) => {
     //そもそもCookieが無いならエラー
     if (token.value === undefined) {
-      return error(401, "Invalid token");
+      return status(401, "Invalid token");
     }
 
     //トークンがDBにあるか確認
@@ -29,11 +29,11 @@ const CheckToken = new Elysia({ name: "CheckToken" })
 
     //トークンが無効ならエラー
     if (tokenData === null) {
-      return error(401, "Invalid token");
+      return status(401, "Invalid token");
     }
     //BAN確認
     if (tokenData.user.isBanned) {
-      return error(401, "User is banned");
+      return status(401, "User is banned");
     }
 
     return {
@@ -73,7 +73,7 @@ const checkRoleTerm = new Elysia({ name: "checkRoleTerm" })
 
         //該当権限を持つロール付与情報が無いなら停止
         if (roleLink === null) {
-          return error(401, "Role level not enough");
+          return status(401, "Role level not enough");
         }
       });
     },
