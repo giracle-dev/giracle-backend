@@ -574,7 +574,7 @@ export const channel = new Elysia({ prefix: "/channel" })
           channelId,
         },
       });
-      if (targetUserJoinedData !== null) {
+      if (targetUserJoinedData === null) {
         return error(400, "This user is not joined this channel");
       }
 
