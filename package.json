@@ -11,13 +11,13 @@
     "seed": "bun ./prisma/seeds.ts"
   },
   "dependencies": {
-    "@elysiajs/cors": "^1.3.1",
+    "@elysiajs/cors": "^1.3.3",
     "@elysiajs/swagger": "^1.3.0",
-    "@prisma/client": "^6.7.0",
+    "@prisma/client": "^6.8.2",
     "elysia": "latest",
     "open-graph-scraper": "^6.10.0",
     "sharp": "^0.33.5",
-    "prisma": "^6.7.0"
+    "prisma": "^6.8.2"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.3",
