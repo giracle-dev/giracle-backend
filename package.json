@@ -15,9 +15,10 @@
     "@elysiajs/swagger": "^1.2.2",
     "@prisma/client": "^6.5.0",
     "elysia": "latest",
+    "image-size": "^2.0.2",
     "open-graph-scraper": "^6.9.0",
-    "sharp": "^0.33.5",
-    "prisma": "^6.5.0"
+    "prisma": "^6.5.0",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.3",
