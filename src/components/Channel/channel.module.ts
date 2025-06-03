@@ -6,6 +6,7 @@ import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { WSSubscribe, WSUnsubscribe } from "../../ws";
 import CalculateReactionTotal from "../../Utils/CalculateReactionTotal";
+import { imageSize } from 'image-size';
 
 const db = new PrismaClient();
 
@@ -430,6 +431,29 @@ export const channel = new Elysia({ prefix: "/channel" })
         atTop = history.length < (fetchLength || 30);
       }
 
+      //画像の添付ファイルがあれば画像のメタデータ（縦幅など）を含める
+      const ImageDimensions: { [fileId: string]: { height:number; width:number; } } = {};
+      for (const index in history) {
+        for (const file of history[index].MessageFileAttached) {
+          if (file.type.startsWith("image/")) {
+            try {
+              //画像を読み込む
+              const imageArrBuffer = await Bun.file(`./STORAGE/file/${channelId}/${file.savedFileName}`).arrayBuffer();
+              const buffer = new Uint8Array(imageArrBuffer);
+              //画像のメタデータを取得
+              const { width, height } = imageSize(buffer)
+              
+              if (width !== undefined && height !== undefined) {
+                ImageDimensions[file.id] = {
+                  height,
+                  width,
+                };
+              }
+            } catch(e) {}
+          }
+        }
+      }
+
       //最後にメッセージごとにリアクションの合計数をそれぞれ格納する
       for (const index in history) {
         const emojiTotalJson = await CalculateReactionTotal(
@@ -448,9 +472,10 @@ export const channel = new Elysia({ prefix: "/channel" })
       return {
         message: "History fetched",
         data: {
-          history,
-          atTop,
-          atEnd,
+          history, //履歴データ
+          ImageDimensions, //画像用のサイズデータ(縦幅、横幅)
+          atTop, //最初まで取得したかどうか
+          atEnd, //最新まで取得したかどうか
         },
       };
     },
