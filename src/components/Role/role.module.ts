@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import Elysia, { error, t } from "elysia";
+import Elysia, { status, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import CompareRoleLevelToRole from "../../Utils/CompareRoleLevelToRole";
 
@@ -43,7 +43,7 @@ export const role = new Elysia({ prefix: "/role" })
       });
       //ロールが存在しない
       if (!role) {
-        throw error(404, "Role not found");
+        throw status(404, "Role not found");
       }
 
       return {
@@ -107,7 +107,7 @@ export const role = new Elysia({ prefix: "/role" })
   .post(
     "/update",
     async ({ body: { roleId, roleData }, _userId, server }) => {
-      if (roleId === "HOST") throw error(400, "You cannot update HOST role");
+      if (roleId === "HOST") throw status(400, "You cannot update HOST role");
 
       const roleUpdated = await db.roleInfo.update({
         where: {
@@ -155,13 +155,13 @@ export const role = new Elysia({ prefix: "/role" })
     async ({ body: { userId, roleId }, _userId, server }) => {
       //デフォルトのロールはリンク不可
       if (roleId === "MEMBER" || roleId === "HOST") {
-        throw error(400, "You cannot link default role");
+        throw status(400, "You cannot link default role");
       }
 
       //送信者のロールレベルが足りるか確認
       if (userId !== _userId) {
         if (!(await CompareRoleLevelToRole(_userId, roleId))) {
-          throw error(400, "Role level not enough or role not found");
+          throw status(400, "Role level not enough or role not found");
         }
       }
 
@@ -174,7 +174,7 @@ export const role = new Elysia({ prefix: "/role" })
       });
       //リンク済みならエラー
       if (checkRoleLinked !== null) {
-        throw error(400, "Role already linked");
+        throw status(400, "Role already linked");
       }
 
       await db.roleLink.create({
@@ -211,12 +211,12 @@ export const role = new Elysia({ prefix: "/role" })
     async ({ body: { userId, roleId }, _userId, server }) => {
       //デフォルトのロールはリンク取り消し不可
       if (roleId === "MEMBER" || roleId === "HOST") {
-        throw error(400, "You cannot unlink default role");
+        throw status(400, "You cannot unlink default role");
       }
 
       //送信者のロールレベルが足りるか確認
       if (!(await CompareRoleLevelToRole(_userId, roleId))) {
-        throw error(400, "Role level not enough or role not found");
+        throw status(400, "Role level not enough or role not found");
       }
 
       await db.roleLink.deleteMany({
@@ -252,7 +252,7 @@ export const role = new Elysia({ prefix: "/role" })
     async ({ body: { roleId }, _userId, server }) => {
       //送信者のロールレベルが足りるか確認
       if (!(await CompareRoleLevelToRole(_userId, roleId))) {
-        throw error(400, "Role level not enough or role not found");
+        throw status(400, "Role level not enough or role not found");
       }
 
       //ユーザーのロール付与情報を全削除
@@ -301,7 +301,7 @@ export const role = new Elysia({ prefix: "/role" })
 
       //ロールが存在しない
       if (role === null) {
-        throw error(404, "Role not found");
+        throw status(404, "Role not found");
       }
 
       return {
@@ -326,7 +326,7 @@ export const role = new Elysia({ prefix: "/role" })
 
       //ロールが存在しない
       if (roles === null) {
-        throw error(404, "Roles not found");
+        throw status(404, "Roles not found");
       }
 
       return {
