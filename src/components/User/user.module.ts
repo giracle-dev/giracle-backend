@@ -15,7 +15,7 @@ export const user = new Elysia({ prefix: "/user" })
   .use(userService)
   .put(
     "/sign-up",
-    async ({ body: { username, password, inviteCode }, error, server }) => {
+    async ({ body: { username, password, inviteCode }, server }) => {
       //初めてのユーザーかどうか
       let flagFirstUser = false;
       //ユーザー数を取得して最初ならtrue
