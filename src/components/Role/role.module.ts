@@ -292,7 +292,7 @@ export const role = new Elysia({ prefix: "/role" })
   )
   .get(
     "/:roleId",
-    async ({ params: { roleId }, error }) => {
+    async ({ params: { roleId } }) => {
       const role = await db.roleInfo.findUnique({
         where: {
           id: roleId,
@@ -321,7 +321,7 @@ export const role = new Elysia({ prefix: "/role" })
   )
   .get(
     "/list",
-    async ({ error }) => {
+    async () => {
       const roles = await db.roleInfo.findMany();
 
       //ロールが存在しない

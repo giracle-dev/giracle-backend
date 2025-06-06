@@ -15,7 +15,7 @@ export const user = new Elysia({ prefix: "/user" })
   .use(userService)
   .put(
     "/sign-up",
-    async ({ body: { username, password, inviteCode }, error, server }) => {
+    async ({ body: { username, password, inviteCode }, server }) => {
       //初めてのユーザーかどうか
       let flagFirstUser = false;
       //ユーザー数を取得して最初ならtrue
@@ -151,7 +151,7 @@ export const user = new Elysia({ prefix: "/user" })
   )
   .post(
     "/sign-in",
-    async ({ error, body: { username, password }, cookie: { token } }) => {
+    async ({ body: { username, password }, cookie: { token } }) => {
       //ユーザー情報取得
       const user = await db.user.findUnique({
         where: { name: username },
@@ -450,7 +450,7 @@ export const user = new Elysia({ prefix: "/user" })
   )
   .post(
     "/change-password",
-    async ({ error, body: { currentPassword, newPassword }, _userId }) => {
+    async ({ body: { currentPassword, newPassword }, _userId }) => {
       //console.log("user.module :: /sign-in :: tokenGenerated", tokenGenerated);
       //ユーザー情報取得
       const userdata = await db.user.findFirst({
@@ -589,7 +589,7 @@ export const user = new Elysia({ prefix: "/user" })
   )
   .get(
     "/verify-token",
-    ({ _userId, error }) => {
+    ({ _userId }) => {
       //もし空ならトークンが無効
       if (_userId === "") {
         throw status(401, "Token is invalid");
