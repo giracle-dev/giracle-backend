@@ -36,6 +36,9 @@ const CheckToken = new Elysia({ name: "CheckToken" })
       return status(401, "User is banned");
     }
 
+    //トークンの期限を延長
+    token.expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 15); //15日間有効
+
     return {
       _userId: tokenData.userId,
     };
