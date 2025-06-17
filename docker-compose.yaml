@@ -13,6 +13,9 @@ services:
     # コンテナにわかりやすい名前をつける
     container_name: giracle-backend
 
+    networks:
+      - giracle
+
     # ポートのマッピング
     # ホストOSの8080番ポートを、コンテナの80番ポートに接続
     ports:
@@ -21,3 +24,11 @@ services:
     # コンテナの再起動ポリシー
     # 明示的に停止しない限り、常に再起動する
     restart: unless-stopped
+
+# このComposeファイル内で使用するネットワークを定義する
+networks:
+  # 'giracle' という名前のネットワークを定義
+  giracle:
+    # external: true は、このネットワークが 'docker-compose up' で
+    # 作成されるものではなく、外部にすでに存在することをDockerに伝える設定
+    external: true
