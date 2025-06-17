@@ -34,6 +34,6 @@ export const app = new Elysia()
   .use(role)
   .use(message)
   .use(server)
-  .listen(3000);
+  .listen(4000);
 
-console.log("Server running at http://localhost:3000");
+console.log("Server running at http://localhost:4000");
