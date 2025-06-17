@@ -1,0 +1,4 @@
+# Dockerイメージに含めたくないものを指定
+node_modules
+.git
+README.md

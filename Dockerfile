@@ -1,17 +1,17 @@
-FROM oven/bun
+FROM oven/bun:latest
 
-WORKDIR /app
+WORKDIR /APP
 
-COPY package.json .
-COPY bun.lockb .
+COPY package.json ./
+COPY bun.lock ./
 
-RUN bun i
+RUN bun i --production
 
-COPY src ./src
-COPY tsconfig.json .
+# ソースコード全部移動
+COPY ./ ./
 
 ENV NODE_ENV production
 
 CMD ["bun", "run", "./src/index.ts"]
 
-EXPOSE 3000
+EXPOSE 4000

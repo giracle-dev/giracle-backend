@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # サービス名を 'frontend' とする
+  backend:
+    # Dockerfileを使ってイメージをビルドする
+    build:
+      # ビルドコンテキスト（Dockerfileやコピー元ファイルがある場所）はカレントディレクトリ
+      context: .
+      # 使用するDockerfileの名前を指定
+      dockerfile: Dockerfile
+    
+    # コンテナにわかりやすい名前をつける
+    container_name: giracle-backend
+
+    # ポートのマッピング
+    # ホストOSの8080番ポートを、コンテナの80番ポートに接続
+    ports:
+      - "4000:4000"
+    
+    # コンテナの再起動ポリシー
+    # 明示的に停止しない限り、常に再起動する
+    restart: unless-stopped
