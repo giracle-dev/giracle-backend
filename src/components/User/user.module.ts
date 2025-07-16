@@ -8,6 +8,7 @@ import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { userWSInstance } from "../../ws";
 import { userService } from "./user.service";
 import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
+import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 
 const db = new PrismaClient();
 
@@ -252,10 +253,18 @@ export const user = new Elysia({ prefix: "/user" })
   )
   .get(
     "/search",
-    async ({ query: { username, joinedChannel, cursor } }) => {
+    async ({ query: { username, joinedChannel, cursor }, _userId }) => {
       //もしcursorがundefinedなら0にする
       if (cursor === undefined) {
         cursor = 0;
+      }
+
+      //チャンネル指定をしているならそれぞれが閲覧可能であるかを調べる
+      if (joinedChannel !== undefined) {
+        const canView = await CheckChannelVisibility(joinedChannel, _userId);
+        if (canView === false) {
+          return status(403, "You can't search this channel due to visibility restrictions");
+        }
       }
 
       //ユーザーを検索
