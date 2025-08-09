@@ -114,7 +114,7 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
           const urlMatched = messageData.content.match(urlRegex) ?? [];
 
           //URLが含まれていないかつ編集された状態じゃないなら何もしない
-          if (urlMatched === null && !messageData.isEdited) return;
+          if (urlMatched.length === 0 && !messageData.isEdited) return;
 
           //TwitterのリンクがあればfxTwitterへ
           for (const index in urlMatched) {
