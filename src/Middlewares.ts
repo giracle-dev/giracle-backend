@@ -101,17 +101,20 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
       return {
         async afterResponse({ server, response }) {
           //URLプレビューが無効あるいはレスポンスが存在しないなら何もしない
-          if (!isEnabled || response === undefined) return;
+          if (!isEnabled || response === undefined || response === null) return;
+
+          //メッセージデータを取得
+          const messageData = response.data as Message;
           //メッセージId取り出し
-          const messageId = response.data.id;
+          const messageId = messageData.id;
 
           //URLを抽出
           const urlRegex: RegExp =
             /https?:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#\u3000-\u30FE\u4E00-\u9FA0\uFF01-\uFFE3]+/g;
-          const urlMatched = response.data.content.match(urlRegex);
+          const urlMatched = messageData.content?.match(urlRegex) ?? [];
 
-          //URLが含まれていないなら何もしない
-          if (urlMatched === null) return;
+          //URLが含まれていないかつ編集された状態じゃないなら何もしない
+          if (urlMatched.length === 0 && !messageData.isEdited) return;
 
           //TwitterのリンクがあればfxTwitterへ
           for (const index in urlMatched) {
@@ -186,7 +189,7 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
           });
           //WSで通知
           server?.publish(
-            `channel::${response.data.channelId}`,
+            `channel::${messageData.channelId}`,
             JSON.stringify({
               signal: "message::UpdateMessage",
               data: message,
