@@ -104,7 +104,7 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
           if (!isEnabled || response === undefined || response === null) return;
 
           //メッセージデータを取得
-          const messageData = response.data;
+          const messageData = response.data as Message;
           //メッセージId取り出し
           const messageId = messageData.id;
 
