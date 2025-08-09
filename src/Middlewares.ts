@@ -111,7 +111,7 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
           //URLを抽出
           const urlRegex: RegExp =
             /https?:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#\u3000-\u30FE\u4E00-\u9FA0\uFF01-\uFFE3]+/g;
-          const urlMatched = messageData.content.match(urlRegex) ?? [];
+          const urlMatched = messageData.content?.match(urlRegex) ?? [];
 
           //URLが含まれていないかつ編集された状態じゃないなら何もしない
           if (urlMatched.length === 0 && !messageData.isEdited) return;
