@@ -153,6 +153,17 @@ export const message = new Elysia({ prefix: "/message" })
   .post(
     "/read-time/update",
     async ({ _userId, body: { channelId, readTime }, server }) => {
+      //ユーザーがチャンネルに参加しているかどうかを確認する
+      const channelJoinedData = await db.channelJoin.findFirst({
+        where: {
+          channelId: channelId,
+          userId: _userId
+        }
+      });
+      if (channelJoinedData === null) {
+        throw status(400, "You are not joined in this channel.");
+      }
+
       //既読時間を取得して更新する必要があるか調べる
       const readTimeSaved = await db.messageReadTime.findUnique({
         where: {
