@@ -5,6 +5,7 @@ import type { ElysiaWS } from "elysia/dist/ws";
 const db = new PrismaClient();
 
 //ユーザーごとのWSインスタンス管理 ( Map <UserId, WSインスタンス>)
+// biome-ignore lint/suspicious/noExplicitAny: 全WSインスタンスを受け付けるためany
 export const userWSInstance = new Map<string, ElysiaWS<any, any>[]>();
 
 /**
@@ -21,7 +22,7 @@ export const wsHandler = new Elysia().ws("/ws", {
 
   message(ws, { signal }) {
     //pingを受け取ったらpongを返す
-    if (signal === 'ping') {
+    if (signal === "ping") {
       ws.send({
         signal: "pong",
         data: "pong",
@@ -95,34 +96,25 @@ export const wsHandler = new Elysia().ws("/ws", {
       return;
     }
 
-    const user = await db.user.findFirst({
+    const userToken = await db.token.findFirst({
       where: {
-        Token: {
-          some: {
-            token: token,
-          },
-        },
-      },
-      include: {
-        ChannelJoin: true,
+        token: token,
       },
     });
-    if (!user) {
+    if (!userToken) {
       return;
     }
 
     //このユーザーWSインスタンス削除
-    //userWSInstance.delete(user.id);
-    WSremoveUserInstance(user.id, ws);
+    WSremoveUserInstance(userToken.userId, ws);
 
-    //console.log("ws :: close : userWSInstance.get(user.id)?.length", userWSInstance.get(user.id)?.length);
-    if (!userWSInstance.has(user.id)) {
+    if (!userWSInstance.has(userToken.userId)) {
       //ユーザー接続通知
       ws.publish(
         "GLOBAL",
         JSON.stringify({
           signal: "user::Disconnected",
-          data: user.id,
+          data: userToken.userId,
         }),
       );
     }
@@ -160,13 +152,14 @@ function WSremoveUserInstance(userId: string, ws: ElysiaWS<any, any>) {
     return;
   }
   const socketTokenRemoving = ws.data.cookie.token;
-  userWSInstance.set(
-    userId,
-    currentInstance.filter(v => {
-      //console.log("WSremoveUserInstance :: v.data.cookie.token", v.data.cookie, socketTokenRemoving.initial.value);
-      return v.data.cookie.token.value !== socketTokenRemoving.initial.value;
-    }),
-  );
+
+  //トークンのIndex番号を調べてそれを元にインスタンスをsplice
+  const indexToRemove = currentInstance.findIndex((v) => {
+    return v.data.cookie.token.value === socketTokenRemoving.initial.value;
+  });
+  if (indexToRemove !== -1) {
+    currentInstance.splice(indexToRemove, 1);
+  }
 
   //もしインスタンスが0になったら削除
   if (userWSInstance.get(userId)?.length === 0) {
