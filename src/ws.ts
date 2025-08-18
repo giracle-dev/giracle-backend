@@ -21,7 +21,7 @@ export const wsHandler = new Elysia().ws("/ws", {
 
   message(ws, { signal }) {
     //pingを受け取ったらpongを返す
-    if (signal === 'ping') {
+    if (signal === "ping") {
       ws.send({
         signal: "pong",
         data: "pong",
@@ -95,34 +95,25 @@ export const wsHandler = new Elysia().ws("/ws", {
       return;
     }
 
-    const user = await db.user.findFirst({
+    const userToken = await db.token.findFirst({
       where: {
-        Token: {
-          some: {
             token: token,
           },
-        },
-      },
-      include: {
-        ChannelJoin: true,
-      },
     });
-    if (!user) {
+    if (!userToken) {
       return;
     }
 
     //このユーザーWSインスタンス削除
-    //userWSInstance.delete(user.id);
-    WSremoveUserInstance(user.id, ws);
+    WSremoveUserInstance(userToken.userId, ws);
 
-    //console.log("ws :: close : userWSInstance.get(user.id)?.length", userWSInstance.get(user.id)?.length);
-    if (!userWSInstance.has(user.id)) {
+    if (!userWSInstance.has(userToken.userId)) {
       //ユーザー接続通知
       ws.publish(
         "GLOBAL",
         JSON.stringify({
           signal: "user::Disconnected",
-          data: user.id,
+          data: userToken.userId,
         }),
       );
     }
