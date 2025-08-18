@@ -97,8 +97,8 @@ export const wsHandler = new Elysia().ws("/ws", {
 
     const userToken = await db.token.findFirst({
       where: {
-            token: token,
-          },
+        token: token,
+      },
     });
     if (!userToken) {
       return;
@@ -151,13 +151,14 @@ function WSremoveUserInstance(userId: string, ws: ElysiaWS<any, any>) {
     return;
   }
   const socketTokenRemoving = ws.data.cookie.token;
-  userWSInstance.set(
-    userId,
-    currentInstance.filter(v => {
-      //console.log("WSremoveUserInstance :: v.data.cookie.token", v.data.cookie, socketTokenRemoving.initial.value);
-      return v.data.cookie.token.value !== socketTokenRemoving.initial.value;
-    }),
-  );
+
+  //トークンのIndex番号を調べてそれを元にインスタンスをsplice
+  const indexToRemove = currentInstance.findIndex((v) => {
+    return v.data.cookie.token.value === socketTokenRemoving.initial.value;
+  });
+  if (indexToRemove !== -1) {
+    currentInstance.splice(indexToRemove, 1);
+  }
 
   //もしインスタンスが0になったら削除
   if (userWSInstance.get(userId)?.length === 0) {
