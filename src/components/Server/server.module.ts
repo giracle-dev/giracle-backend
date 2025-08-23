@@ -305,6 +305,8 @@ export const server = new Elysia({ prefix: "/server" })
       if (await emojiGif.exists()) return emojiGif;
       const emojiJpeg = Bun.file(`./STORAGE/custom-emoji/${emoji.id}.jpeg`);
       if (await emojiJpeg.exists()) return emojiJpeg;
+      const emojiWebp = Bun.file(`./STORAGE/custom-emoji/${emoji.id}.webp`);
+      if (await emojiWebp.exists()) return emojiWebp;
 
       return status(404, "Custom emoji not found");
     },
@@ -377,13 +379,18 @@ export const server = new Elysia({ prefix: "/server" })
       if (ext === "gif") {
         await sharp(await emoji.arrayBuffer(), { animated: true })
           .resize(32, 32)
-          .gif()
+          .gif({
+            colours: 128, // 色数を128に削減
+            dither: 0, // ディザリングを無効化
+            effort: 7, // パレット生成の計算量を設定
+          })
           .toFile(`./STORAGE/custom-emoji/${emojiUploaded.id}.gif`);
       } else {
         await sharp(await emoji.arrayBuffer())
+          .rotate()
           .resize(32, 32)
-          .jpeg({ mozjpeg: true, quality: 90 })
-          .toFile(`./STORAGE/custom-emoji/${emojiUploaded.id}.jpeg`);
+          .webp({ quality: 95 })
+          .toFile(`./STORAGE/custom-emoji/${emojiUploaded.id}.webp`);
       }
 
       //WSで通知
@@ -421,6 +428,20 @@ export const server = new Elysia({ prefix: "/server" })
           code: emojiCode,
         },
       });
+
+      //絵文字の画像ファイルを削除
+      await unlink(`./STORAGE/custom-emoji/${emojiDeleted.id}.png`).catch(
+        () => {},
+      );
+      await unlink(`./STORAGE/custom-emoji/${emojiDeleted.id}.gif`).catch(
+        () => {},
+      );
+      await unlink(`./STORAGE/custom-emoji/${emojiDeleted.id}.jpeg`).catch(
+        () => {},
+      );
+      await unlink(`./STORAGE/custom-emoji/${emojiDeleted.id}.webp`).catch(
+        () => {},
+      );
 
       //WSで通知
       server?.publish(
