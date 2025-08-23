@@ -263,7 +263,10 @@ export const user = new Elysia({ prefix: "/user" })
       if (joinedChannel !== undefined) {
         const canView = await CheckChannelVisibility(joinedChannel, _userId);
         if (canView === false) {
-          return status(403, "You can't search this channel due to visibility restrictions");
+          return status(
+            403,
+            "You can't search this channel due to visibility restrictions",
+          );
         }
       }
 
@@ -328,6 +331,10 @@ export const user = new Elysia({ prefix: "/user" })
       if (await iconFileJpeg.exists()) {
         return iconFileJpeg;
       }
+      const iconFileWebp = Bun.file(`./STORAGE/icon/${userId}.webp`);
+      if (await iconFileWebp.exists()) {
+        return iconFileWebp;
+      }
 
       //存在しない場合はデフォルトアイコンを返す
       return file("./STORAGE/icon/default.png");
@@ -357,6 +364,10 @@ export const user = new Elysia({ prefix: "/user" })
       const bannerFileJpeg = Bun.file(`./STORAGE/banner/${userId}.jpeg`);
       if (await bannerFileJpeg.exists()) {
         return bannerFileJpeg;
+      }
+      const bannerFileWebp = Bun.file(`./STORAGE/banner/${userId}.webp`);
+      if (await bannerFileWebp.exists()) {
+        return bannerFileWebp;
       }
 
       //存在しない場合はデフォルトアイコンを返す
@@ -392,18 +403,23 @@ export const user = new Elysia({ prefix: "/user" })
       await unlink(`./STORAGE/icon/${_userId}.png`).catch(() => {});
       await unlink(`./STORAGE/icon/${_userId}.gif`).catch(() => {});
       await unlink(`./STORAGE/icon/${_userId}.jpeg`).catch(() => {});
+      await unlink(`./STORAGE/icon/${_userId}.webp`).catch(() => {});
 
-      //画像を圧縮、保存する
+      //画像を圧縮、保存する(GIFとそれ以外で処理を分ける)
       if (ext === "gif") {
-        sharp(await icon.arrayBuffer(), { animated: true })
+        await sharp(await icon.arrayBuffer(), { animated: true })
           .resize(125, 125)
-          .gif()
-          .toFile(`./STORAGE/icon/${_userId}.${ext}`);
+          .gif({
+            colours: 128, // 色数を128に削減
+            dither: 0, // ディザリングを無効化
+            effort: 7, // パレット生成の計算量を設定
+          })
+          .toFile(`./STORAGE/icon/${_userId}.gif`);
       } else {
-        sharp(await icon.arrayBuffer())
+        await sharp(await icon.arrayBuffer())
           .resize(125, 125)
-          .jpeg({ mozjpeg: true, quality: 80 })
-          .toFile(`./STORAGE/icon/${_userId}.${ext}`);
+          .webp({ quality: 90 })
+          .toFile(`./STORAGE/icon/${_userId}.webp`);
       }
 
       return {
@@ -436,13 +452,28 @@ export const user = new Elysia({ prefix: "/user" })
       //拡張子取得
       const ext = banner.type.split("/")[1];
 
-      //既存のアイコンを削除
+      //既存のバナーを削除
       await unlink(`./STORAGE/banner/${_userId}.png`).catch(() => {});
       await unlink(`./STORAGE/banner/${_userId}.gif`).catch(() => {});
       await unlink(`./STORAGE/banner/${_userId}.jpeg`).catch(() => {});
+      await unlink(`./STORAGE/banner/${_userId}.webp`).catch(() => {});
 
-      //アイコンを保存
-      await Bun.write(`./STORAGE/banner/${_userId}.${ext}`, banner);
+      //画像を圧縮、保存する
+      if (ext === "gif") {
+        await sharp(await banner.arrayBuffer(), { animated: true })
+          .gif({
+            colours: 128, // 色数を128に削減
+            dither: 0, // ディザリングを無効化
+            effort: 7, // パレット生成の計算量を設定
+          })
+          .toFile(`./STORAGE/banner/${_userId}.gif`);
+      } else {
+        await sharp(await banner.arrayBuffer())
+          .rotate()
+          .webp({ quality: 90 })
+          .toFile(`./STORAGE/banner/${_userId}.webp`);
+      }
+
       return {
         message: "Banner changed",
       };
