@@ -423,10 +423,10 @@ export const server = new Elysia({ prefix: "/server" })
       });
 
       //絵文字の画像ファイルを削除
-      await unlink(`./STORAGE/banner/${emojiCode}.png`).catch(() => {});
-      await unlink(`./STORAGE/banner/${emojiCode}.gif`).catch(() => {});
-      await unlink(`./STORAGE/banner/${emojiCode}.jpeg`).catch(() => {});
-      await unlink(`./STORAGE/banner/${emojiCode}.webp`).catch(() => {});
+      await unlink(`./STORAGE/custom-emoji/${emojiCode}.png`).catch(() => {});
+      await unlink(`./STORAGE/custom-emoji/${emojiCode}.gif`).catch(() => {});
+      await unlink(`./STORAGE/custom-emoji/${emojiCode}.jpeg`).catch(() => {});
+      await unlink(`./STORAGE/custom-emoji/${emojiCode}.webp`).catch(() => {});
 
       //WSで通知
       server?.publish(
