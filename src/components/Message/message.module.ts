@@ -324,15 +324,25 @@ export const message = new Elysia({ prefix: "/message" })
       );
 
       console.log("message.module :: /file/upload : file.type->", file.type);
-      //jpegファイルであるかどうかフラグ
-      let isJpeg = false;
-      //ファイルを保存、GIF以外の画像なら圧縮
+      //webpファイルであるかどうかフラグ
+      let isWebp = false;
+
+      //ファイルを保存する
       if (file.type.startsWith("image/") && file.type !== "image/gif") {
-        sharp(await file.arrayBuffer())
-          .jpeg({ quality: 95, mozjpeg: true })
-          .toFile(`./STORAGE/file/${channelId}/${fileNameGen}.jpeg`);
-        //jpegで保存されたことと設定
-        isJpeg = true;
+        await sharp(await file.arrayBuffer())
+          .rotate()
+          .webp({ quality: 95 })
+          .toFile(`./STORAGE/file/${channelId}/${fileNameGen}.webp`);
+        //webpで保存されたことと設定
+        isWebp = true;
+      } else if (file.type === "image/gif") {
+        await sharp(await file.arrayBuffer(), { animated: true })
+          .gif({
+            colours: 128, // 色数を128に削減
+            dither: 0, // ディザリングを無効化
+            effort: 7, // パレット生成の計算量を設定
+          })
+          .toFile(`./STORAGE/file/${channelId}/${fileNameGen}`);
       } else {
         //ファイルを保存
         await Bun.write(`./STORAGE/file/${channelId}/${fileNameGen}`, file);
@@ -344,8 +354,8 @@ export const message = new Elysia({ prefix: "/message" })
           channelId,
           userId: _userId,
           size: file.size,
-          actualFileName: isJpeg ? `${file.name}.jpeg` : file.name,
-          savedFileName: isJpeg ? `${fileNameGen}.jpeg` : fileNameGen,
+          actualFileName: isWebp ? `${file.name}.webp` : file.name,
+          savedFileName: isWebp ? `${fileNameGen}.webp` : fileNameGen,
           type: file.type,
         },
       });
