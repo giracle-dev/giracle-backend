@@ -1,6 +1,6 @@
 import { mkdir } from "node:fs/promises";
 import { unlink } from "node:fs/promises";
-import { PrismaClient } from "@prisma/client";
+import { Message, PrismaClient } from "@prisma/client";
 import Elysia, { status, file, t } from "elysia";
 import sharp from "sharp";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
@@ -748,7 +748,11 @@ export const message = new Elysia({ prefix: "/message" })
 
   .post(
     "/send",
-    async ({ body: { channelId, message, fileIds }, _userId, server }) => {
+    async ({
+      body: { channelId, message, fileIds, replyingMessageId },
+      _userId,
+      server,
+    }) => {
       //メッセージが空白か改行しか含まれていないならエラー(ファイル添付があるなら除外)
       const spaceCount =
         (message.match(/ /g) || "").length +
@@ -769,6 +773,20 @@ export const message = new Elysia({ prefix: "/message" })
         throw status(400, "You are not joined this channel");
       }
 
+      //返信先メッセージ用変数(メッセージ保存処理後に使用)
+      let messageReplyingTo: Message | null = null;
+      //返信先メッセージがあるなら存在するか確認
+      if (replyingMessageId) {
+        messageReplyingTo = await db.message.findUnique({
+          where: {
+            id: replyingMessageId,
+          },
+        });
+        if (messageReplyingTo === null) {
+          throw status(400, "Replying message not found");
+        }
+      }
+
       //アップロードしているファイルId配列があるならファイル情報を取得
       const fileData = await db.messageFileAttached.findMany({
         where: {
@@ -784,6 +802,7 @@ export const message = new Elysia({ prefix: "/message" })
           channelId,
           userId: _userId,
           content: message,
+          replyingMessageId: replyingMessageId ?? undefined,
           MessageFileAttached: {
             connect: fileData.map((data) => {
               return {
@@ -834,6 +853,32 @@ export const message = new Elysia({ prefix: "/message" })
         );
       }
 
+      //返信メッセージがあるなら返信先の送信者に通知(自分自身には通知しない)
+      if (
+        replyingMessageId &&
+        messageReplyingTo &&
+        messageReplyingTo.userId !== _userId
+      ) {
+        await db.inbox.create({
+          data: {
+            userId: messageReplyingTo.userId,
+            messageId: messageSaved.id,
+            type: "reply",
+          },
+        });
+        //WS通知
+        server?.publish(
+          `user::${messageReplyingTo.userId}`,
+          JSON.stringify({
+            signal: "inbox::Added",
+            data: {
+              message: messageSaved,
+              type: "reply",
+            },
+          }),
+        );
+      }
+
       return {
         message: "Message sent",
         data: messageSaved,
@@ -844,6 +889,7 @@ export const message = new Elysia({ prefix: "/message" })
         channelId: t.String({ minLength: 1 }),
         message: t.String(),
         fileIds: t.Array(t.String({ minLength: 1 })),
+        replyingMessageId: t.Optional(t.String()),
       }),
       detail: {
         description: "メッセージを送信します",
