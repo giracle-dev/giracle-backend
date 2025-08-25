@@ -159,6 +159,7 @@ model Message {
   content             String
   isSystemMessage     Boolean               @default(false)
   isEdited            Boolean               @default(false)
+  replyingMessageId   String?
   userId              String
   channelId           String
   createdAt           DateTime              @default(now())
@@ -211,11 +212,11 @@ model RoleInfo {
 }
 
 model Invitation {
-  id            Int      @id @default(autoincrement())
-  inviteCode    String   @unique
+  id            Int    @id @default(autoincrement())
+  inviteCode    String @unique
   createdUserId String
-  usedCount     Int      @default(0)
-  user          User     @relation(fields: [createdUserId], references: [id])
+  usedCount     Int    @default(0)
+  user          User   @relation(fields: [createdUserId], references: [id])
 }
 
 model ChannelJoinOnDefault {
