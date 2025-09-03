@@ -1,5 +1,4 @@
 import { cors } from "@elysiajs/cors";
-import { swagger } from "@elysiajs/swagger";
 import { Elysia } from "elysia";
 
 import { channel } from "./components/Channel/channel.module";
@@ -23,7 +22,6 @@ export const app = new Elysia()
       origin: Bun.env.CORS_ORIGIN,
     }),
   )
-  .use(swagger())
   .onError(({ error, code }) => {
     if (code === "NOT_FOUND") return "Not Found :(";
     console.error("index :: エラー->", error);
