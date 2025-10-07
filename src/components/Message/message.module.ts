@@ -12,7 +12,7 @@ const db = new PrismaClient();
 export const message = new Elysia({ prefix: "/message" })
   .use(CheckToken)
   .get(
-    "/get/:messageId",
+    "/:messageId",
     async ({ params: { messageId }, _userId }) => {
       const messageData = await db.message.findUnique({
         where: {
