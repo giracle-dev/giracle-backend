@@ -247,7 +247,7 @@ describe("channel", async () => {
     );
     //console.log("channel.test : get-history : response", response);
     expect(responseError.ok).toBe(false);
-    expect(responseError.status).toBe(500);
+    expect(responseError.status).toBe(400);
 
     //不正リクエストを送信
     const responseUnknwown = await app.handle(
