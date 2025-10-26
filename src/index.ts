@@ -8,6 +8,7 @@ import { message } from "./components/Message/message.module";
 import { role } from "./components/Role/role.module";
 import { user } from "./components/User/user.module";
 import { server } from "./components/Server/server.module";
+import { notification } from "./components/Notification/notification.module";
 import { wsHandler } from "./ws";
 
 //ユーザーアップロード用のディレクトリ作成
@@ -37,6 +38,7 @@ export const app = new Elysia()
   .use(role)
   .use(message)
   .use(server)
+  .use(notification)
   .listen(3000);
 
 console.log("Server running at http://localhost:3000");

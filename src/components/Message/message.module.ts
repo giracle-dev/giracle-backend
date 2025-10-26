@@ -6,6 +6,7 @@ import sharp from "sharp";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
+import { notificationService } from "../Notification/notification.service";
 
 const db = new PrismaClient();
 
@@ -634,6 +635,17 @@ export const message = new Elysia({ prefix: "/message" })
         }),
       );
 
+      // プッシュ通知: リアクション
+      const message = await db.message.findUnique({ where: { id: messageId } });
+      if (message && message.userId !== _userId) {
+        notificationService.sendReactionNotification(
+          message.userId,
+          _userId,
+          messageId,
+          emojiCode
+        ).catch(err => console.error('Failed to send reaction notification:', err));
+      }
+
       return {
         message: "Message reacted.",
         data: reaction,
@@ -832,6 +844,36 @@ export const message = new Elysia({ prefix: "/message" })
             },
           }),
         );
+
+        // プッシュ通知: メンション
+        if (mentionedUserId !== _userId) {
+          notificationService.sendMentionNotification(
+            mentionedUserId,
+            _userId,
+            channelId,
+            message
+          ).catch(err => console.error('Failed to send mention notification:', err));
+        }
+      }
+
+      // プッシュ通知: 通常メッセージ（メンションがない場合のみ）
+      if (mentionedUserIds.length === 0) {
+        const sender = await db.user.findUnique({ where: { id: _userId } });
+        const channel = await db.channel.findUnique({ where: { id: channelId } });
+
+        notificationService.sendToChannelMembers(
+          channelId,
+          _userId,
+          {
+            title: `#${channel?.name || 'Channel'}`,
+            body: `${sender?.name || 'Someone'}: ${message.substring(0, 100)}`,
+            data: {
+              type: 'message',
+              channelId,
+              messageId: messageSaved.id,
+            },
+          }
+        ).catch(err => console.error('Failed to send channel notification:', err));
       }
 
       return {
