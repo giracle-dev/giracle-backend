@@ -1,7 +1,6 @@
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { Elysia } from "elysia";
-import { PrismaClient } from "@prisma/client";
 
 import { channel } from "./components/Channel/channel.module";
 import { message } from "./components/Message/message.module";
@@ -17,8 +16,6 @@ await mkdir("./STORAGE/file", { recursive: true }).catch((e) => {});
 await mkdir("./STORAGE/icon", { recursive: true }).catch((e) => {});
 await mkdir("./STORAGE/banner", { recursive: true }).catch((e) => {});
 await mkdir("./STORAGE/custom-emoji", { recursive: true }).catch((e) => {});
-
-export const db = new PrismaClient();
 
 export const app = new Elysia()
   .use(
