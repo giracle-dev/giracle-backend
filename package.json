@@ -1,6 +1,6 @@
 {
   "name": "giracle-backend",
-  "version": "0.21.5-alpha",
+  "version": "0.21.6-alpha",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts",
