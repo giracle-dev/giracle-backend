@@ -782,8 +782,13 @@ export const message = new Elysia({ prefix: "/message" })
             id: replyingMessageId,
           },
         });
+        //返信先メッセージが存在しないならエラー
         if (messageReplyingTo === null) {
           throw status(400, "Replying message not found");
+        }
+        //返信先メッセージがこのチャンネルに存在するか確認
+        if (messageReplyingTo.channelId !== channelId) {
+          throw status(400, "Replying message not found in this channel");
         }
       }
 
