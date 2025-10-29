@@ -1,6 +1,6 @@
 import { mkdir } from "node:fs/promises";
 import { unlink } from "node:fs/promises";
-import { Message, PrismaClient } from "@prisma/client";
+import { type Message, PrismaClient } from "@prisma/client";
 import Elysia, { status, file, t } from "elysia";
 import sharp from "sharp";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
