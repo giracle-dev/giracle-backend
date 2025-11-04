@@ -465,6 +465,12 @@ export const message = new Elysia({ prefix: "/message" })
           messageId,
         },
       });
+      //このメッセージからできているInboxデータの削除
+      await db.inbox.deleteMany({
+        where: {
+          messageId: messageId,
+        }
+      });
 
       //メッセージの削除
       await db.message.delete({
