@@ -85,6 +85,51 @@ const checkRoleTerm = new Elysia({ name: "checkRoleTerm" })
     },
   });
 
+//クライアントごとのバケット管理
+const buckets = new Map<string, { count: number; resetAt: number }>();
+//制限設定
+const limitConfig = {
+  anonymous: {
+    limit: 50,
+    windowMs: 1 * 60 * 1000,
+  },
+  authenticated: {
+    limit: 200,
+    windowMs: 1 * 60 * 1000,
+  },
+};
+export const rateLimitter = new Elysia({ name: "rateLimitter" })
+  .resolve({ as: "scoped" }, async ({ request, cookie: { token } }) => {
+    //未ログインであるかどうか
+    let isAnonymous = false;
+    //識別キー
+    let key: string = token.value ?? "anonymous";
+
+    //未ログインの場合は状態を設定しIPアドレス等をキーにする
+    if (token?.value === undefined) {
+      isAnonymous = true;
+      key = request.headers.get("x-real-ip") ?? request.headers.get("x-forwarded-for") ?? request.headers.get("cf-connecting-ip") ?? request.headers.get("x-client-ip") ?? request.headers.get("x-forwarded") ?? request.headers.get("forwarded") ?? request.headers.get("via") ?? request.headers.get("remote-addr") ?? request.headers.get("x-cluster-client-ip") ?? request.headers.get("proxy-client-ip") ?? request.headers.get("wl-proxy-client-ip") ?? request.headers.get("x-forwarded-host") ?? request.headers.get("x-forwarded-server") ?? request.headers.get("host") ?? request.headers.get("user-agent") ?? "anonymous" as string;
+    }
+
+    console.log("Middlewares :: rateLimitter : ", {key}, buckets.get(key), {isAnonymous});
+
+    const now = Date.now();
+    const bucket = buckets.get(key);
+
+    const configUsing = isAnonymous ? limitConfig.anonymous : limitConfig.authenticated;
+
+    if (!bucket || bucket.resetAt < now) {
+      buckets.set(key, { count: 1, resetAt: now + configUsing.windowMs });
+      return;
+    }
+    if (bucket.count >= configUsing.limit) {
+      return status(429, "Too Many Requests");
+    }
+    
+    //カウント増加
+    bucket.count += 1;
+  });
+
 //URLプレビュー生成
 const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
   .guard({

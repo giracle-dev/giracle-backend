@@ -1,5 +1,6 @@
 import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
+import { rateLimitter } from "./Middlewares";
 
 import { channel } from "./components/Channel/channel.module";
 import { message } from "./components/Message/message.module";
@@ -22,6 +23,7 @@ export const app = new Elysia()
       origin: Bun.env.CORS_ORIGIN,
     }),
   )
+  .use(rateLimitter)
   .onError(({ error, code }) => {
     if (code === "NOT_FOUND") return "Not Found :(";
     console.error("index :: エラー->", error);
