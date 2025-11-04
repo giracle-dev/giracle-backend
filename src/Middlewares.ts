@@ -90,7 +90,7 @@ const buckets = new Map<string, { count: number; resetAt: number }>();
 //制限設定
 const limitConfig = {
   anonymous: {
-    limit: 50,
+    limit: 25,
     windowMs: 1 * 60 * 1000,
   },
   authenticated: {
@@ -123,6 +123,14 @@ export const rateLimitter = new Elysia({ name: "rateLimitter" })
       return;
     }
     if (bucket.count >= configUsing.limit) {
+      //認証済みで制限を超えたならトークンを無効化
+      if (!isAnonymous) {
+        db.token.delete({
+          where: {
+            token: key,
+          },
+        });
+      }
       return status(429, "Too Many Requests");
     }
     
