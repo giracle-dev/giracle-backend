@@ -23,7 +23,7 @@ export const app = new Elysia()
       origin: Bun.env.CORS_ORIGIN,
     }),
   )
-  .use(rateLimiter)
+  .use(Bun.env.RATE_LIMIT_ENABLED === "true" ? rateLimiter : undefined)
   .onError(({ error, code }) => {
     if (code === "NOT_FOUND") return "Not Found :(";
     console.error("index :: エラー->", error);
