@@ -91,11 +91,11 @@ const buckets = new Map<string, { count: number; resetAt: number }>();
 const limitConfig = {
   anonymous: {
     limit: parseInt(Bun.env.RATE_LIMIT_ANONYMOUS_COUNT ?? "25"),
-    windowMs: parseInt(Bun.env.RATE_LIMIT_ANONYMOUS_TIMEOUT ?? "1") * 60 * 1000,
+    windowMs: parseInt(Bun.env.RATE_LIMIT_ANONYMOUS_TIMEOUT ?? "60") * 1000,
   },
   authenticated: {
     limit: parseInt(Bun.env.RATE_LIMIT_AUTHORIZED_COUNT ?? "200"),
-    windowMs: parseInt(Bun.env.RATE_LIMIT_AUTHORIZED_TIMEOUT ?? "1") * 60 * 1000,
+    windowMs: parseInt(Bun.env.RATE_LIMIT_AUTHORIZED_TIMEOUT ?? "60") * 1000,
   },
 };
 export const rateLimiter = new Elysia({ name: "rateLimiter" })
