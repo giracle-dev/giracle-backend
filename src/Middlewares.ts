@@ -142,7 +142,7 @@ export const rateLimitter = new Elysia({ name: "rateLimitter" })
       buckets.set(key, { count: 1, resetAt: now + configUsing.windowMs });
       return;
     }
-    
+
     //制限を超過しているか確認、超過しているなら429を返す
     if (bucket.count >= configUsing.limit) {
       //ブロックされるけどカウント増加
@@ -200,9 +200,7 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
         async afterResponse({ server, responseValue }) {
           //URLプレビューが無効あるいはレスポンスが存在しないなら何もしない
           if (!isEnabled || responseValue === undefined || responseValue === null) return;
-
-          console.log("Middleware :: urlPreviewControl : responseValue->", responseValue);
-
+          
           //メッセージデータを取得
           const messageData = responseValue.data as Message;
           //メッセージId取り出し
