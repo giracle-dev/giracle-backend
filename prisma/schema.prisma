@@ -219,6 +219,14 @@ model Invitation {
   user          User   @relation(fields: [createdUserId], references: [id])
 }
 
+model BlockedIPAddress {
+  id           Int      @id @default(autoincrement())
+  address      String   @unique
+  blockedCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  latestAccess DateTime @default(now())
+}
+
 model ChannelJoinOnDefault {
   id        Int     @id @default(autoincrement())
   channelId String  @unique

@@ -85,13 +85,121 @@ const checkRoleTerm = new Elysia({ name: "checkRoleTerm" })
     },
   });
 
+//レート制限用クライアントごとのバケット管理
+const buckets = new Map<string, { count: number; resetAt: number }>();
+//レート制限用バケットの古いデータを定期的に削除
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of buckets.entries()) {
+    if (value.resetAt <= now) {
+      buckets.delete(key);
+    }
+  }
+}, 60 * 1000); // １分ごと
+
+//制限設定
+const limitConfig = {
+  anonymous: {
+    limit: parseInt(Bun.env.RATE_LIMIT_ANONYMOUS_COUNT ?? "25"),
+    windowMs: parseInt(Bun.env.RATE_LIMIT_ANONYMOUS_TIMEOUT ?? "60") * 1000,
+  },
+  authenticated: {
+    limit: parseInt(Bun.env.RATE_LIMIT_AUTHORIZED_COUNT ?? "200"),
+    windowMs: parseInt(Bun.env.RATE_LIMIT_AUTHORIZED_TIMEOUT ?? "60") * 1000,
+  },
+};
+export const rateLimiter = new Elysia({ name: "rateLimiter" })
+  .resolve({ as: "scoped" }, async ({ request, cookie: { token } }) => {
+    //未ログインであるかどうか
+    let isAnonymous = false;
+    //識別キー
+    let key: string = token.value ?? "anonymous";
+
+    //未ログインの場合は状態を設定しIPアドレス等をキーにする
+    if (token?.value === undefined) {
+      isAnonymous = true;
+      key = request.headers.get("x-real-ip") ?? request.headers.get("x-forwarded-for") ?? request.headers.get("cf-connecting-ip") ?? request.headers.get("x-client-ip") ?? request.headers.get("x-forwarded") ?? request.headers.get("forwarded") ?? request.headers.get("via") ?? request.headers.get("remote-addr") ?? request.headers.get("x-cluster-client-ip") ?? request.headers.get("proxy-client-ip") ?? request.headers.get("wl-proxy-client-ip") ?? request.headers.get("x-forwarded-host") ?? request.headers.get("x-forwarded-server") ?? request.headers.get("host") ?? request.headers.get("user-agent") ?? "anonymous" as string;
+
+      //IPアドレスが既にブロックされているか確認
+      const blockedIP = await db.blockedIPAddress.findUnique({
+        where: {
+          address: key,
+        }
+      });
+      if (blockedIP) {
+        //ブロックされている場合はカウントを増加させて429を返す
+        db.blockedIPAddress.update({
+          where: {
+            address: key,
+          },
+          data: {
+            blockedCount: blockedIP.blockedCount + 1,
+            latestAccess: new Date(),
+          },
+        });
+        return status(429, "Too Many Requests");
+      }
+    }
+
+    const now = Date.now();
+    const bucket = buckets.get(key);
+
+    //認証しているかどうかで使用設定を変更
+    const configUsing = isAnonymous ? limitConfig.anonymous : limitConfig.authenticated;
+
+    //バケットが無いかリセット時間を過ぎているなら新規作成
+    if (!bucket || bucket.resetAt < now) {
+      buckets.set(key, { count: 1, resetAt: now + configUsing.windowMs });
+      return;
+    }
+
+    //制限を超過しているか確認、超過しているなら429を返す
+    if (bucket.count >= configUsing.limit) {
+      //ブロックされるけどカウント増加
+      bucket.count += 1;
+
+      //認証済みで制限を超えたならトークンを無効化
+      if (!isAnonymous) {
+        db.token.delete({
+          where: {
+            token: key,
+          },
+        });
+      } else { //匿名の場合の処理
+        //カウントがプラス10を超過している場合はIPアドレスでブロック
+        if (bucket.count > configUsing.limit + 10) {
+          db.blockedIPAddress.upsert({
+            where: {
+              address: key,
+            },
+            create: {
+              address: key,
+              blockedCount: 1,
+            },
+            update: {
+              blockedCount: {
+                increment: 1,
+              },
+              latestAccess: new Date(),
+            },
+          });
+        }
+      }
+
+      return status(429, "Too Many Requests");
+    } else {
+      //カウント増加
+      bucket.count += 1;
+    }
+  });
+
 //URLプレビュー生成
 const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
   .guard({
     body: t.Object({
       channelId: t.String({ minLength: 1 }),
       message: t.String({ minLength: 1 }),
-    }),
+    })
   })
   .onError(({ error }) => {
     console.error("Middleware :: urlPreviewControl : エラー->", error);
@@ -99,12 +207,12 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
   .macro({
     bindUrlPreview(isEnabled: boolean) {
       return {
-        async afterResponse({ server, response }) {
+        async afterResponse({ server, responseValue }) {
           //URLプレビューが無効あるいはレスポンスが存在しないなら何もしない
-          if (!isEnabled || response === undefined || response === null) return;
-
+          if (!isEnabled || responseValue === undefined || responseValue === null) return;
+          
           //メッセージデータを取得
-          const messageData = response.data as Message;
+          const messageData = responseValue.data as Message;
           //メッセージId取り出し
           const messageId = messageData.id;
 
