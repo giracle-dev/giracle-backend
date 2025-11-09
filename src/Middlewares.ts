@@ -109,20 +109,45 @@ export const rateLimitter = new Elysia({ name: "rateLimitter" })
     if (token?.value === undefined) {
       isAnonymous = true;
       key = request.headers.get("x-real-ip") ?? request.headers.get("x-forwarded-for") ?? request.headers.get("cf-connecting-ip") ?? request.headers.get("x-client-ip") ?? request.headers.get("x-forwarded") ?? request.headers.get("forwarded") ?? request.headers.get("via") ?? request.headers.get("remote-addr") ?? request.headers.get("x-cluster-client-ip") ?? request.headers.get("proxy-client-ip") ?? request.headers.get("wl-proxy-client-ip") ?? request.headers.get("x-forwarded-host") ?? request.headers.get("x-forwarded-server") ?? request.headers.get("host") ?? request.headers.get("user-agent") ?? "anonymous" as string;
-    }
 
-    console.log("Middlewares :: rateLimitter : ", {key}, buckets.get(key), {isAnonymous});
+      //IPアドレスが既にブロックされているか確認
+      const blockedIP = await db.blockedIPAddress.findUnique({
+        where: {
+          address: key,
+        }
+      });
+      if (blockedIP) {
+        //ブロックされている場合はカウントを増加させて429を返す
+        await db.blockedIPAddress.update({
+          where: {
+            address: key,
+          },
+          data: {
+            blockedCount: blockedIP.blockedCount + 1,
+            latestAccess: new Date(),
+          },
+        });
+        return status(429, "Too Many Requests");
+      }
+    }
 
     const now = Date.now();
     const bucket = buckets.get(key);
 
+    //認証しているかどうかで使用設定を変更
     const configUsing = isAnonymous ? limitConfig.anonymous : limitConfig.authenticated;
 
+    //バケットが無いかリセット時間を過ぎているなら新規作成
     if (!bucket || bucket.resetAt < now) {
       buckets.set(key, { count: 1, resetAt: now + configUsing.windowMs });
       return;
     }
+    
+    //制限を超過しているか確認、超過しているなら429を返す
     if (bucket.count >= configUsing.limit) {
+      //ブロックされるけどカウント増加
+      bucket.count += 1;
+
       //認証済みで制限を超えたならトークンを無効化
       if (!isAnonymous) {
         db.token.delete({
@@ -130,12 +155,32 @@ export const rateLimitter = new Elysia({ name: "rateLimitter" })
             token: key,
           },
         });
+      } else { //匿名の場合の処理
+        //カウントがプラス10を超過している場合はIPアドレスでブロック
+        if (bucket.count > configUsing.limit + 10) {
+          await db.blockedIPAddress.upsert({
+            where: {
+              address: key,
+            },
+            create: {
+              address: key,
+              blockedCount: 1,
+            },
+            update: {
+              blockedCount: {
+                increment: 1,
+              },
+              latestAccess: new Date(),
+            },
+          });
+        }
       }
+
       return status(429, "Too Many Requests");
+    } else {
+      //カウント増加
+      bucket.count += 1;
     }
-    
-    //カウント増加
-    bucket.count += 1;
   });
 
 //URLプレビュー生成
@@ -144,7 +189,7 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
     body: t.Object({
       channelId: t.String({ minLength: 1 }),
       message: t.String({ minLength: 1 }),
-    }),
+    })
   })
   .onError(({ error }) => {
     console.error("Middleware :: urlPreviewControl : エラー->", error);
@@ -155,6 +200,8 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
         async afterResponse({ server, responseValue }) {
           //URLプレビューが無効あるいはレスポンスが存在しないなら何もしない
           if (!isEnabled || responseValue === undefined || responseValue === null) return;
+
+          console.log("Middleware :: urlPreviewControl : responseValue->", responseValue);
 
           //メッセージデータを取得
           const messageData = responseValue.data as Message;
