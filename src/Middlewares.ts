@@ -85,17 +85,17 @@ const checkRoleTerm = new Elysia({ name: "checkRoleTerm" })
     },
   });
 
-//クライアントごとのバケット管理
+//レート制限用クライアントごとのバケット管理
 const buckets = new Map<string, { count: number; resetAt: number }>();
 //制限設定
 const limitConfig = {
   anonymous: {
-    limit: 25,
-    windowMs: 1 * 60 * 1000,
+    limit: parseInt(Bun.env.RATE_LIMIT_ANONYMOUS_COUNT ?? "25"),
+    windowMs: parseInt(Bun.env.RATE_LIMIT_ANONYMOUS_TIMEOUT ?? "1") * 60 * 1000,
   },
   authenticated: {
-    limit: 200,
-    windowMs: 1 * 60 * 1000,
+    limit: parseInt(Bun.env.RATE_LIMIT_AUTHORIZED_COUNT ?? "200"),
+    windowMs: parseInt(Bun.env.RATE_LIMIT_AUTHORIZED_TIMEOUT ?? "1") * 60 * 1000,
   },
 };
 export const rateLimitter = new Elysia({ name: "rateLimitter" })
