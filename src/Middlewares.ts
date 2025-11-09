@@ -128,7 +128,7 @@ export const rateLimiter = new Elysia({ name: "rateLimiter" })
       });
       if (blockedIP) {
         //ブロックされている場合はカウントを増加させて429を返す
-        await db.blockedIPAddress.update({
+        db.blockedIPAddress.update({
           where: {
             address: key,
           },
@@ -168,7 +168,7 @@ export const rateLimiter = new Elysia({ name: "rateLimiter" })
       } else { //匿名の場合の処理
         //カウントがプラス10を超過している場合はIPアドレスでブロック
         if (bucket.count > configUsing.limit + 10) {
-          await db.blockedIPAddress.upsert({
+          db.blockedIPAddress.upsert({
             where: {
               address: key,
             },
