@@ -87,8 +87,7 @@ const checkRoleTerm = new Elysia({ name: "checkRoleTerm" })
 
 //レート制限用クライアントごとのバケット管理
 const buckets = new Map<string, { count: number; resetAt: number }>();
-
-// Periodic cleanup of expired buckets to prevent memory leak
+//レート制限用バケットの古いデータを定期的に削除
 setInterval(() => {
   const now = Date.now();
   for (const [key, value] of buckets.entries()) {
@@ -96,7 +95,8 @@ setInterval(() => {
       buckets.delete(key);
     }
   }
-}, 60 * 1000); // Run every 1 minute
+}, 60 * 1000); // １分ごと
+
 //制限設定
 const limitConfig = {
   anonymous: {
