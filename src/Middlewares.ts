@@ -98,7 +98,7 @@ const limitConfig = {
     windowMs: parseInt(Bun.env.RATE_LIMIT_AUTHORIZED_TIMEOUT ?? "1") * 60 * 1000,
   },
 };
-export const rateLimitter = new Elysia({ name: "rateLimitter" })
+export const rateLimiter = new Elysia({ name: "rateLimiter" })
   .resolve({ as: "scoped" }, async ({ request, cookie: { token } }) => {
     //未ログインであるかどうか
     let isAnonymous = false;
