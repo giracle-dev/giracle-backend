@@ -15,6 +15,7 @@ model User {
   Channel             Channel[]
   ChannelJoin         ChannelJoin[]
   CustomEmoji         CustomEmoji[]
+  DeviceToken         DeviceToken[]
   Inbox               Inbox[]
   Invitation          Invitation[]
   Message             Message[]
@@ -241,4 +242,18 @@ model ServerConfig {
   RegisterInviteOnly        Boolean @default(true)
   RegisterAnnounceChannelId String  @default("")
   MessageMaxLength          Int     @default(3000)
+}
+
+model DeviceToken {
+  id          String   @id @default(uuid())
+  deviceToken String   @unique
+  platform    String   // "ios" or "android"
+  userId      String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([deviceToken])
 }

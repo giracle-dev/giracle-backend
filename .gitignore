@@ -49,6 +49,12 @@ package-lock.json
 *.db-journal
 /.idea
 
+# APNs 証明書
+apns/*.p8
+apns/*.pem
+apns/*.cer
+apns/*.p12
+
 # ユーザーのアップロード
 /STORAGE/file/*
 /STORAGE/icon/*
