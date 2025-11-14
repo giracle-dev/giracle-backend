@@ -870,30 +870,37 @@ export const channel = new Elysia({ prefix: "/channel" })
           }
         });
 
-      //既読時間データを削除
-      await db.messageReadTime.deleteMany({
-        where: {
-          channelId,
-        },
-      });
       //メッセージデータを削除
-      await db.message.deleteMany({
+      const delMessage = db.message.deleteMany({
         where: {
           channelId,
         },
       });
       //チャンネル参加データを削除
-      await db.channelJoin.deleteMany({
+      const delChannelJoin = db.channelJoin.deleteMany({
         where: {
           channelId,
         },
       });
-
-      await db.channel.delete({
+      //チャンネルデフォルト参加データを削除
+      const delJoinOnDefault = db.channelJoinOnDefault.deleteMany({
+        where: {
+          channelId
+        }
+      });
+      //チャンネルデータを削除
+      const delChannel = db.channel.delete({
         where: {
           id: channelId,
         },
       });
+
+      await db.$transaction([
+        delMessage,
+        delChannelJoin,
+        delJoinOnDefault,
+        delChannel,
+      ]);
 
       return {
         message: "Channel deleted",

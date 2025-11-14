@@ -48,8 +48,8 @@ model Token {
 model ChannelViewableRole {
   channelId String
   roleId    String
-  role      RoleInfo @relation(fields: [roleId], references: [id])
-  channel   Channel  @relation(fields: [channelId], references: [id])
+  role      RoleInfo @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([channelId, roleId])
   @@index([roleId])
@@ -61,7 +61,7 @@ model ChannelJoin {
   channelId       String
   userId          String
   user            User     @relation(fields: [userId], references: [id])
-  channel         Channel  @relation(fields: [channelId], references: [id])
+  channel         Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([userId, channelId])
   @@index([userId])
@@ -94,15 +94,15 @@ model MessageUrlPreview {
   faviconLink String?
   imageLink   String?
   videoLink   String?
-  message     Message @relation(fields: [messageId], references: [id])
+  message     Message @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model MessageReadTime {
   readTime  DateTime
   channelId String
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  channel   Channel  @relation(fields: [channelId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@id([channelId, userId])
   @@index([userId])
@@ -118,9 +118,9 @@ model MessageFileAttached {
   size           Int
   type           String
   messageId      String?
-  Message        Message? @relation(fields: [messageId], references: [id])
+  Message        Message? @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   user           User     @relation(fields: [userId], references: [id])
-  channel        Channel  @relation(fields: [channelId], references: [id])
+  channel        Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([channelId])
   @@index([messageId])
@@ -133,9 +133,9 @@ model MessageReaction {
   userId    String
   emojiCode String
   messageId String?
-  Message   Message? @relation(fields: [messageId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-  channel   Channel  @relation(fields: [channelId], references: [id])
+  Message   Message? @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([channelId])
   @@index([messageId])
@@ -164,8 +164,8 @@ model Message {
   channelId           String
   createdAt           DateTime              @default(now())
   Inbox               Inbox[]
-  channel             Channel               @relation(fields: [channelId], references: [id])
-  user                User                  @relation(fields: [userId], references: [id])
+  channel             Channel               @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   MessageFileAttached MessageFileAttached[]
   MessageReaction     MessageReaction[]
   MessageUrlPreview   MessageUrlPreview[]
@@ -230,7 +230,7 @@ model BlockedIPAddress {
 model ChannelJoinOnDefault {
   id        Int     @id @default(autoincrement())
   channelId String  @unique
-  channel   Channel @relation(fields: [channelId], references: [id])
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model ServerConfig {
