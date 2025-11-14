@@ -6,6 +6,7 @@ import sharp from "sharp";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
+import { apnsService } from "../../services/apns.service";
 
 const db = new PrismaClient();
 
@@ -888,6 +889,120 @@ export const message = new Elysia({ prefix: "/message" })
             },
           }),
         );
+      }
+
+      // プッシュ通知の送信（APNsが初期化されている場合のみ）
+      if (apnsService.isReady()) {
+        try {
+          // チャンネル名と送信者の情報を取得
+          const channelInfo = await db.channel.findUnique({
+            where: { id: channelId },
+            select: { name: true },
+          });
+          const senderInfo = await db.user.findUnique({
+            where: { id: _userId },
+            select: { name: true },
+          });
+
+          // チャンネルに参加しているすべてのユーザーを取得（メンション置き換え用）
+          const allChannelMembers = await db.channelJoin.findMany({
+            where: { channelId },
+            include: {
+              user: {
+                select: { id: true, name: true },
+              },
+            },
+          });
+
+          // userId -> userName のマッピングを作成
+          const userIdToNameMap = new Map<string, string>();
+          for (const member of allChannelMembers) {
+            userIdToNameMap.set(member.user.id, member.user.name || "Unknown");
+          }
+
+          // メッセージ内の @<userId> をユーザー名に置き換え
+          let displayMessage = message;
+          const mentionPattern = /@<([a-f0-9-]+)>/g;
+          displayMessage = displayMessage.replace(
+            mentionPattern,
+            (match, userId) => {
+              const userName = userIdToNameMap.get(userId);
+              return userName ? `@${userName}` : match;
+            },
+          );
+
+          // チャンネルに参加しているユーザー（送信者以外）のデバイストークンを取得
+          const channelMembers = await db.channelJoin.findMany({
+            where: {
+              channelId,
+              userId: { not: _userId }, // 送信者自身は除外
+            },
+            include: {
+              user: {
+                include: {
+                  DeviceToken: {
+                    where: {
+                      platform: "ios",
+                      isActive: true,
+                    },
+                  },
+                },
+              },
+            },
+          });
+
+          // iOSデバイストークンを収集（通知設定を考慮）
+          const deviceTokens: string[] = [];
+          for (const member of channelMembers) {
+            const userId = member.user.id;
+
+            for (const deviceToken of member.user.DeviceToken) {
+              const mode = deviceToken.notificationMode;
+
+              // "off" の場合は通知を送らない
+              if (mode === "off") {
+                continue;
+              }
+
+              // "mentions" の場合はメンションされている場合のみ通知
+              if (mode === "mentions") {
+                const isMentioned =
+                  message.includes(`@<${userId}>`) ||
+                  message.includes("@channel") ||
+                  message.includes("@everyone");
+
+                if (!isMentioned) {
+                  continue;
+                }
+              }
+
+              // "all" の場合、または上記の条件を満たす場合は通知を送る
+              deviceTokens.push(deviceToken.deviceToken);
+            }
+          }
+
+          // デバイストークンがある場合のみ送信
+          if (deviceTokens.length > 0) {
+            // 表示用メッセージを使用（メンションがユーザー名に置き換えられている）
+            const notificationBody = displayMessage.length > 100
+              ? `${displayMessage.substring(0, 97)}...`
+              : displayMessage;
+
+            await apnsService.sendNotification(deviceTokens, {
+              title: `${senderInfo?.name || "Someone"} in #${channelInfo?.name || "channel"}`,
+              body: notificationBody,
+              badge: 1,
+              data: {
+                channelId: channelId,
+                messageId: messageSaved.id,
+                type: "message",
+              },
+            });
+          }
+        } catch (error) {
+          // プッシュ通知の失敗はメッセージ送信の失敗にはしない
+          console.error("Failed to send push notification:", error);
+        }
       }
 
       return {
