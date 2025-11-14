@@ -904,6 +904,33 @@ export const message = new Elysia({ prefix: "/message" })
             select: { name: true },
           });
 
+          // チャンネルに参加しているすべてのユーザーを取得（メンション置き換え用）
+          const allChannelMembers = await db.channelJoin.findMany({
+            where: { channelId },
+            include: {
+              user: {
+                select: { id: true, name: true },
+              },
+            },
+          });
+
+          // userId -> userName のマッピングを作成
+          const userIdToNameMap = new Map<string, string>();
+          for (const member of allChannelMembers) {
+            userIdToNameMap.set(member.user.id, member.user.name || "Unknown");
+          }
+
+          // メッセージ内の @<userId> をユーザー名に置き換え
+          let displayMessage = message;
+          const mentionPattern = /@<([a-f0-9-]+)>/g;
+          displayMessage = displayMessage.replace(
+            mentionPattern,
+            (match, userId) => {
+              const userName = userIdToNameMap.get(userId);
+              return userName ? `@${userName}` : match;
+            },
+          );
+
           // チャンネルに参加しているユーザー（送信者以外）のデバイストークンを取得
           const channelMembers = await db.channelJoin.findMany({
             where: {
@@ -924,19 +951,42 @@ export const message = new Elysia({ prefix: "/message" })
             },
           });
 
-          // iOSデバイストークンを収集
+          // iOSデバイストークンを収集（通知設定を考慮）
           const deviceTokens: string[] = [];
           for (const member of channelMembers) {
+            const userId = member.user.id;
+
             for (const deviceToken of member.user.DeviceToken) {
+              const mode = deviceToken.notificationMode;
+
+              // "off" の場合は通知を送らない
+              if (mode === "off") {
+                continue;
+              }
+
+              // "mentions" の場合はメンションされている場合のみ通知
+              if (mode === "mentions") {
+                const isMentioned =
+                  message.includes(`@<${userId}>`) ||
+                  message.includes("@channel") ||
+                  message.includes("@everyone");
+
+                if (!isMentioned) {
+                  continue;
+                }
+              }
+
+              // "all" の場合、または上記の条件を満たす場合は通知を送る
               deviceTokens.push(deviceToken.deviceToken);
             }
           }
 
           // デバイストークンがある場合のみ送信
           if (deviceTokens.length > 0) {
-            const notificationBody = message.length > 100
-              ? `${message.substring(0, 97)}...`
-              : message;
+            // 表示用メッセージを使用（メンションがユーザー名に置き換えられている）
+            const notificationBody = displayMessage.length > 100
+              ? `${displayMessage.substring(0, 97)}...`
+              : displayMessage;
 
             await apnsService.sendNotification(deviceTokens, {
               title: `${senderInfo?.name || "Someone"} in #${channelInfo?.name || "channel"}`,

@@ -158,4 +158,55 @@ export const notification = new Elysia({ prefix: "/notification" })
         tags: ["Notification"],
       },
     }
+  )
+  .patch(
+    "/settings",
+    async ({ body: { notificationMode }, _userId }) => {
+      // notificationModeの検証
+      if (
+        notificationMode !== "all" &&
+        notificationMode !== "mentions" &&
+        notificationMode !== "off"
+      ) {
+        return status(400, {
+          message:
+            "Invalid notificationMode. Must be 'all', 'mentions', or 'off'",
+        });
+      }
+
+      try {
+        // ユーザーのすべてのアクティブなデバイストークンを更新
+        const updatedDevices = await db.deviceToken.updateMany({
+          where: {
+            userId: _userId,
+            isActive: true,
+          },
+          data: {
+            notificationMode: notificationMode,
+          },
+        });
+
+        return {
+          message: "Notification settings updated",
+          data: {
+            updatedCount: updatedDevices.count,
+            notificationMode: notificationMode,
+          },
+        };
+      } catch (error) {
+        console.error("Failed to update notification settings:", error);
+        return status(500, {
+          message: "Internal server error",
+        });
+      }
+    },
+    {
+      body: t.Object({
+        notificationMode: t.String({ minLength: 1 }),
+      }),
+      detail: {
+        description: "通知設定を更新します（all/mentions/off）",
+        tags: ["Notification"],
+      },
+    }
   );
