@@ -904,12 +904,21 @@ export const message = new Elysia({ prefix: "/message" })
             select: { name: true },
           });
 
-          // チャンネルに参加しているすべてのユーザーを取得（メンション置き換え用）
+          // チャンネルに参加しているすべてのユーザーを取得（DeviceTokenも含む）
           const allChannelMembers = await db.channelJoin.findMany({
             where: { channelId },
             include: {
               user: {
-                select: { id: true, name: true },
+                select: {
+                  id: true,
+                  name: true,
+                  DeviceToken: {
+                    where: {
+                      platform: "ios",
+                      isActive: true,
+                    },
+                  },
+                },
               },
             },
           });
@@ -931,32 +940,17 @@ export const message = new Elysia({ prefix: "/message" })
             },
           );
 
-          // チャンネルに参加しているユーザー（送信者以外）のデバイストークンを取得
-          const channelMembers = await db.channelJoin.findMany({
-            where: {
-              channelId,
-              userId: { not: _userId }, // 送信者自身は除外
-            },
-            include: {
-              user: {
-                include: {
-                  DeviceToken: {
-                    where: {
-                      platform: "ios",
-                      isActive: true,
-                    },
-                  },
-                },
-              },
-            },
-          });
+          // 送信者以外のメンバーをフィルタリング
+          const channelMembers = allChannelMembers.filter(
+            (member) => member.user.id !== _userId
+          );
 
           // iOSデバイストークンを収集（通知設定を考慮）
           const deviceTokens: string[] = [];
           for (const member of channelMembers) {
             const userId = member.user.id;
 
-            for (const deviceToken of member.user.DeviceToken) {
+            for (const deviceToken of member.user.DeviceToken || []) {
               const mode = deviceToken.notificationMode;
 
               // "off" の場合は通知を送らない

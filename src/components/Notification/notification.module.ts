@@ -9,56 +9,49 @@ export const notification = new Elysia({ prefix: "/notification" })
   .post(
     "/register-device",
     async ({ body: { deviceToken, platform }, _userId }) => {
-      try {
-        // 既存のデバイストークンを確認
-        const existingToken = await db.deviceToken.findUnique({
-          where: { deviceToken: deviceToken },
-        });
+      // 既存のデバイストークンを確認
+      const existingToken = await db.deviceToken.findUnique({
+        where: { deviceToken: deviceToken },
+      });
 
-        if (existingToken) {
-          // 既存トークンが同じユーザーの場合は更新
-          if (existingToken.userId === _userId) {
-            const updatedToken = await db.deviceToken.update({
-              where: { deviceToken: deviceToken },
-              data: {
-                isActive: true,
-                updatedAt: new Date(),
-              },
-            });
+      if (existingToken) {
+        // 既存トークンが同じユーザーの場合は更新
+        if (existingToken.userId === _userId) {
+          const updatedToken = await db.deviceToken.update({
+            where: { deviceToken: deviceToken },
+            data: {
+              isActive: true,
+              updatedAt: new Date(),
+            },
+          });
 
-            return {
-              message: "Device token updated",
-              data: updatedToken,
-            };
-          } else {
-            // 別のユーザーのトークンの場合は古いものを無効化して新規作成
-            await db.deviceToken.update({
-              where: { deviceToken: deviceToken },
-              data: { isActive: false },
-            });
-          }
+          return {
+            message: "Device token updated",
+            data: updatedToken,
+          };
         }
 
-        // 新規デバイストークンを登録
-        const newToken = await db.deviceToken.create({
-          data: {
-            deviceToken: deviceToken,
-            platform: platform,
-            userId: _userId,
-            isActive: true,
-          },
-        });
-
-        return {
-          message: "Device token registered",
-          data: newToken,
-        };
-      } catch (error) {
-        console.error("Failed to register device token:", error);
-        return status(500, {
-          message: "Internal server error",
+        // 別のユーザーのトークンの場合は古いものを無効化して新規作成
+        await db.deviceToken.update({
+          where: { deviceToken: deviceToken },
+          data: { isActive: false },
         });
       }
+
+      // 新規デバイストークンを登録
+      const newToken = await db.deviceToken.create({
+        data: {
+          deviceToken: deviceToken,
+          platform: platform,
+          userId: _userId,
+          isActive: true,
+        },
+      });
+
+      return {
+        message: "Device token registered",
+        data: newToken,
+      };
     },
     {
       body: t.Object({
@@ -74,40 +67,33 @@ export const notification = new Elysia({ prefix: "/notification" })
   .delete(
     "/unregister-device",
     async ({ body: { deviceToken }, _userId }) => {
-      try {
-        // デバイストークンの存在確認
-        const existingToken = await db.deviceToken.findUnique({
-          where: { deviceToken: deviceToken },
-        });
+      // デバイストークンの存在確認
+      const existingToken = await db.deviceToken.findUnique({
+        where: { deviceToken: deviceToken },
+      });
 
-        if (!existingToken) {
-          return status(404, {
-            message: "Device token not found",
-          });
-        }
-
-        // 自分のトークンでない場合はエラー
-        if (existingToken.userId !== _userId) {
-          return status(403, {
-            message: "You cannot unregister another user's device token",
-          });
-        }
-
-        // デバイストークンを無効化（削除ではなく無効化）
-        await db.deviceToken.update({
-          where: { deviceToken: deviceToken },
-          data: { isActive: false },
-        });
-
-        return {
-          message: "Device token unregistered",
-        };
-      } catch (error) {
-        console.error("Failed to unregister device token:", error);
-        return status(500, {
-          message: "Internal server error",
+      if (!existingToken) {
+        return status(404, {
+          message: "Device token not found",
         });
       }
+
+      // 自分のトークンでない場合はエラー
+      if (existingToken.userId !== _userId) {
+        return status(403, {
+          message: "You cannot unregister another user's device token",
+        });
+      }
+
+      // デバイストークンを無効化（削除ではなく無効化）
+      await db.deviceToken.update({
+        where: { deviceToken: deviceToken },
+        data: { isActive: false },
+      });
+
+      return {
+        message: "Device token unregistered",
+      };
     },
     {
       body: t.Object({
@@ -122,28 +108,21 @@ export const notification = new Elysia({ prefix: "/notification" })
   .get(
     "/my-devices",
     async ({ _userId }) => {
-      try {
-        // ユーザーのアクティブなデバイストークンを取得
-        const devices = await db.deviceToken.findMany({
-          where: {
-            userId: _userId,
-            isActive: true,
-          },
-          orderBy: {
-            updatedAt: "desc",
-          },
-        });
+      // ユーザーのアクティブなデバイストークンを取得
+      const devices = await db.deviceToken.findMany({
+        where: {
+          userId: _userId,
+          isActive: true,
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+      });
 
-        return {
-          message: "Device tokens retrieved",
-          data: devices,
-        };
-      } catch (error) {
-        console.error("Failed to retrieve device tokens:", error);
-        return status(500, {
-          message: "Internal server error",
-        });
-      }
+      return {
+        message: "Device tokens retrieved",
+        data: devices,
+      };
     },
     {
       detail: {
@@ -155,31 +134,24 @@ export const notification = new Elysia({ prefix: "/notification" })
   .patch(
     "/settings",
     async ({ body: { notificationMode }, _userId }) => {
-      try {
-        // ユーザーのすべてのアクティブなデバイストークンを更新
-        const updatedDevices = await db.deviceToken.updateMany({
-          where: {
-            userId: _userId,
-            isActive: true,
-          },
-          data: {
-            notificationMode: notificationMode,
-          },
-        });
+      // ユーザーのすべてのアクティブなデバイストークンを更新
+      const updatedDevices = await db.deviceToken.updateMany({
+        where: {
+          userId: _userId,
+          isActive: true,
+        },
+        data: {
+          notificationMode: notificationMode,
+        },
+      });
 
-        return {
-          message: "Notification settings updated",
-          data: {
-            updatedCount: updatedDevices.count,
-            notificationMode: notificationMode,
-          },
-        };
-      } catch (error) {
-        console.error("Failed to update notification settings:", error);
-        return status(500, {
-          message: "Internal server error",
-        });
-      }
+      return {
+        message: "Notification settings updated",
+        data: {
+          updatedCount: updatedDevices.count,
+          notificationMode: notificationMode,
+        },
+      };
     },
     {
       body: t.Object({
