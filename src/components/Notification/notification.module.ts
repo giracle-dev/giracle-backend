@@ -9,13 +9,6 @@ export const notification = new Elysia({ prefix: "/notification" })
   .post(
     "/register-device",
     async ({ body: { deviceToken, platform }, _userId }) => {
-      // プラットフォームの検証
-      if (platform !== "ios" && platform !== "android") {
-        return status(400, {
-          message: "Invalid platform. Must be 'ios' or 'android'",
-        });
-      }
-
       try {
         // 既存のデバイストークンを確認
         const existingToken = await db.deviceToken.findUnique({
@@ -70,7 +63,7 @@ export const notification = new Elysia({ prefix: "/notification" })
     {
       body: t.Object({
         deviceToken: t.String({ minLength: 1 }),
-        platform: t.String({ minLength: 1 }),
+        platform: t.Union([t.Literal("ios"), t.Literal("android")]),
       }),
       detail: {
         description: "デバイストークンを登録します（iOS/Android）",
@@ -162,18 +155,6 @@ export const notification = new Elysia({ prefix: "/notification" })
   .patch(
     "/settings",
     async ({ body: { notificationMode }, _userId }) => {
-      // notificationModeの検証
-      if (
-        notificationMode !== "all" &&
-        notificationMode !== "mentions" &&
-        notificationMode !== "off"
-      ) {
-        return status(400, {
-          message:
-            "Invalid notificationMode. Must be 'all', 'mentions', or 'off'",
-        });
-      }
-
       try {
         // ユーザーのすべてのアクティブなデバイストークンを更新
         const updatedDevices = await db.deviceToken.updateMany({
@@ -202,7 +183,11 @@ export const notification = new Elysia({ prefix: "/notification" })
     },
     {
       body: t.Object({
-        notificationMode: t.String({ minLength: 1 }),
+        notificationMode: t.Union([
+          t.Literal("all"),
+          t.Literal("mentions"),
+          t.Literal("off"),
+        ]),
       }),
       detail: {
         description: "通知設定を更新します（all/mentions/off）",

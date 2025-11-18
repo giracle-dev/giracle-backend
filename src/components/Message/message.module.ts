@@ -6,7 +6,7 @@ import sharp from "sharp";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
-import { apnsService } from "../../services/apns.service";
+import { apnsService } from "../../Utils/APNs";
 
 const db = new PrismaClient();
 

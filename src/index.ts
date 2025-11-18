@@ -9,7 +9,7 @@ import { user } from "./components/User/user.module";
 import { server } from "./components/Server/server.module";
 import { notification } from "./components/Notification/notification.module";
 import { wsHandler } from "./ws";
-import { apnsService } from "./services/apns.service";
+import { apnsService } from "./Utils/APNs";
 
 //ユーザーアップロード用のディレクトリ作成
 import { mkdir } from "node:fs/promises";
