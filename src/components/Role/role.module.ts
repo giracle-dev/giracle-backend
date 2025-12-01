@@ -168,12 +168,9 @@ export const role = new Elysia({ prefix: "/role" })
       }
 
       //送信者のロールレベルが足りるか確認
-      if (userId !== _userId) {
-        if (!(await CompareRoleLevelToRole(_userId, roleId))) {
-          throw status(400, "Role level not enough or role not found");
-        }
+      if (!(await CompareRoleLevelToRole(_userId, roleId))) {
+        throw status(400, "Role level not enough or role not found");
       }
-
       //リンク済みか確認
       const checkRoleLinked = await db.roleLink.findFirst({
         where: {
