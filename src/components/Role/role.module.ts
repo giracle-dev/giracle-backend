@@ -2,6 +2,8 @@ import { PrismaClient } from "@prisma/client";
 import Elysia, { status, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import CompareRoleLevelToRole from "../../Utils/CompareRoleLevelToRole";
+import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
+import CalculateRoleLevel from "../../Utils/CalculateRoleLevel";
 
 const db = new PrismaClient();
 
@@ -67,6 +69,13 @@ export const role = new Elysia({ prefix: "/role" })
   .put(
     "/create",
     async ({ body: { roleName, rolePower }, _userId, server }) => {
+      //ロールレベルの計算
+      const levelFromThis = CalculateRoleLevel(rolePower);
+      const userRoleLevel = await getUsersRoleLevel(_userId);
+      if (userRoleLevel <= levelFromThis) {
+        throw status(400, "Role level not enough");
+      }
+
       const newRole = await db.roleInfo.create({
         data: {
           name: roleName,
