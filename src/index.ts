@@ -2,6 +2,7 @@ import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { PrismaClient } from "../prisma/generated/client";
 import { rateLimiter } from "./Middlewares";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 
 import { channel } from "./components/Channel/channel.module";
 import { message } from "./components/Message/message.module";
@@ -12,14 +13,13 @@ import { wsHandler } from "./ws";
 
 //ユーザーアップロード用のディレクトリ作成
 import { mkdir } from "node:fs/promises";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 await mkdir("./STORAGE", { recursive: true }).catch((e) => {});
 await mkdir("./STORAGE/file", { recursive: true }).catch((e) => {});
 await mkdir("./STORAGE/icon", { recursive: true }).catch((e) => {});
 await mkdir("./STORAGE/banner", { recursive: true }).catch((e) => {});
 await mkdir("./STORAGE/custom-emoji", { recursive: true }).catch((e) => {});
 
-const adapter = new PrismaBetterSqlite3({
+const adapter = new PrismaLibSql({
   url: process.env.DATABASE_URL || "file:./dev.db",
 });
 export const db = new PrismaClient({ adapter });
