@@ -1,4 +1,3 @@
-import { type Message } from "@prisma/client";
 import Elysia, { status, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
@@ -6,8 +5,9 @@ import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { WSSubscribe, WSUnsubscribe } from "../../ws";
 import CalculateReactionTotal from "../../Utils/CalculateReactionTotal";
-import { imageSize } from 'image-size';
+import { imageSize } from "image-size";
 import { db } from "../..";
+import type { Message } from "../../../prisma/generated/client";
 
 export const channel = new Elysia({ prefix: "/channel" })
   .use(CheckToken)
@@ -337,10 +337,12 @@ export const channel = new Elysia({ prefix: "/channel" })
             },
             take: fetchLength,
           });
+          const optionLte =
+            messageTakingFrom[messageTakingFrom.length - 1]?.createdAt;
           //指定時間以降のメッセージの時間より前のメッセージを取得するように設定
           optionDate = {
             createdAt: {
-              lte: messageTakingFrom[messageTakingFrom.length - 1].createdAt,
+              lte: optionLte,
               gte: messageDataFrom.createdAt,
             },
           };
@@ -431,24 +433,28 @@ export const channel = new Elysia({ prefix: "/channel" })
       }
 
       //画像の添付ファイルがあれば画像のメタデータ（縦幅など）を含める
-      const ImageDimensions: { [fileId: string]: { height:number; width:number; } } = {};
+      const ImageDimensions: {
+        [fileId: string]: { height: number; width: number };
+      } = {};
       for (const index in history) {
         for (const file of history[index].MessageFileAttached) {
           if (file.type.startsWith("image/")) {
             try {
               //画像を読み込む
-              const imageArrBuffer = await Bun.file(`./STORAGE/file/${channelId}/${file.savedFileName}`).arrayBuffer();
+              const imageArrBuffer = await Bun.file(
+                `./STORAGE/file/${channelId}/${file.savedFileName}`,
+              ).arrayBuffer();
               const buffer = new Uint8Array(imageArrBuffer);
               //画像のメタデータを取得
-              const { width, height } = imageSize(buffer)
-              
+              const { width, height } = imageSize(buffer);
+
               if (width !== undefined && height !== undefined) {
                 ImageDimensions[file.id] = {
                   height,
                   width,
                 };
               }
-            } catch(e) {}
+            } catch (e) {}
           }
         }
       }
@@ -884,8 +890,8 @@ export const channel = new Elysia({ prefix: "/channel" })
       //チャンネルデフォルト参加データを削除
       const delJoinOnDefault = db.channelJoinOnDefault.deleteMany({
         where: {
-          channelId
-        }
+          channelId,
+        },
       });
       //チャンネルデータを削除
       const delChannel = db.channel.delete({
