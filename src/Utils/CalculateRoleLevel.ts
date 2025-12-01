@@ -1,6 +1,6 @@
 /**
  * ロールのデータそのものからロールレベルを計算して返す
- * @param role ロール情報
+ * @param rolePower ロール情報
  * @returns ロールレベル
  */
 export default function CalculateRoleLevel (
