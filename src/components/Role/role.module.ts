@@ -2,6 +2,8 @@ import { PrismaClient } from "@prisma/client";
 import Elysia, { status, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import CompareRoleLevelToRole from "../../Utils/CompareRoleLevelToRole";
+import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
+import CalculateRoleLevel from "../../Utils/CalculateRoleLevel";
 
 const db = new PrismaClient();
 
@@ -67,6 +69,13 @@ export const role = new Elysia({ prefix: "/role" })
   .put(
     "/create",
     async ({ body: { roleName, rolePower }, _userId, server }) => {
+      //ロールレベルの計算
+      const levelFromThis = CalculateRoleLevel(rolePower);
+      const userRoleLevel = await getUsersRoleLevel(_userId);
+      if (userRoleLevel <= levelFromThis) {
+        throw status(400, "Role level not enough");
+      }
+
       const newRole = await db.roleInfo.create({
         data: {
           name: roleName,
@@ -108,6 +117,16 @@ export const role = new Elysia({ prefix: "/role" })
     "/update",
     async ({ body: { roleId, roleData }, _userId, server }) => {
       if (roleId === "HOST") throw status(400, "You cannot update HOST role");
+      //事前にロールの存在と送信者のロールレベルが足りるか確認
+      if (await CompareRoleLevelToRole(_userId, roleId) === false) {
+        throw status(400, "Role level not enough or role not found");
+      }
+      //更新予定のロールレベルが送信者のロールレベルを超えていないか確認
+      const roleLevelIfUpdated = CalculateRoleLevel(roleData);
+      const userRoleLevel = await getUsersRoleLevel(_userId);
+      if (userRoleLevel < roleLevelIfUpdated) {
+        throw status(400, "Role level not enough");
+      }
 
       const roleUpdated = await db.roleInfo.update({
         where: {
@@ -159,12 +178,9 @@ export const role = new Elysia({ prefix: "/role" })
       }
 
       //送信者のロールレベルが足りるか確認
-      if (userId !== _userId) {
-        if (!(await CompareRoleLevelToRole(_userId, roleId))) {
-          throw status(400, "Role level not enough or role not found");
-        }
+      if (!(await CompareRoleLevelToRole(_userId, roleId))) {
+        throw status(400, "Role level not enough or role not found");
       }
-
       //リンク済みか確認
       const checkRoleLinked = await db.roleLink.findFirst({
         where: {

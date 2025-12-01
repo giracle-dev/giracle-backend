@@ -54,12 +54,12 @@ export default async function CompareRoleLevelToRole(
     targetRoleLevel = 1;
   }
 
-  console.log(
-    "compareRoleLevelToRole :: userRoleLevel->",
-    userRoleLevel,
-    " targetRoleLevel->",
-    targetRoleLevel,
-  );
+  // console.log(
+  //   "compareRoleLevelToRole :: userRoleLevel->",
+  //   userRoleLevel,
+  //   " targetRoleLevel->",
+  //   targetRoleLevel,
+  // );
 
   //送信者のロールレベルが高いか等しい場合はtrueを返す
   return userRoleLevel >= targetRoleLevel;
