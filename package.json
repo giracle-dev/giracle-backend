@@ -16,7 +16,7 @@
     "@prisma/client": "^6.19.0",
     "elysia": "latest",
     "image-size": "^2.0.2",
-    "open-graph-scraper": "^6.10.0",
+    "open-graph-scraper": "^6.11.0",
     "prisma": "^6.19.0",
     "sharp": "^0.33.5"
   },

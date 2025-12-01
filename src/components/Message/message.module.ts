@@ -380,7 +380,7 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .get(
     "/file/:fileId",
-    async ({ params: { fileId } }) => {
+    async ({ params: { fileId }, set }) => {
       const fileData = await db.messageFileAttached.findUnique({
         where: {
           id: fileId,
@@ -390,6 +390,9 @@ export const message = new Elysia({ prefix: "/message" })
       if (fileData === null) {
         throw status(404, "File not found");
       }
+
+      //画像のキャッシュ期間を設定
+      set.headers["Cache-Control"] = "public, max-age=604800"; // 1週間
 
       return file(
         `./STORAGE/file/${fileData.channelId}/${fileData.savedFileName}`,
@@ -469,7 +472,7 @@ export const message = new Elysia({ prefix: "/message" })
       await db.inbox.deleteMany({
         where: {
           messageId: messageId,
-        }
+        },
       });
 
       //メッセージの削除
