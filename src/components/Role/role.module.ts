@@ -117,6 +117,16 @@ export const role = new Elysia({ prefix: "/role" })
     "/update",
     async ({ body: { roleId, roleData }, _userId, server }) => {
       if (roleId === "HOST") throw status(400, "You cannot update HOST role");
+      //事前にロールの存在と送信者のロールレベルが足りるか確認
+      if (await CompareRoleLevelToRole(_userId, roleId) === false) {
+        throw status(400, "Role level not enough or role not found");
+      }
+      //更新予定のロールレベルが送信者のロールレベルを超えていないか確認
+      const roleLevelifUpdated = CalculateRoleLevel(roleData);
+      const userRoleLevel = await getUsersRoleLevel(_userId);
+      if (userRoleLevel < roleLevelifUpdated) {
+        throw status(400, "Role level not enough");
+      }
 
       const roleUpdated = await db.roleInfo.update({
         where: {
