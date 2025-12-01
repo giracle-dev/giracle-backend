@@ -337,10 +337,12 @@ export const channel = new Elysia({ prefix: "/channel" })
             },
             take: fetchLength,
           });
+          const optionLte =
+            messageTakingFrom[messageTakingFrom.length - 1]?.createdAt;
           //指定時間以降のメッセージの時間より前のメッセージを取得するように設定
           optionDate = {
             createdAt: {
-              lte: messageTakingFrom[messageTakingFrom.length - 1].createdAt,
+              lte: optionLte,
               gte: messageDataFrom.createdAt,
             },
           };
