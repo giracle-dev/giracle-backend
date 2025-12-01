@@ -1,12 +1,10 @@
 import fs from "node:fs";
 import { unlink } from "node:fs/promises";
 import * as path from "node:path";
-import { PrismaClient } from "@prisma/client";
 import Elysia, { status, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import sharp from "sharp";
-
-const db = new PrismaClient();
+import { db } from "../..";
 
 export const server = new Elysia({ prefix: "/server" })
   .get(

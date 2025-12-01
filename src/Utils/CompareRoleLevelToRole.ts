@@ -1,5 +1,5 @@
-import { PrismaClient } from "@prisma/client";
 import getUsersRoleLevel from "./getUsersRoleLevel";
+import { db } from "..";
 
 const levelIndex = {
   manageServer: 5,
@@ -21,8 +21,6 @@ export default async function CompareRoleLevelToRole(
 ): Promise<boolean> {
   //HOSTロールに対する操作は許可しない
   if (_roleId === "HOST") return false;
-
-  const db = new PrismaClient();
 
   //対象のロール情報を取得
   const role = await db.roleInfo.findUnique({

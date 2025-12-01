@@ -1,11 +1,9 @@
-import { PrismaClient } from "@prisma/client";
 import Elysia, { status, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import CompareRoleLevelToRole from "../../Utils/CompareRoleLevelToRole";
 import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
 import CalculateRoleLevel from "../../Utils/CalculateRoleLevel";
-
-const db = new PrismaClient();
+import { db } from "../..";
 
 export const role = new Elysia({ prefix: "/role" })
   .use(CheckToken)

@@ -1,8 +1,7 @@
 import { type Message, PrismaClient } from "@prisma/client";
 import { Elysia, status, t } from "elysia";
 import ogs from "open-graph-scraper";
-
-const db = new PrismaClient();
+import { db } from ".";
 
 const CheckToken = new Elysia({ name: "CheckToken" })
   .guard({
