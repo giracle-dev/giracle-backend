@@ -291,7 +291,7 @@ export const server = new Elysia({ prefix: "/server" })
   )
   .get(
     "/custom-emoji/:code",
-    async ({ params: { code } }) => {
+    async ({ params: { code }, set }) => {
       //絵文字データを取得、無ければエラー
       const emoji = await db.customEmoji.findFirst({
         where: {
@@ -299,6 +299,9 @@ export const server = new Elysia({ prefix: "/server" })
         },
       });
       if (emoji === null) return status(404, "Custom emoji not found");
+
+      //画像のキャッシュ期間を設定
+      set.headers["Cache-Control"] = "public, max-age=259200"; // 3日
 
       //アイコン読み取り、存在確認して返す
       const emojiGif = Bun.file(`./STORAGE/custom-emoji/${emoji.id}.gif`);
