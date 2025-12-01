@@ -122,9 +122,9 @@ export const role = new Elysia({ prefix: "/role" })
         throw status(400, "Role level not enough or role not found");
       }
       //更新予定のロールレベルが送信者のロールレベルを超えていないか確認
-      const roleLevelifUpdated = CalculateRoleLevel(roleData);
+      const roleLevelIfUpdated = CalculateRoleLevel(roleData);
       const userRoleLevel = await getUsersRoleLevel(_userId);
-      if (userRoleLevel < roleLevelifUpdated) {
+      if (userRoleLevel < roleLevelIfUpdated) {
         throw status(400, "Role level not enough");
       }
 
