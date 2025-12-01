@@ -1,6 +1,5 @@
 import crypto from "node:crypto";
 import { unlink } from "node:fs/promises";
-import { PrismaClient } from "@prisma/client";
 import Elysia, { status, t, file } from "elysia";
 import sharp from "sharp";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
@@ -9,8 +8,7 @@ import { userWSInstance } from "../../ws";
 import { userService } from "./user.service";
 import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
-
-const db = new PrismaClient();
+import { db } from "../..";
 
 export const user = new Elysia({ prefix: "/user" })
   .use(userService)

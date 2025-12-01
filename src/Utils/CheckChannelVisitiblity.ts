@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { db } from "..";
 
 /**
  * 指定のユーザーIdが指定のチャンネルにアクセス可能かどうかを確認する
@@ -9,8 +9,6 @@ export default async function CheckChannelVisibility(
   _channelId: string,
   _userId: string,
 ): Promise<boolean> {
-  const db = new PrismaClient();
-
   //チャンネルの閲覧制限があるか確認
   const roleViewable = await db.channelViewableRole.findMany({
     where: {

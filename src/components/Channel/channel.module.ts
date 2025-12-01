@@ -1,4 +1,4 @@
-import { type Message, PrismaClient } from "@prisma/client";
+import { type Message } from "@prisma/client";
 import Elysia, { status, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
@@ -7,8 +7,7 @@ import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { WSSubscribe, WSUnsubscribe } from "../../ws";
 import CalculateReactionTotal from "../../Utils/CalculateReactionTotal";
 import { imageSize } from 'image-size';
-
-const db = new PrismaClient();
+import { db } from "../..";
 
 export const channel = new Elysia({ prefix: "/channel" })
   .use(CheckToken)

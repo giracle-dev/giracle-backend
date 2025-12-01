@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
 import Elysia, { t } from "elysia";
 import type { ElysiaWS } from "elysia/dist/ws";
-
-const db = new PrismaClient();
+import { db } from ".";
 
 //ユーザーごとのWSインスタンス管理 ( Map <UserId, WSインスタンス>)
 // biome-ignore lint/suspicious/noExplicitAny: 全WSインスタンスを受け付けるためany

@@ -1,4 +1,5 @@
-import { type Channel, PrismaClient } from "@prisma/client";
+import { type Channel } from "@prisma/client";
+import { db } from "..";
 
 /**
  * 指定のユーザーが閲覧できるチャンネル情報を取得する
@@ -10,9 +11,6 @@ export default async function GetUserViewableChannel(
   _userId: string,
   _onlyJoinedChannel = false,
 ): Promise<Channel[]> {
-  //PrismaClientのインスタンスを作成
-  const db = new PrismaClient();
-
   //ユーザーのロールを取得
   const userRolesLinks = await db.roleLink.findMany({
     where: {

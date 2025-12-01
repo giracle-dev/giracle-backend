@@ -1,6 +1,5 @@
 import {PrismaClient} from "@prisma/client";
-
-const db = new PrismaClient();
+import { db } from "..";
 
 /**
  * メッセージのリアクション総数を自分のがあるかを調べつつ計算する

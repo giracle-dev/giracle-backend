@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
 import type { Server } from "bun";
-
-const db = new PrismaClient();
+import { db } from "..";
 
 /**
  * システムメッセージを記録、送信する

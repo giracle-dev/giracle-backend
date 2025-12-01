@@ -1,13 +1,12 @@
 import { mkdir } from "node:fs/promises";
 import { unlink } from "node:fs/promises";
-import { type Message, PrismaClient } from "@prisma/client";
+import { type Message } from "@prisma/client";
 import Elysia, { status, file, t } from "elysia";
 import sharp from "sharp";
 import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
-
-const db = new PrismaClient();
+import { db } from "../..";
 
 export const message = new Elysia({ prefix: "/message" })
   .use(CheckToken)
