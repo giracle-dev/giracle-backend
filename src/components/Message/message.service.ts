@@ -578,7 +578,26 @@ export abstract class ServiceMessage {
       },
     });
 
-    return { messageSaved, messageReplyingTo };
+    //メッセージから "@<userId>" を検知
+    const mentionedUserIds =
+      message.match(/@<([\w-]+)>/g)?.map((mention) => mention.slice(2, -1)) ||
+      [];
+
+    //DBに保存するInbox用データを作成
+    const savingInboxData = [];
+    for (const mentionedUserId of mentionedUserIds) {
+      savingInboxData.push({
+        userId: mentionedUserId,
+        messageId: messageSaved.id,
+        type: "mention",
+      });
+    }
+    //inboxに保存
+    await db.inbox.createMany({
+      data: savingInboxData,
+    });
+
+    return { messageSaved, messageReplyingTo, mentionedUserIds };
   };
 
   static Edit = async (messageId: string, content: string, _userId: string) => {

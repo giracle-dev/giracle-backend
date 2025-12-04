@@ -384,7 +384,7 @@ export const message = new Elysia({ prefix: "/message" })
       server,
     }) => {
       //メッセージの保存処理
-      const { messageSaved, messageReplyingTo } = await ServiceMessage.Send(
+      const { messageSaved, messageReplyingTo, mentionedUserIds } = await ServiceMessage.Send(
         channelId,
         message,
         fileIds,
@@ -400,25 +400,6 @@ export const message = new Elysia({ prefix: "/message" })
           data: messageSaved,
         }),
       );
-
-      //メッセージから "@<userId>" を検知
-      const mentionedUserIds =
-        message.match(/@<([\w-]+)>/g)?.map((mention) => mention.slice(2, -1)) ||
-        [];
-
-      //DBに保存するInbox用データを作成
-      const savingInboxData = [];
-      for (const mentionedUserId of mentionedUserIds) {
-        savingInboxData.push({
-          userId: mentionedUserId,
-          messageId: messageSaved.id,
-          type: "mention",
-        });
-      }
-      //inboxに保存
-      await db.inbox.createMany({
-        data: savingInboxData,
-      });
 
       //メンションされたユーザーに通知
       for (const mentionedUserId of mentionedUserIds) {
