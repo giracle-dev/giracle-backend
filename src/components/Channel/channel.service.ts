@@ -98,7 +98,7 @@ export abstract class ServiceChannel {
     });
 
     if (channelData === null) {
-      return status(404, "Channel not found");
+      throw status(404, "Channel not found");
     }
 
     return channelData;
