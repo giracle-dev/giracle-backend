@@ -1,9 +1,5 @@
 import Elysia, { status, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
-import CompareRoleLevelToRole from "../../Utils/CompareRoleLevelToRole";
-import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
-import CalculateRoleLevel from "../../Utils/CalculateRoleLevel";
-import { db } from "../..";
 import { ServiceRole } from "./role.service";
 
 export const role = new Elysia({ prefix: "/role" })

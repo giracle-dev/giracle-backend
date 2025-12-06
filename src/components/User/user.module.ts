@@ -1,105 +1,14 @@
-import crypto from "node:crypto";
-import { unlink } from "node:fs/promises";
 import Elysia, { status, t, file } from "elysia";
-import sharp from "sharp";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
-import { userWSInstance } from "../../ws";
-import { userService } from "./user.service";
-import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
-import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import { db } from "../..";
+import { ServiceUser } from "./user.service";
 
 export const user = new Elysia({ prefix: "/user" })
-  .use(userService)
   .put(
     "/sign-up",
     async ({ body: { username, password, inviteCode }, server }) => {
-      //初めてのユーザーかどうか
-      let flagFirstUser = false;
-      //ユーザー数を取得して最初ならtrue
-      const num = await db.user.count();
-      if (num === 1) {
-        flagFirstUser = true;
-      }
-
-      //最初のユーザーなら招待条件を確認しない
-      if (!flagFirstUser) {
-        //サーバーの設定を取得して招待関連の条件を確認
-        const serverConfig = await db.serverConfig.findFirst();
-        if (!serverConfig?.RegisterAvailable) {
-          return status(400, {
-            message: "Registration is disabled",
-          });
-        }
-        if (serverConfig?.RegisterInviteOnly) {
-          if (inviteCode === undefined) {
-            return status(400, {
-              message: "Invite code is invalid",
-            });
-          }
-          //招待コードが有効か確認
-          const Invite = await db.invitation.findUnique({
-            where: { inviteCode: inviteCode },
-          });
-          //招待コードが無効な場合
-          if (Invite === null) {
-            return status(400, {
-              message: "Invite code is invalid",
-            });
-          }
-          //---------------------------------------
-          //使用回数を加算
-          await db.invitation.update({
-            where: { inviteCode: inviteCode },
-            data: {
-              usedCount: Invite.usedCount + 1,
-            },
-          });
-        }
-      }
-
-      const user = await db.user.findUnique({
-        where: { name: username },
-      });
-      if (user) {
-        return status(400, {
-          message: "User already exists",
-        });
-      }
-
-      //ソルト生成、パスワードのハッシュ化
-      const salt = crypto.randomBytes(16).toString("hex");
-      const passwordHashed = await Bun.password.hash(password + salt);
-      //DBへユーザー情報を登録
-      const createdUser = await db.user.create({
-        data: {
-          name: username,
-          selfIntroduction: `こんにちは、${username}です。`,
-          password: {
-            create: {
-              password: passwordHashed,
-              salt: salt,
-            },
-          },
-          RoleLink: {
-            create: {
-              roleId: flagFirstUser ? "HOST" : "MEMBER",
-            },
-          },
-        },
-      });
-
-      //デフォルトで参加するチャンネルに参加させる
-      const channelJoinOnDefault = await db.channelJoinOnDefault.findMany({});
-      for (const channelIdJson of channelJoinOnDefault) {
-        await db.channelJoin.create({
-          data: {
-            userId: createdUser.id,
-            channelId: channelIdJson.channelId,
-          },
-        });
-      }
+      const { createdUser } = await ServiceUser.SignUp(username, password, inviteCode);
 
       //新規登録を通知するチャンネルId
       const serverConfigAnnounceChannelId = await db.serverConfig.findFirst({
@@ -151,57 +60,7 @@ export const user = new Elysia({ prefix: "/user" })
   .post(
     "/sign-in",
     async ({ body: { username, password }, cookie: { token } }) => {
-      //ユーザー情報取得
-      const user = await db.user.findUnique({
-        where: { name: username },
-        include: {
-          password: true,
-        },
-      });
-
-      //ユーザーが存在しない場合
-      if (!user) {
-        return status(400, {
-          message: "Auth info is incorrect",
-        });
-      }
-      //パスワードが設定されていない場合
-      if (!user.password) {
-        return status(400, {
-          message: "Internal error",
-        });
-      }
-      //ユーザーがBANされている場合
-      if (user.isBanned) {
-        return status(401, {
-          message: "User is banned",
-        });
-      }
-
-      //パスワードのハッシュ化
-      const passwordCheckResult = await Bun.password.verify(
-        password + user.password?.salt,
-        user.password.password,
-      );
-
-      //パスワードが一致しない場合
-      if (!passwordCheckResult) {
-        return status(400, {
-          message: "Auth info is incorrect",
-        });
-      }
-
-      //トークンを生成
-      const tokenGenerated = await db.token.create({
-        data: {
-          token: crypto.randomBytes(16).toString("hex"),
-          user: {
-            connect: {
-              name: username,
-            },
-          },
-        },
-      });
+      const tokenGenerated = await ServiceUser.SignIn(username, password);
       //console.log("user.module :: /sign-in :: tokenGenerated", tokenGenerated);
       //クッキーに格納
       token.value = tokenGenerated.token;
@@ -211,12 +70,15 @@ export const user = new Elysia({ prefix: "/user" })
       return {
         message: `Signed in as ${username}`,
         data: {
-          userId: user.id,
+          userId: tokenGenerated.userId,
         },
       };
     },
     {
-      body: "signIn",
+      body: t.Object({
+        username: t.String({ minLength: 1 }),
+        password: t.String({ minLength: 4 }),
+      }),
       cookie: t.Cookie({ token: t.Optional(t.String()) }),
       detail: {
         description: "ユーザーのサインイン",
@@ -230,12 +92,7 @@ export const user = new Elysia({ prefix: "/user" })
   .get(
     "/get-online",
     async () => {
-      //オンラインユーザーIDを取得
-      const onlineUserIds = Array.from(userWSInstance.keys());
-      //重複を削除
-      const uniqueOnlineUserIds = Array.from(new Set(onlineUserIds)).map(
-        String,
-      );
+      const uniqueOnlineUserIds = await ServiceUser.GetOnline();
 
       return {
         message: "Fetched online user list",
@@ -252,49 +109,12 @@ export const user = new Elysia({ prefix: "/user" })
   .get(
     "/search",
     async ({ query: { username, joinedChannel, cursor }, _userId }) => {
-      //もしcursorがundefinedなら0にする
-      if (cursor === undefined) {
-        cursor = 0;
-      }
-
-      //チャンネル指定をしているならそれぞれが閲覧可能であるかを調べる
-      if (joinedChannel !== undefined) {
-        const canView = await CheckChannelVisibility(joinedChannel, _userId);
-        if (canView === false) {
-          return status(
-            403,
-            "You can't search this channel due to visibility restrictions",
-          );
-        }
-      }
-
-      //ユーザーを検索
-      const users = await db.user.findMany({
-        take: 30,
-        skip: cursor * 30,
-        where: {
-          name: {
-            contains: username,
-          },
-          ChannelJoin: {
-            some: {
-              channelId: joinedChannel === "" ? undefined : joinedChannel,
-            },
-          },
-        },
-        include: {
-          ChannelJoin: {
-            select: {
-              channelId: true,
-            },
-          },
-          RoleLink: {
-            select: {
-              roleId: true,
-            },
-          },
-        },
-      });
+      const users = await ServiceUser.Search(
+        _userId,
+        username,
+        joinedChannel,
+        cursor,
+      );
 
       return {
         message: "User search result",
@@ -316,22 +136,9 @@ export const user = new Elysia({ prefix: "/user" })
   .get(
     "/icon/:userId",
     async ({ params: { userId } }) => {
-      //アイコン読み取り、存在確認して返す
-      const iconFilePng = Bun.file(`./STORAGE/icon/${userId}.png`);
-      if (await iconFilePng.exists()) {
-        return iconFilePng;
-      }
-      const iconFileGif = Bun.file(`./STORAGE/icon/${userId}.gif`);
-      if (await iconFileGif.exists()) {
-        return iconFileGif;
-      }
-      const iconFileJpeg = Bun.file(`./STORAGE/icon/${userId}.jpeg`);
-      if (await iconFileJpeg.exists()) {
-        return iconFileJpeg;
-      }
-      const iconFileWebp = Bun.file(`./STORAGE/icon/${userId}.webp`);
-      if (await iconFileWebp.exists()) {
-        return iconFileWebp;
+      const userIcon = await ServiceUser.GetUserIcon(userId);
+      if (userIcon) {
+        return userIcon;
       }
 
       //存在しない場合はデフォルトアイコンを返す
@@ -350,22 +157,9 @@ export const user = new Elysia({ prefix: "/user" })
   .get(
     "/banner/:userId",
     async ({ params: { userId } }) => {
-      //アイコン読み取り、存在確認して返す
-      const bannerFilePng = Bun.file(`./STORAGE/banner/${userId}.png`);
-      if (await bannerFilePng.exists()) {
-        return bannerFilePng;
-      }
-      const bannerFileGif = Bun.file(`./STORAGE/banner/${userId}.gif`);
-      if (await bannerFileGif.exists()) {
-        return bannerFileGif;
-      }
-      const bannerFileJpeg = Bun.file(`./STORAGE/banner/${userId}.jpeg`);
-      if (await bannerFileJpeg.exists()) {
-        return bannerFileJpeg;
-      }
-      const bannerFileWebp = Bun.file(`./STORAGE/banner/${userId}.webp`);
-      if (await bannerFileWebp.exists()) {
-        return bannerFileWebp;
+      const userBanner = await ServiceUser.GetUserBanner(userId);
+      if (userBanner) {
+        return userBanner;
       }
 
       //存在しない場合はデフォルトアイコンを返す
@@ -384,41 +178,7 @@ export const user = new Elysia({ prefix: "/user" })
   .post(
     "/change-icon",
     async ({ body: { icon }, _userId }) => {
-      if (icon.size > 8 * 1024 * 1024) {
-        return status(400, "File size is too large");
-      }
-      if (
-        icon.type !== "image/png" &&
-        icon.type !== "image/gif" &&
-        icon.type !== "image/jpeg"
-      ) {
-        return status(400, "File type is invalid");
-      }
-      //拡張子取得
-      const ext = icon.type.split("/")[1];
-
-      //既存のアイコンを削除
-      await unlink(`./STORAGE/icon/${_userId}.png`).catch(() => {});
-      await unlink(`./STORAGE/icon/${_userId}.gif`).catch(() => {});
-      await unlink(`./STORAGE/icon/${_userId}.jpeg`).catch(() => {});
-      await unlink(`./STORAGE/icon/${_userId}.webp`).catch(() => {});
-
-      //画像を圧縮、保存する(GIFとそれ以外で処理を分ける)
-      if (ext === "gif") {
-        await sharp(await icon.arrayBuffer(), { animated: true })
-          .resize(125, 125)
-          .gif({
-            colours: 128, // 色数を128に削減
-            dither: 0, // ディザリングを無効化
-            effort: 7, // パレット生成の計算量を設定
-          })
-          .toFile(`./STORAGE/icon/${_userId}.gif`);
-      } else {
-        await sharp(await icon.arrayBuffer())
-          .resize(125, 125)
-          .webp({ quality: 90 })
-          .toFile(`./STORAGE/icon/${_userId}.webp`);
-      }
+      await ServiceUser.ChangeIcon(icon, _userId);
 
       return {
         message: "Icon changed",
@@ -437,40 +197,7 @@ export const user = new Elysia({ prefix: "/user" })
   .post(
     "/change-banner",
     async ({ _userId, body: { banner } }) => {
-      if (banner.size > 10 * 1024 * 1024) {
-        return status(400, "File size is too large");
-      }
-      if (
-        banner.type !== "image/png" &&
-        banner.type !== "image/gif" &&
-        banner.type !== "image/jpeg"
-      ) {
-        return status(400, "File type is invalid");
-      }
-      //拡張子取得
-      const ext = banner.type.split("/")[1];
-
-      //既存のバナーを削除
-      await unlink(`./STORAGE/banner/${_userId}.png`).catch(() => {});
-      await unlink(`./STORAGE/banner/${_userId}.gif`).catch(() => {});
-      await unlink(`./STORAGE/banner/${_userId}.jpeg`).catch(() => {});
-      await unlink(`./STORAGE/banner/${_userId}.webp`).catch(() => {});
-
-      //画像を圧縮、保存する
-      if (ext === "gif") {
-        await sharp(await banner.arrayBuffer(), { animated: true })
-          .gif({
-            colours: 128, // 色数を128に削減
-            dither: 0, // ディザリングを無効化
-            effort: 7, // パレット生成の計算量を設定
-          })
-          .toFile(`./STORAGE/banner/${_userId}.gif`);
-      } else {
-        await sharp(await banner.arrayBuffer())
-          .rotate()
-          .webp({ quality: 90 })
-          .toFile(`./STORAGE/banner/${_userId}.webp`);
-      }
+      await ServiceUser.ChangeBanner(banner, _userId);
 
       return {
         message: "Banner changed",
@@ -489,44 +216,11 @@ export const user = new Elysia({ prefix: "/user" })
   .post(
     "/change-password",
     async ({ body: { currentPassword, newPassword }, _userId }) => {
-      //console.log("user.module :: /sign-in :: tokenGenerated", tokenGenerated);
-      //ユーザー情報取得
-      const userdata = await db.user.findFirst({
-        where: {
-          id: _userId,
-        },
-        include: {
-          password: true,
-        },
-      });
-      //ユーザー情報、またはその中のパスワードが取得できない場合
-      if (userdata === null || userdata.password === null) {
-        return status(500, "Internal Server Error");
-      }
-
-      //現在のパスワードが正しいか確認
-      const passwordCheckResult = await Bun.password.verify(
-        currentPassword + userdata.password.salt,
-        userdata.password.password,
+      await ServiceUser.ChangePassword(
+        currentPassword,
+        newPassword,
+        _userId,
       );
-      //パスワードが一致しない場合
-      if (!passwordCheckResult) {
-        return status(401, {
-          message: "Current password is incorrect",
-        });
-      }
-
-      //新しいパスワードをハッシュ化してDBに保存
-      await db.password.update({
-        where: {
-          userId: userdata.id,
-        },
-        data: {
-          password: await Bun.password.hash(
-            newPassword + userdata.password.salt,
-          ),
-        },
-      });
 
       return {
         message: "Password changed",
@@ -547,33 +241,11 @@ export const user = new Elysia({ prefix: "/user" })
   .post(
     "/profile-update",
     async ({ body: { name, selfIntroduction }, _userId, server }) => {
-      //ユーザー情報取得
-      const user = await db.user.findUnique({
-        where: {
-          id: _userId,
-        },
-      });
-      //ユーザーが存在しない場合
-      if (!user) {
-        return status(404, "User not found");
-      }
-
-      // 更新データの準備
-      const updatingValue: { name?: string; selfIntroduction?: string } = {};
-      if (name !== undefined) {
-        updatingValue.name = name;
-      }
-      if (selfIntroduction !== undefined) {
-        updatingValue.selfIntroduction = selfIntroduction;
-      }
-
-      //データ更新
-      const userUpdated = await db.user.update({
-        where: {
-          id: user.id,
-        },
-        data: updatingValue,
-      });
+      const userUpdated = await ServiceUser.UpdateProfile(
+        _userId,
+        name,
+        selfIntroduction,
+      );
 
       //WSで全体へ通知
       server?.publish(
@@ -603,12 +275,7 @@ export const user = new Elysia({ prefix: "/user" })
   .get(
     "/sign-out",
     async ({ cookie: { token } }) => {
-      //トークン削除
-      await db.token.delete({
-        where: {
-          token: token.value,
-        },
-      });
+      await ServiceUser.SignOut(token.value!);
 
       //クッキー削除
       token.remove();
@@ -660,27 +327,7 @@ export const user = new Elysia({ prefix: "/user" })
   .get(
     "/info/:id",
     async ({ params: { id } }) => {
-      const user = await db.user.findFirst({
-        where: {
-          id: id,
-        },
-        include: {
-          ChannelJoin: {
-            select: {
-              channelId: true,
-            },
-          },
-          RoleLink: {
-            select: {
-              roleId: true,
-            },
-          },
-        },
-      });
-      //ユーザーが存在しない場合
-      if (!user) {
-        return status(404, "User not found");
-      }
+      const user = await ServiceUser.GetUserInfo(id);
 
       return {
         message: "User info",
@@ -700,20 +347,7 @@ export const user = new Elysia({ prefix: "/user" })
   .get(
     "/list",
     async () => {
-      const users = await db.user.findMany({
-        include: {
-          ChannelJoin: {
-            select: {
-              channelId: true,
-            },
-          },
-          RoleLink: {
-            select: {
-              roleId: true,
-            },
-          },
-        },
-      });
+      const users = await ServiceUser.GetUserList();
 
       return {
         message: "User list",
@@ -731,30 +365,7 @@ export const user = new Elysia({ prefix: "/user" })
   .post(
     "/ban",
     async ({ body: { userId }, server, _userId }) => {
-      //HOSTをBANすることはできない
-      if (userId === "HOST") {
-        return status(400, "You can't ban HOST");
-      }
-      //自分自身をBANすることはできない
-      if (userId === _userId) {
-        return status(400, "You can't ban yourself");
-      }
-      //ロールレベルが対象より低いとBANできない
-      if (
-        (await getUsersRoleLevel(_userId)) < (await getUsersRoleLevel(userId))
-      ) {
-        return status(400, "You can't ban higher role level user");
-      }
-
-      //BANする
-      const userBanned = await db.user.update({
-        where: {
-          id: userId,
-        },
-        data: {
-          isBanned: true,
-        },
-      });
+      const userBanned = await ServiceUser.Ban(userId, _userId);
 
       //WSで全体へ通知
       server?.publish(
@@ -784,26 +395,7 @@ export const user = new Elysia({ prefix: "/user" })
   .post(
     "/unban",
     async ({ body: { userId }, server, _userId }) => {
-      //自分自身をUNBANすることはできない
-      if (userId === _userId) {
-        return status(400, "You can't unban yourself");
-      }
-      //ロールレベルが対象より低いとBAN解除できない
-      if (
-        (await getUsersRoleLevel(_userId)) < (await getUsersRoleLevel(userId))
-      ) {
-        return status(400, "You can't unban higher role level user");
-      }
-
-      //BANを解除
-      const userUnbanned = await db.user.update({
-        where: {
-          id: userId,
-        },
-        data: {
-          isBanned: false,
-        },
-      });
+      const userUnbanned = await ServiceUser.Unban(userId, _userId);
 
       //WSで全体へ通知
       server?.publish(
