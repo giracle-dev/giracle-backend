@@ -42,10 +42,7 @@ export abstract class ServiceMessage {
     const channelIds = userChannelJoined.map((channel) => channel.channelId);
     //チャンネルがない場合は空JSONを返す
     if (channelIds.length === 0) {
-      return {
-        message: "Fetched news",
-        data: {},
-      };
+      return {};
     }
 
     //ユーザーの既読時間を取得
