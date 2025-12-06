@@ -1,52 +1,17 @@
 import Elysia, { status, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
-import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
-import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { WSSubscribe, WSUnsubscribe } from "../../ws";
-import CalculateReactionTotal from "../../Utils/CalculateReactionTotal";
-import { imageSize } from "image-size";
 import { db } from "../..";
-import type { Message } from "../../../prisma/generated/client";
+import { ServiceChannel } from "./channel.service";
 
 export const channel = new Elysia({ prefix: "/channel" })
   .use(CheckToken)
   .post(
     "/join",
     async ({ body: { channelId }, _userId, server }) => {
-      //チャンネル参加データが存在するか確認
-      const channelJoined = await db.channelJoin.findFirst({
-        where: {
-          userId: _userId,
-          channelId,
-        },
-      });
-      //既に参加している
-      if (channelJoined !== null) {
-        throw status(400, "Already joined");
-      }
-
-      //チャンネルが存在するか確認
-      const channelData = await db.channel.findUnique({
-        where: {
-          id: channelId,
-        },
-      });
-      //チャンネルが存在しない
-      if (channelData === null) {
-        throw status(404, "Channel not found");
-      }
-      //チャンネルを見られないようなユーザーだと存在しないとしてエラーを出す
-      if (!(await CheckChannelVisibility(channelId, _userId))) {
-        throw status(404, "Channel not found");
-      }
-
-      await db.channelJoin.create({
-        data: {
-          userId: _userId,
-          channelId,
-        },
-      });
+      //参加処理
+      await ServiceChannel.Join(channelId, _userId);
 
       //WS登録させる
       //userWSInstance.get(_userId)?.subscribe(`channel::${channelId}`);
@@ -95,35 +60,8 @@ export const channel = new Elysia({ prefix: "/channel" })
   .post(
     "/leave",
     async ({ body: { channelId }, _userId, server }) => {
-      //チャンネル参加データが存在するか確認
-      const channelJoinData = await db.channelJoin.findFirst({
-        where: {
-          userId: _userId,
-          channelId,
-        },
-      });
-      if (channelJoinData === null) {
-        throw status(400, "You are not joined this channel");
-      }
-
-      //既読時間データを削除
-      await db.messageReadTime
-        .delete({
-          where: {
-            channelId_userId: {
-              channelId,
-              userId: _userId,
-            },
-          },
-        })
-        .catch(() => {});
-      //チャンネル参加データを削除
-      await db.channelJoin.deleteMany({
-        where: {
-          userId: _userId,
-          channelId,
-        },
-      });
+      //チャンネル退出処理
+      await ServiceChannel.Leave(channelId, _userId);
 
       //WS登録を解除させる
       //userWSInstance.get(_userId)?.unsubscribe(`channel::${channelId}`);
@@ -165,27 +103,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   .get(
     "/get-info/:channelId",
     async ({ params: { channelId }, _userId }) => {
-      //チャンネルを見られないようなユーザーだと存在しないとしてエラーを出す
-      if (!(await CheckChannelVisibility(channelId, _userId))) {
-        throw status(404, "Channel not found");
-      }
-
-      const channelData = await db.channel.findUnique({
-        where: {
-          id: channelId,
-        },
-        include: {
-          ChannelViewableRole: {
-            select: {
-              roleId: true,
-            },
-          },
-        },
-      });
-
-      if (channelData === null) {
-        return status(404, "Channel not found");
-      }
+      const channelData = await ServiceChannel.GetInfo(channelId, _userId);
 
       return {
         message: "Channel info ready",
@@ -205,67 +123,11 @@ export const channel = new Elysia({ prefix: "/channel" })
   .get(
     "/list",
     async ({ _userId }) => {
-      //ロール閲覧制限のないチャンネルリストから取得
-      const channelList = await db.channel.findMany({
-        where: {
-          ChannelViewableRole: {
-            none: {},
-          },
-        },
-      });
-
-      //ユーザーのロールを取得
-      const user = await db.user.findUnique({
-        where: {
-          id: _userId,
-        },
-        include: {
-          RoleLink: true,
-        },
-      });
-      if (!user) {
-        throw status(500, "Internal Server Error");
-      }
-      //指定のロールでしか閲覧できない、また他条件でのチャンネルを取得
-      const roleIds = user.RoleLink.map((roleLink) => roleLink.roleId);
-      const channelsLimited = await db.channel.findMany({
-        where: {
-          OR: [
-            {
-              //閲覧制限があり、自分がそのロールに所属している
-              ChannelViewableRole: {
-                some: {
-                  roleId: {
-                    in: roleIds,
-                  },
-                },
-              },
-            },
-            {
-              //自分が作成した
-              createdUserId: _userId,
-            },
-            {
-              //自分が参加している
-              ChannelJoin: {
-                some: {
-                  userId: _userId,
-                },
-              },
-            },
-          ],
-        },
-      });
-
-      //重複を取り除く
-      const mergedChannels = [...channelList, ...channelsLimited];
-      const uniqueChannels = Array.from(
-        new Set(mergedChannels.map((channel) => JSON.stringify(channel))),
-      ).map((channel) => JSON.parse(channel));
+      const ChannelList = await ServiceChannel.List(_userId);
 
       return {
         message: "Channel list ready",
-        data: uniqueChannels,
+        data: ChannelList,
       };
     },
     {
@@ -278,209 +140,19 @@ export const channel = new Elysia({ prefix: "/channel" })
   .post(
     "/get-history/:channelId",
     async ({ params: { channelId }, body, _userId }) => {
-      //パラメータ指定の取得
-      const { messageIdFrom, fetchDirection, fetchLength, messageTimeFrom } =
-        body || {};
-
-      //チャンネルへのアクセス権限があるか調べる
-      if (!(await CheckChannelVisibility(channelId, _userId))) {
-        return status(403, "You don't have permission to access this channel");
-      }
-
-      //基準位置に時間指定があるなら有効か確認
-      if (messageTimeFrom !== undefined) {
-        if (Number.isNaN(Date.parse(messageTimeFrom))) {
-          return status(400, "Invalid time format");
-        }
-      }
-
-      let messageDataFrom: Message | null = null;
-      //基準位置になるメッセージIdが指定されているなら
-      if (messageIdFrom !== undefined) {
-        //取得、格納
-        messageDataFrom = await db.message.findUnique({
-          where: {
-            id: messageIdFrom,
-          },
-        });
-        //無ければエラー
-        if (!messageDataFrom) {
-          return status(404, "Message cursor position not found");
-        }
-      }
-
-      //基準のメッセージIdか時間指定があるなら時間を取得、取得設定として設定
-      let optionDate: { createdAt: { lte: Date } | { gte: Date } } | null =
-        null;
-      if (messageDataFrom !== null) {
-        //基準のメッセージIdによる取得データがあるなら
-        //取得時間方向に合わせて設定を指定
-        if (fetchDirection === "older") {
-          //古い方向に取得する場合
-          optionDate = {
-            createdAt: {
-              lte: messageDataFrom.createdAt,
-            },
-          };
-        } else {
-          //新しい方向に取得する場合
-          //指定時間以降の最初のメッセージを取得
-          const messageTakingFrom = await db.message.findMany({
-            where: {
-              channelId: channelId,
-              createdAt: {
-                gte: messageDataFrom.createdAt,
-              },
-            },
-            orderBy: {
-              createdAt: "asc",
-            },
-            take: fetchLength,
-          });
-          const optionLte =
-            messageTakingFrom[messageTakingFrom.length - 1]?.createdAt;
-          //指定時間以降のメッセージの時間より前のメッセージを取得するように設定
-          optionDate = {
-            createdAt: {
-              lte: optionLte,
-              gte: messageDataFrom.createdAt,
-            },
-          };
-        }
-      } else if (messageTimeFrom !== undefined) {
-        //メッセージId指定がない場合、時間指定を使う
-        //取得時間方向に合わせて設定を指定
-        if (fetchDirection === "older") {
-          //古い方向に取得する場合
-          optionDate = {
-            createdAt: {
-              lte: new Date(messageTimeFrom),
-            },
-          };
-        } else {
-          //新しい方向に取得する場合
-          //指定時間以降の最初のメッセージを取得
-          const messageTakingFrom = await db.message.findMany({
-            where: {
-              channelId: channelId,
-              createdAt: {
-                gte: new Date(messageTimeFrom),
-              },
-            },
-            orderBy: {
-              createdAt: "asc",
-            },
-            take: fetchLength,
-          });
-          //指定時間以降のメッセージの時間より前のメッセージを取得するように設定
-          optionDate = {
-            createdAt: {
-              lte:
-                messageTakingFrom[messageTakingFrom.length - 1]?.createdAt ||
-                undefined,
-              gte: new Date(messageTimeFrom),
-            },
-          };
-        }
-      }
-
-      //履歴を取得する
-      const history = await db.message.findMany({
-        where: {
-          channelId: channelId,
-          ...optionDate,
-        },
-        include: {
-          MessageUrlPreview: true,
-          MessageFileAttached: true,
-        },
-        take: fetchLength,
-        orderBy: { createdAt: "desc" },
-      });
-
-      //履歴の最新まで取ったかどうかを判別するために最初のメッセージを取得
-      const firstMessageOfChannel = await db.message.findFirst({
-        where: {
-          channelId: channelId,
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
-      });
-
-      //取得した履歴が最新まで取得したか、または最初まで取得したかを判別
-      let atEnd = false;
-      let atTop = false;
-      //取得方向によって判別方法が異なる
-      if (fetchDirection === "newer") {
-        //取得した履歴がある場合
-        if (history[0] !== undefined) {
-          atTop = firstMessageOfChannel?.id === history[0].id;
-        } else {
-          //取得した履歴がない場合、最初まで取得したと判定
-          atTop = true;
-        }
-        atEnd = history.length < (fetchLength || 30);
-      } else {
-        //取得した履歴がある場合
-        if (history[0] !== undefined) {
-          atEnd = firstMessageOfChannel?.id === history[0].id;
-        } else {
-          //取得した履歴がない場合、最初まで取得したと判定
-          atEnd = true;
-        }
-        atTop = history.length < (fetchLength || 30);
-      }
-
-      //画像の添付ファイルがあれば画像のメタデータ（縦幅など）を含める
-      const ImageDimensions: {
-        [fileId: string]: { height: number; width: number };
-      } = {};
-      for (const index in history) {
-        for (const file of history[index].MessageFileAttached) {
-          if (file.type.startsWith("image/")) {
-            try {
-              //画像を読み込む
-              const imageArrBuffer = await Bun.file(
-                `./STORAGE/file/${channelId}/${file.savedFileName}`,
-              ).arrayBuffer();
-              const buffer = new Uint8Array(imageArrBuffer);
-              //画像のメタデータを取得
-              const { width, height } = imageSize(buffer);
-
-              if (width !== undefined && height !== undefined) {
-                ImageDimensions[file.id] = {
-                  height,
-                  width,
-                };
-              }
-            } catch (e) {}
-          }
-        }
-      }
-
-      //最後にメッセージごとにリアクションの合計数をそれぞれ格納する
-      for (const index in history) {
-        const emojiTotalJson = await CalculateReactionTotal(
-          history[index].id,
-          _userId,
-        );
-
-        //結果をこのメッセージ部分に格納する
-        history[index] = {
-          ...history[index],
-          // @ts-ignore - reactionSummaryの追加
-          reactionSummary: emojiTotalJson,
-        };
-      }
+      const results = await ServiceChannel.GetHistory(
+        channelId,
+        body,
+        _userId,
+      );
 
       return {
         message: "History fetched",
         data: {
-          history, //履歴データ
-          ImageDimensions, //画像用のサイズデータ(縦幅、横幅)
-          atTop, //最初まで取得したかどうか
-          atEnd, //最新まで取得したかどうか
+          history: results.history, //履歴データ
+          ImageDimensions: results.ImageDimensions, //画像用のサイズデータ(縦幅、横幅)
+          atTop: results.atTop, //最初まで取得したかどうか
+          atEnd: results.atEnd, //最新まで取得したかどうか
         },
       };
     },
@@ -507,21 +179,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   .get(
     "/search",
     async ({ query: { query }, _userId }) => {
-      //閲覧できるチャンネルをId配列で取得
-      const channelViewable = await GetUserViewableChannel(_userId);
-      const channelIdsViewable = channelViewable.map((c) => c.id);
-
-      //チャンネル検索
-      const channelInfos = await db.channel.findMany({
-        where: {
-          name: {
-            contains: query,
-          },
-          id: {
-            in: channelIdsViewable,
-          },
-        },
-      });
+      const channelInfos = await ServiceChannel.Search(query, _userId);
 
       return {
         message: "Searched channels",
@@ -544,40 +202,9 @@ export const channel = new Elysia({ prefix: "/channel" })
   .post(
     "/invite",
     async ({ body: { channelId, userId }, _userId, server }) => {
-      //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
-      const requestUser = await db.user.findUnique({
-        where: {
-          id: _userId,
-        },
-        include: {
-          ChannelJoin: true,
-        },
-      });
-      if (!requestUser) {
-        return status(404, "User not found");
-      }
-      if (!requestUser.ChannelJoin.some((c) => c.channelId === channelId)) {
-        return status(403, "You are not joined this channel");
-      }
+      //招待処理
+      await ServiceChannel.Invite(channelId, userId, _userId);
 
-      //対象ユーザーがすでに参加しているかどうかを確認
-      const targetUserJoinedData = await db.channelJoin.findFirst({
-        where: {
-          userId,
-          channelId,
-        },
-      });
-      if (targetUserJoinedData !== null) {
-        return status(400, "Already joined");
-      }
-
-      //チャンネル参加させる
-      await db.channelJoin.create({
-        data: {
-          userId,
-          channelId,
-        },
-      });
       //WSチャンネルを登録させる
       WSSubscribe(userId, `channel::${channelId}`);
 
@@ -614,40 +241,9 @@ export const channel = new Elysia({ prefix: "/channel" })
   .post(
     "/kick",
     async ({ body: { channelId, userId }, _userId, server }) => {
-      //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
-      const requestUser = await db.user.findUnique({
-        where: {
-          id: _userId,
-        },
-        include: {
-          ChannelJoin: true,
-        },
-      });
-      if (!requestUser) {
-        return status(404, "User not found");
-      }
-      if (!requestUser.ChannelJoin.some((c) => c.channelId === channelId)) {
-        return status(403, "You are not joined this channel");
-      }
+      //キック処理
+      await ServiceChannel.Kick(channelId, userId, _userId);
 
-      //対象ユーザーが参加しているかどうかを確認
-      const targetUserJoinedData = await db.channelJoin.findFirst({
-        where: {
-          userId,
-          channelId,
-        },
-      });
-      if (targetUserJoinedData === null) {
-        return status(400, "This user is not joined this channel");
-      }
-
-      //チャンネル参加データを削除(退出させる)
-      await db.channelJoin.deleteMany({
-        where: {
-          userId,
-          channelId,
-        },
-      });
       //WSチャンネルを登録解除
       WSUnsubscribe(userId, `channel::${channelId}`);
 
@@ -687,89 +283,13 @@ export const channel = new Elysia({ prefix: "/channel" })
       body: { name, description, isArchived, channelId, viewableRole },
       server,
     }) => {
-      //適用するデータ群のJSON
-      const updatingValues: {
-        name?: string;
-        description?: string;
-        isArchived?: boolean;
-      } = {};
-
-      //渡されたデータを調べて適用するデータを格納
-      if (name !== undefined && name !== "") updatingValues.name = name;
-      if (description !== undefined) updatingValues.description = description;
-      if (isArchived !== undefined) updatingValues.isArchived = isArchived;
-
-      //チャンネルデータを更新する
-      await db.channel.update({
-        where: {
-          id: channelId,
-        },
-        data: {
-          ...updatingValues,
-        },
-      });
-
-      //チャンネル閲覧ロールを更新
-      if (viewableRole !== undefined) {
-        // 既存のroleIdを取得
-        const existingRoles = await db.channelViewableRole.findMany({
-          where: {
-            channelId: channelId,
-          },
-          select: {
-            roleId: true,
-          },
-        });
-
-        // 既存のroleIdをセットに変換
-        //const existingRoleIds = new Set(existingRoles.map(role => role.roleId));
-        const _existingRoleIds = existingRoles.map((role) => role.roleId);
-        const existingRoleIds = new Set(_existingRoleIds);
-
-        // 新しいroleIdをフィルタリング
-        const newRoleIds = viewableRole.filter(
-          (roleId) => !existingRoleIds.has(roleId),
-        );
-
-        //現在の閲覧可能roleIdを削除
-        await db.channelViewableRole.deleteMany({
-          where: {
-            channelId,
-          },
-        });
-
-        // 新しいroleIdを挿入
-        if (newRoleIds.length > 0) {
-          await db.channel.update({
-            where: {
-              id: channelId,
-            },
-            data: {
-              ChannelViewableRole: {
-                createMany: {
-                  data: newRoleIds.map((roleId) => ({
-                    roleId,
-                  })),
-                },
-              },
-            },
-          });
-        }
-      }
-
-      //更新後のデータを取得
-      const channelDataUpdated = await db.channel.findUnique({
-        where: {
-          id: channelId,
-        },
-        include: {
-          ChannelViewableRole: {
-            select: {
-              roleId: true,
-            },
-          },
-        },
-      });
+      const channelDataUpdated = await ServiceChannel.Update(
+        channelId,
+        name,
+        description,
+        isArchived,
+        viewableRole,
+      );
 
       //WSで通知
       server?.publish(
@@ -803,17 +323,11 @@ export const channel = new Elysia({ prefix: "/channel" })
   .put(
     "/create",
     async ({ body: { channelName, description = "" }, _userId }) => {
-      const newChannel = await db.channel.create({
-        data: {
-          name: channelName,
-          description: description,
-          user: {
-            connect: {
-              id: _userId,
-            },
-          },
-        },
-      });
+      const newChannel = await ServiceChannel.Create(
+        channelName,
+        description,
+        _userId,
+      );
 
       return {
         message: "Channel created",
@@ -837,18 +351,14 @@ export const channel = new Elysia({ prefix: "/channel" })
   .delete(
     "/delete",
     async ({ body: { channelId }, server }) => {
+      //チャンネルの存在確認
       const channel = await db.channel.findUnique({
         where: {
           id: channelId,
         },
       });
-
-      //チャンネルが存在しない
       if (channel === null) {
-        return {
-          success: false,
-          message: "Channel not found",
-        };
+        throw status(404, "Channel not found");
       }
 
       //チャンネル参加者にWSで通知
@@ -875,37 +385,8 @@ export const channel = new Elysia({ prefix: "/channel" })
           }
         });
 
-      //メッセージデータを削除
-      const delMessage = db.message.deleteMany({
-        where: {
-          channelId,
-        },
-      });
-      //チャンネル参加データを削除
-      const delChannelJoin = db.channelJoin.deleteMany({
-        where: {
-          channelId,
-        },
-      });
-      //チャンネルデフォルト参加データを削除
-      const delJoinOnDefault = db.channelJoinOnDefault.deleteMany({
-        where: {
-          channelId,
-        },
-      });
-      //チャンネルデータを削除
-      const delChannel = db.channel.delete({
-        where: {
-          id: channelId,
-        },
-      });
-
-      await db.$transaction([
-        delMessage,
-        delChannelJoin,
-        delJoinOnDefault,
-        delChannel,
-      ]);
+      //チャンネル削除処理
+      await ServiceChannel.Delete(channelId);
 
       return {
         message: "Channel deleted",

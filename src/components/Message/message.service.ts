@@ -1,0 +1,633 @@
+import { mkdir } from "node:fs/promises";
+import { unlink } from "node:fs/promises";
+import { type Message } from "../../../prisma/generated/client";
+import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
+import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
+import sharp from "sharp";
+import { status } from "elysia";
+import { db } from "../..";
+
+export abstract class ServiceMessage {
+  
+  static Get = async (messageId: string, _userId: string) => {
+    const messageData = await db.message.findUnique({
+      where: {
+        id: messageId,
+      },
+    });
+    //メッセージが見つからなければエラー
+    if (messageData === null) {
+      throw status(404, "Message not found");
+    }
+
+    //チャンネルの閲覧制限があるか確認してから返す
+    if (!await CheckChannelVisibility(messageData.channelId, _userId)) {
+      throw status(404, "Message not found");
+    }
+
+    return messageData;
+  };
+
+  static GetNew = async (_userId: string) => {
+    // ユーザーが参加しているチャンネルを取得
+    const userChannelJoined = await db.channelJoin.findMany({
+      where: {
+        userId: _userId,
+      },
+      select: {
+        channelId: true,
+      },
+    });
+    //チャンネルIdのJSONを配列化
+    const channelIds = userChannelJoined.map((channel) => channel.channelId);
+    //チャンネルがない場合は空JSONを返す
+    if (channelIds.length === 0) {
+      return {};
+    }
+
+    //ユーザーの既読時間を取得
+    const messageReadTime = await db.messageReadTime.findMany({
+      where: {
+        userId: _userId,
+        channelId: {
+          in: channelIds,
+        },
+      },
+      select: {
+        channelId: true,
+        readTime: true,
+      },
+    });
+
+    //チャンネルごとの新着メッセージがあるかどうかを格納するJSON
+    const JSONNews: { [key: string]: boolean } = {};
+
+    //チャンネルごとの最新のメッセ時間を取得
+    const latestTimes = await db.message.groupBy({
+      by: ["channelId"],
+      where: {
+        channelId: { in: channelIds },
+      },
+      _max: {
+        createdAt: true,
+      },
+    });
+    //最新時間ごとにメッセージを取得
+    const newests = await db.message.findMany({
+      select: {
+        channelId: true,
+        createdAt: true,
+      },
+      where: {
+        OR: latestTimes.map((lt) => ({
+          channelId: lt.channelId,
+          createdAt: lt._max.createdAt!,
+        })),
+      },
+    });
+    for (const newestMessage of newests) {
+      //最新メッセからチャンネルId
+      const channelId = newestMessage.channelId;
+      //既読時間を探し出す
+      const targetReadTime = messageReadTime.find(
+        (data) => data.channelId === channelId,
+      );
+
+      //既読時間が存在するなら比較してBooleanを返す、ないならfalse
+      if (targetReadTime) {
+        JSONNews[channelId] =
+          newestMessage.createdAt.valueOf() > targetReadTime?.readTime.valueOf();
+      } else {
+        JSONNews[channelId] = false;
+      }
+    }
+
+    return JSONNews;
+  };
+
+  static GetReadTime = async (_userId: string) => {
+    const readTime = await db.messageReadTime.findMany({
+      where: {
+        userId: _userId,
+      },
+    });
+    //既読時間がない場合はエラー
+    if (readTime === null) {
+      throw status(404, "Read time not found");
+    }
+
+    return readTime;
+  };
+
+  static UpdateReadTime = async (channelId: string, readTime: Date, _userId: string) => {
+    //既読時間を取得して更新する必要があるか調べる
+    const readTimeSaved = await db.messageReadTime.findUnique({
+      where: {
+        channelId_userId: {
+          channelId,
+          userId: _userId,
+        },
+      },
+    });
+    if (
+      readTimeSaved !== null &&
+      readTimeSaved.readTime.valueOf() > readTime.valueOf()
+    ) {
+      throw status(400, "Read time is already newer");
+    }
+
+    const readTimeUpdated = await db.messageReadTime.upsert({
+      where: {
+        channelId_userId: {
+          channelId,
+          userId: _userId,
+        },
+      },
+      create: {
+        readTime,
+        channelId,
+        userId: _userId,
+      },
+      update: {
+        readTime,
+      },
+    });
+
+    return readTimeUpdated;
+  };
+
+  static Search = async (
+    content: string | undefined,
+    channelId: string | undefined,
+    userId: string | undefined,
+    hasUrlPreview: boolean | undefined,
+    hasFileAttachment: boolean | undefined,
+    loadIndex: number | undefined,
+    sort: "asc" | "desc" | undefined,
+    _userId: string,
+  ) => {
+    //デフォルトのソート順を設定
+    if (sort === undefined) sort = "desc";
+    //読み込みインデックス指定があるならスキップするメッセ数を計算
+    const messageSkipping = loadIndex ? (loadIndex - 1) * 50 : 0;
+
+    //チャンネル指定が無かった時用のユーザーが閲覧できるチャンネルId配列
+    let viewableChannelIds: string[] = [];
+    //チャンネル指定があるなら閲覧制限を確認する、無いならユーザーが閲覧できるチャンネルを取得
+    if (channelId) {
+      //チャンネルの閲覧制限があるか確認
+      if (!(await CheckChannelVisibility(channelId, _userId))) {
+        throw status(403, "You are not allowed to view this channel");
+      }
+    } else {
+      const viewableChannels = await GetUserViewableChannel(_userId, false);
+      viewableChannelIds = viewableChannels.map((channel) => channel.id);
+    }
+
+    //URLプレビューがあるかどうかの条件を変換
+    const relationOptionGetter = (_opt: boolean | undefined) => {
+      switch (_opt) {
+        case undefined:
+          return undefined;
+        case true:
+          return {
+            some: {},
+          };
+        case false:
+          return {
+            none: {},
+          };
+      }
+    };
+
+    //メッセージを検索する
+    const messages = await db.message.findMany({
+      where: {
+        content: {
+          contains: content,
+        },
+        channelId: channelId
+          ? { equals: channelId }
+          : { in: viewableChannelIds },
+        userId: userId ? { equals: userId } : undefined,
+        MessageUrlPreview: relationOptionGetter(hasUrlPreview),
+        MessageFileAttached: relationOptionGetter(hasFileAttachment),
+      },
+      include: {
+        MessageUrlPreview: true,
+        MessageFileAttached: true,
+      },
+      take: 50,
+      skip: messageSkipping,
+      orderBy: {
+        createdAt: sort,
+      },
+    });
+
+    return messages;
+  };
+
+  static UploadFile = async (channelId: string, file: File, _userId: string) => {
+    //ファイルサイズが500MBを超える場合はエラー
+    if (file.size > 1024 * 1024 * 500) {
+      throw status(400, "File size is too large");
+    }
+
+    //保存するためのファイル名保存
+    const fileNameGen = `${Date.now()}_${file.name}`;
+    //チャンネルIdのディレクトリを作成
+    await mkdir(`./STORAGE/file/${channelId}`, { recursive: true }).catch(
+      () => {},
+    );
+
+    console.log("message.module :: /file/upload : file.type->", file.type);
+    //webpファイルであるかどうかフラグ
+    let isWebp = false;
+
+    //ファイルを保存する
+    if (file.type.startsWith("image/") && file.type !== "image/gif") {
+      await sharp(await file.arrayBuffer())
+        .rotate()
+        .webp({ quality: 95 })
+        .toFile(`./STORAGE/file/${channelId}/${fileNameGen}.webp`);
+      //webpで保存されたことと設定
+      isWebp = true;
+    } else if (file.type === "image/gif") {
+      await sharp(await file.arrayBuffer(), { animated: true })
+        .gif({
+          colours: 128, // 色数を128に削減
+          dither: 0, // ディザリングを無効化
+          effort: 7, // パレット生成の計算量を設定
+        })
+        .toFile(`./STORAGE/file/${channelId}/${fileNameGen}`);
+    } else {
+      //ファイルを保存
+      await Bun.write(`./STORAGE/file/${channelId}/${fileNameGen}`, file);
+    }
+
+    //ファイル情報を作成、保存する
+    const fileData = await db.messageFileAttached.create({
+      data: {
+        channelId,
+        userId: _userId,
+        size: file.size,
+        actualFileName: isWebp ? `${file.name}.webp` : file.name,
+        savedFileName: isWebp ? `${fileNameGen}.webp` : fileNameGen,
+        type: file.type,
+      },
+      select: {
+        id: true,
+      }
+    });
+
+    return fileData;
+  };
+
+  static GetFile = async (fileId: string) => {
+    const fileData = await db.messageFileAttached.findUnique({
+      where: {
+        id: fileId,
+      },
+    });
+
+    if (fileData === null) {
+      throw status(404, "File not found");
+    }
+
+    return fileData;
+  };
+
+  static Delete = async (messageId: string, _userId: string) => {
+    //取得
+    const messageData = await db.message.findUnique({
+      select: {
+        id: true,
+        userId: true,
+        channelId: true
+      },
+      where: {
+        id: messageId,
+      },
+    });
+    if (messageData === null) {
+      throw status(404, "Message not found");
+    }
+    if (messageData.userId !== _userId) {
+      //メッセージの送信者でないならサーバー管理権限を確認する
+      const canManageServer = await db.roleLink.findFirst({
+        where: {
+          userId: _userId,
+          role: {
+            manageServer: true,
+          },
+        },
+      });
+
+      if (!canManageServer)
+        throw status(403, "You are not owner of this message");
+    }
+
+    //URLプレビューの削除
+    await db.messageUrlPreview.deleteMany({
+      where: {
+        messageId,
+      },
+    });
+    //ファイル情報の取得、削除
+    const fileData = await db.messageFileAttached.findMany({
+      where: {
+        messageId,
+      },
+    });
+    for (const file of fileData) {
+      try {
+        await unlink(
+          `./STORAGE/file/${file.channelId}/${file.savedFileName}`,
+        );
+      } catch (e) {
+        console.error("message.module :: /message/delete : 削除エラー->", e);
+      }
+    }
+    //リアクションデータを削除
+    await db.messageReaction.deleteMany({
+      where: {
+        messageId,
+      },
+    });
+    //添付ファイル情報の削除
+    await db.messageFileAttached.deleteMany({
+      where: {
+        messageId,
+      },
+    });
+    //このメッセージからできているInboxデータの削除
+    await db.inbox.deleteMany({
+      where: {
+        messageId: messageId,
+      },
+    });
+
+    //メッセージの削除
+    await db.message.delete({
+      where: {
+        id: messageId,
+      },
+    });
+
+    return messageData;
+  };
+
+  static GetInbox = async (_userId: string) => {
+    //通知を取得する
+    const inboxAll = await db.inbox.findMany({
+      where: {
+        userId: _userId,
+      },
+      include: {
+        Message: true,
+      },
+    });
+
+    return inboxAll;
+  };
+
+  static ReadInbox = async (messageId: string, _userId: string) => {
+    //通知を削除
+    await db.inbox.delete({
+      where: {
+        messageId_userId: {
+          messageId,
+          userId: _userId,
+        },
+      },
+    });
+
+    return;
+  };
+
+  static ClearInbox = async (_userId: string) => {
+    //通知を全部削除
+    await db.inbox.deleteMany({
+      where: {
+        userId: _userId,
+      },
+    });
+
+    return;
+  };
+
+  static Reaction = async (messageId: string, channelId: string, emojiCode: string, _userId: string) => {
+    //自分のリアクションデータを取得して条件確認する
+    const MyReactions = await db.messageReaction.findMany({
+      where: {
+        messageId,
+        userId: _userId,
+      },
+    });
+    //同じ絵文字コードのリアクションがあればエラー
+    if (MyReactions.some((r) => r.emojiCode === emojiCode)) {
+      throw status(400, "You already reacted this message");
+    }
+    //同じユーザーリアクションが10以上ならエラー
+    if (MyReactions.length >= 10) {
+      throw status(400, "You can't react more than 10 times");
+    }
+
+    //リアクションを格納
+    const reaction = await db.messageReaction.create({
+      data: {
+        messageId,
+        userId: _userId,
+        channelId,
+        emojiCode,
+      },
+    });
+
+    return reaction;
+  };
+
+  static GetWhoReacted = async (messageId: string, emojiCode: string, _userId: string) => {
+    //メッセージが存在するか確認
+    const message = await db.message.findUnique({
+      where: {
+        id: messageId,
+      },
+      include: {
+        MessageReaction: {
+          take: length,
+          select: {
+            userId: true,
+          },
+          where: {
+            emojiCode,
+          },
+        },
+      },
+    });
+    if (message === null) {
+      throw status(400, "Message not found or is private.");
+    }
+
+    //チャンネルの閲覧制限があるか確認
+    const viewable = await CheckChannelVisibility(message.channelId, _userId);
+    if (!viewable) {
+      throw status(400, "Message not found or is private.");
+    }
+
+    return message;
+  };
+
+  static DeleteEmojiReaction = async (messageId: string, emojiCode: string, _userId: string) => {
+    //自分のリアクションを取得して無ければエラー
+    const hasMyReaction = await db.messageReaction.findFirst({
+      where: {
+        messageId,
+        userId: _userId,
+        emojiCode,
+      },
+    });
+    if (hasMyReaction === null) {
+      throw status(404, "Reaction does not exists");
+    }
+
+    //リアクションを削除
+    const reactionDeleted = await db.messageReaction.delete({
+      where: {
+        id: hasMyReaction.id,
+      },
+    });
+
+    return reactionDeleted;
+  };
+
+  static Send = async (
+    channelId: string,
+    message: string,
+    fileIds: string[],
+    replyingMessageId: string | undefined,
+    _userId: string
+  ) => {
+    //メッセージが空白か改行しか含まれていないならエラー(ファイル添付があるなら除外)
+    const spaceCount =
+      (message.match(/ /g) || "").length +
+      (message.match(/　/g) || "").length +
+      (message.match(/\n/g) || "").length;
+    if (spaceCount === message.length && fileIds.length === 0)
+      throw status(400, "Message is empty");
+
+    //チャンネル参加情報を取得
+    const channelJoined = await db.channelJoin.findFirst({
+      where: {
+        userId: _userId,
+        channelId,
+      },
+    });
+    //チャンネルに参加していない
+    if (channelJoined === null) {
+      throw status(400, "You are not joined this channel");
+    }
+
+    //返信先メッセージ用変数(メッセージ保存処理後に使用)
+    let messageReplyingTo: Message | null = null;
+    //返信先メッセージがあるなら存在するか確認
+    if (replyingMessageId) {
+      messageReplyingTo = await db.message.findUnique({
+        where: {
+          id: replyingMessageId,
+        },
+      });
+      //返信先メッセージが存在しないならエラー
+      if (messageReplyingTo === null) {
+        throw status(400, "Replying message not found");
+      }
+      //返信先メッセージがこのチャンネルに存在するか確認
+      if (messageReplyingTo.channelId !== channelId) {
+        throw status(400, "Replying message not found in this channel");
+      }
+    }
+
+    //アップロードしているファイルId配列があるならファイル情報を取得
+    const fileData = await db.messageFileAttached.findMany({
+      where: {
+        id: {
+          in: fileIds,
+        },
+      },
+    });
+
+    //メッセージを保存
+    const messageSaved = await db.message.create({
+      data: {
+        channelId,
+        userId: _userId,
+        content: message,
+        replyingMessageId: replyingMessageId ?? undefined,
+        MessageFileAttached: {
+          connect: fileData.map((data) => {
+            return {
+              id: data.id,
+            };
+          }),
+        },
+      },
+      include: {
+        MessageFileAttached: true,
+      },
+    });
+
+    //メッセージから "@<userId>" を検知
+    const mentionedUserIds =
+      message.match(/@<([\w-]+)>/g)?.map((mention) => mention.slice(2, -1)) ||
+      [];
+
+    //DBに保存するInbox用データを作成
+    const savingInboxData = [];
+    for (const mentionedUserId of mentionedUserIds) {
+      savingInboxData.push({
+        userId: mentionedUserId,
+        messageId: messageSaved.id,
+        type: "mention",
+      });
+    }
+    //inboxに保存
+    await db.inbox.createMany({
+      data: savingInboxData,
+    });
+
+    return { messageSaved, messageReplyingTo, mentionedUserIds };
+  };
+
+  static Edit = async (messageId: string, content: string, _userId: string) => {
+    const messageEditing = await db.message.findUnique({
+      where: {
+        id: messageId,
+      },
+    });
+    //メッセージが無かった時エラー
+    if (messageEditing === null) {
+      throw status(404, "Message not found");
+    }
+    //送信者が自分と違うならエラー
+    if (messageEditing.userId !== _userId) {
+      throw status(403, "You are not sender of this message");
+    }
+    //内容が同じならエラー
+    if (messageEditing.content === content) {
+      throw status(400, "Message is already same");
+    }
+
+    //メッセージデータを更新する
+    const msgUpdated = await db.message.update({
+      where: {
+        id: messageId,
+      },
+      data: {
+        content,
+        isEdited: true,
+      },
+    });
+
+    return messageEditing;
+  };
+
+}
