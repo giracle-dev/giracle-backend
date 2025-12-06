@@ -272,7 +272,7 @@ export abstract class ServiceUser {
       icon.type !== "image/gif" &&
       icon.type !== "image/jpeg"
     ) {
-      return status(400, "File type is invalid");
+      throw status(400, "File type is invalid");
     }
     //拡張子取得
     const ext = icon.type.split("/")[1];
@@ -305,14 +305,14 @@ export abstract class ServiceUser {
 
   static ChangeBanner = async (banner: File, _userId: string) => {
     if (banner.size > 10 * 1024 * 1024) {
-      return status(400, "File size is too large");
+      throw status(400, "File size is too large");
     }
     if (
       banner.type !== "image/png" &&
       banner.type !== "image/gif" &&
       banner.type !== "image/jpeg"
     ) {
-      return status(400, "File type is invalid");
+      throw status(400, "File type is invalid");
     }
     //拡張子取得
     const ext = banner.type.split("/")[1];
@@ -354,7 +354,7 @@ export abstract class ServiceUser {
     });
     //ユーザー情報、またはその中のパスワードが取得できない場合
     if (userdata === null || userdata.password === null) {
-      return status(500, "Internal Server Error");
+      throw status(500, "Internal Server Error");
     }
 
     //現在のパスワードが正しいか確認
@@ -364,7 +364,7 @@ export abstract class ServiceUser {
     );
     //パスワードが一致しない場合
     if (!passwordCheckResult) {
-      return status(401, {
+      throw status(401, {
         message: "Current password is incorrect",
       });
     }
