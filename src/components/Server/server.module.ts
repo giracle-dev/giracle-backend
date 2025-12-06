@@ -5,27 +5,13 @@ import Elysia, { status, t } from "elysia";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import sharp from "sharp";
 import { db } from "../..";
+import { ServiceServer } from "./server.service";
 
 export const server = new Elysia({ prefix: "/server" })
   .get(
     "/config",
     async () => {
-      //サーバーの情報取得
-      const config = await db.serverConfig.findFirst();
-      //最初のユーザーになるかどうか
-      const firstUser = await db.user.findFirst({
-        skip: 1,
-      });
-      const isFirstUser = firstUser === null;
-      //デフォルトで参加するチャンネル
-      const defaultJoinChannelFetched = await db.channelJoinOnDefault.findMany({
-        select: {
-          channel: true,
-        },
-      });
-      const defaultJoinChannel = defaultJoinChannelFetched.map(
-        (c) => c.channel,
-      );
+      const { config, isFirstUser, defaultJoinChannel} = await ServiceServer.Config();
 
       return {
         message: "Server config fetched",
@@ -42,22 +28,10 @@ export const server = new Elysia({ prefix: "/server" })
   .get(
     "/banner",
     async () => {
-      //バナー読み取り、存在確認して返す
-      const serverFilePng = Bun.file("./STORAGE/banner/SERVER.png");
-      if (await serverFilePng.exists()) {
-        return serverFilePng;
-      }
-      const serverFileGif = Bun.file("./STORAGE/banner/SERVER.gif");
-      if (await serverFileGif.exists()) {
-        return serverFileGif;
-      }
-      const bannerFileJpeg = Bun.file("./STORAGE/banner/SERVER.jpeg");
-      if (await bannerFileJpeg.exists()) {
-        return bannerFileJpeg;
-      }
-
-      //存在しない場合はデフォルトアイコンを返す
-      return status(404, "Server banner not found");
+      //statusも含めこの中で行う
+      await ServiceServer.Banner();
+      //念の為
+      return status(500, "Something went wrong");
     },
     {
       detail: {
@@ -72,7 +46,7 @@ export const server = new Elysia({ prefix: "/server" })
   .get(
     "/get-invite",
     async () => {
-      const invites = await db.invitation.findMany();
+      const invites = await ServiceServer.GetInvite();
 
       return {
         message: "Server invites fetched",
@@ -90,12 +64,7 @@ export const server = new Elysia({ prefix: "/server" })
   .put(
     "/create-invite",
     async ({ body: { inviteCode }, _userId }) => {
-      const newInvite = await db.invitation.create({
-        data: {
-          inviteCode,
-          createdUserId: _userId,
-        },
-      });
+      const newInvite = await ServiceServer.CreateInvite(inviteCode, _userId);
 
       return {
         message: "Server invite created",
@@ -116,11 +85,7 @@ export const server = new Elysia({ prefix: "/server" })
   .delete(
     "/delete-invite",
     async ({ body: { inviteId } }) => {
-      await db.invitation.delete({
-        where: {
-          id: inviteId,
-        },
-      });
+      await ServiceServer.DeleteInvite(inviteId);
 
       return {
         message: "Server invite deleted",
@@ -143,16 +108,7 @@ export const server = new Elysia({ prefix: "/server" })
   .post(
     "/change-info",
     async ({ body: { name, introduction }, server }) => {
-      await db.serverConfig.updateMany({
-        data: {
-          name,
-          introduction,
-        },
-      });
-
-      //ここでデータ取得
-      const serverinfo = await db.serverConfig.findFirst();
-      if (serverinfo === null) return status(500, "Server config not found");
+      const serverinfo = await ServiceServer.ChangeInfo(name, introduction);
 
       //WSで全体へ通知
       server?.publish(
@@ -192,32 +148,13 @@ export const server = new Elysia({ prefix: "/server" })
       },
       server,
     }) => {
-      await db.serverConfig.updateMany({
-        data: {
-          RegisterAvailable,
-          RegisterInviteOnly,
-          RegisterAnnounceChannelId,
-          MessageMaxLength,
-        },
-      });
-
-      //デフォルト参加チャンネル設定もあるなら更新する
-      if (DefaultJoinChannel) {
-        //デフォルト参加チャンネル全部削除
-        await db.channelJoinOnDefault.deleteMany({});
-        //渡されたチャンネルIdごとにDBへ挿入
-        for (const channelId of DefaultJoinChannel) {
-          await db.channelJoinOnDefault.create({
-            data: {
-              channelId,
-            },
-          });
-        }
-      }
-
-      //ここでデータ取得
-      const serverinfo = await db.serverConfig.findFirst();
-      if (serverinfo === null) return status(500, "Server config not found");
+      const serverinfo = await ServiceServer.ChangeConfig(
+        RegisterAvailable,
+        RegisterInviteOnly,
+        RegisterAnnounceChannelId,
+        MessageMaxLength,
+        DefaultJoinChannel,
+      );
 
       //WSで全体へ通知
       server?.publish(
@@ -251,27 +188,7 @@ export const server = new Elysia({ prefix: "/server" })
   .post(
     "/change-banner",
     async ({ body: { banner } }) => {
-      if (banner.size > 15 * 1024 * 1024) {
-        return status(400, "File size is too large");
-      }
-      if (
-        banner.type !== "image/png" &&
-        banner.type !== "image/gif" &&
-        banner.type !== "image/jpeg"
-      ) {
-        return status(400, "File type is invalid");
-      }
-
-      //拡張子取得
-      const ext = banner.type.split("/")[1];
-
-      //既存のアイコンを削除
-      await unlink("./STORAGE/banner/SERVER.png").catch(() => {});
-      await unlink("./STORAGE/banner/SERVER.gif").catch(() => {});
-      await unlink("./STORAGE/banner/SERVER.jpeg").catch(() => {});
-
-      //アイコンを保存
-      Bun.write(`./STORAGE/banner/SERVER.${ext}`, banner);
+      await ServiceServer.ChangeBanner(banner);
       return {
         message: "Server banner changed",
       };
@@ -290,26 +207,15 @@ export const server = new Elysia({ prefix: "/server" })
   .get(
     "/custom-emoji/:code",
     async ({ params: { code }, set }) => {
-      //絵文字データを取得、無ければエラー
-      const emoji = await db.customEmoji.findFirst({
-        where: {
-          code,
-        },
-      });
-      if (emoji === null) return status(404, "Custom emoji not found");
-
       //画像のキャッシュ期間を設定
       set.headers["Cache-Control"] = "public, max-age=259200"; // 3日
+      //絵文字を返す
+      const customEmoji = await ServiceServer.GetCustomEmoji(code);
+      if (customEmoji === null) {
+        throw status(404, "Custom emoji not found");
+      }
 
-      //アイコン読み取り、存在確認して返す
-      const emojiGif = Bun.file(`./STORAGE/custom-emoji/${emoji.id}.gif`);
-      if (await emojiGif.exists()) return emojiGif;
-      const emojiJpeg = Bun.file(`./STORAGE/custom-emoji/${emoji.id}.jpeg`);
-      if (await emojiJpeg.exists()) return emojiJpeg;
-      const emojiWebp = Bun.file(`./STORAGE/custom-emoji/${emoji.id}.webp`);
-      if (await emojiWebp.exists()) return emojiWebp;
-
-      return status(404, "Custom emoji not found");
+      return customEmoji;
     },
     {
       params: t.Object({
@@ -324,7 +230,7 @@ export const server = new Elysia({ prefix: "/server" })
   .get(
     "/custom-emoji",
     async () => {
-      const customEmojis = await db.customEmoji.findMany();
+      const customEmojis = await ServiceServer.GetCustomEmojis();
 
       return {
         message: "Custom emojis fetched",
@@ -341,58 +247,11 @@ export const server = new Elysia({ prefix: "/server" })
   .put(
     "/custom-emoji/upload",
     async ({ body: { emoji, emojiCode }, server, _userId }) => {
-      if (emoji.size > 8 * 1024 * 1024) {
-        return status(400, "Emoji's file size is too large");
-      }
-      if (
-        emoji.type !== "image/png" &&
-        emoji.type !== "image/gif" &&
-        emoji.type !== "image/jpeg"
-      ) {
-        return status(400, "File type is invalid");
-      }
-
-      //絵文字コードのバリデーション
-      if (emojiCode.includes(" "))
-        return status(400, "Emoji code cannot contain spaces");
-      if (/[^\u0020-\u007E]/.test(emojiCode))
-        return status(400, "Emoji code cannot contain full-width characters");
-
-      //絵文字コードが既に存在するか確認
-      const emojiExist = await db.customEmoji.findFirst({
-        where: {
-          code: emojiCode,
-        },
-      });
-      if (emojiExist !== null) return status(400, "Emoji code already exists");
-
-      //DBに登録
-      const emojiUploaded = await db.customEmoji.create({
-        data: {
-          code: emojiCode,
-          uploadedUserId: _userId,
-        },
-      });
-
-      //拡張子取得
-      const ext = emoji.type.split("/")[1];
-      //拡張子に合わせて画像を変換
-      if (ext === "gif") {
-        await sharp(await emoji.arrayBuffer(), { animated: true })
-          .resize(32, 32)
-          .gif({
-            colours: 128, // 色数を128に削減
-            dither: 0, // ディザリングを無効化
-            effort: 7, // パレット生成の計算量を設定
-          })
-          .toFile(`./STORAGE/custom-emoji/${emojiUploaded.id}.gif`);
-      } else {
-        await sharp(await emoji.arrayBuffer())
-          .rotate()
-          .resize(32, 32)
-          .webp({ quality: 95 })
-          .toFile(`./STORAGE/custom-emoji/${emojiUploaded.id}.webp`);
-      }
+      const emojiUploaded = await ServiceServer.uploadCustomEmoji(
+        emoji,
+        emojiCode,
+        _userId,
+      );
 
       //WSで通知
       server?.publish(
@@ -423,26 +282,7 @@ export const server = new Elysia({ prefix: "/server" })
   .delete(
     "/custom-emoji/delete",
     async ({ body: { emojiCode }, server }) => {
-      //絵文字を削除しデータ取得
-      const emojiDeleted = await db.customEmoji.delete({
-        where: {
-          code: emojiCode,
-        },
-      });
-
-      //絵文字の画像ファイルを削除
-      await unlink(`./STORAGE/custom-emoji/${emojiDeleted.id}.png`).catch(
-        () => {},
-      );
-      await unlink(`./STORAGE/custom-emoji/${emojiDeleted.id}.gif`).catch(
-        () => {},
-      );
-      await unlink(`./STORAGE/custom-emoji/${emojiDeleted.id}.jpeg`).catch(
-        () => {},
-      );
-      await unlink(`./STORAGE/custom-emoji/${emojiDeleted.id}.webp`).catch(
-        () => {},
-      );
+      const emojiDeleted = await ServiceServer.DeleteCustomEmoji(emojiCode);
 
       //WSで通知
       server?.publish(
@@ -472,20 +312,7 @@ export const server = new Elysia({ prefix: "/server" })
   .get(
     "/storage-usage",
     async () => {
-      //ディレクトリ一覧を取得
-      const dirs = fs.readdirSync("./STORAGE/file");
-      if (dirs.length === 0) return 0;
-
-      //合計サイズ
-      let totalSize = 0;
-
-      //ディレクトリごとにファイルを取得、パスを格納する
-      for (const dir of dirs) {
-        const insideDir = fs.readdirSync(`./STORAGE/file/${dir}`);
-        for (const f of insideDir) {
-          totalSize += fs.statSync(path.join(`./STORAGE/file/${dir}`, f)).size;
-        }
-      }
+      const totalSize = await ServiceServer.StorageUsage();
 
       return {
         message: "Server storage usage fetched",
