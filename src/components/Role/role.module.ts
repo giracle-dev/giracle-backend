@@ -4,19 +4,14 @@ import CompareRoleLevelToRole from "../../Utils/CompareRoleLevelToRole";
 import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
 import CalculateRoleLevel from "../../Utils/CalculateRoleLevel";
 import { db } from "../..";
+import { ServiceRole } from "./role.service";
 
 export const role = new Elysia({ prefix: "/role" })
   .use(CheckToken)
   .get(
     "/search",
     async ({ query: { name } }) => {
-      const roles = await db.roleInfo.findMany({
-        where: {
-          name: {
-            contains: name,
-          },
-        },
-      });
+      const roles = await ServiceRole.Search(name);
 
       return {
         message: "Role searched",
@@ -33,54 +28,17 @@ export const role = new Elysia({ prefix: "/role" })
       },
     },
   )
-  .get(
-    "/get-info/:id",
-    async ({ params: { id } }) => {
-      const role = await db.roleInfo.findUnique({
-        where: {
-          id,
-        },
-      });
-      //ロールが存在しない
-      if (!role) {
-        throw status(404, "Role not found");
-      }
-
-      return {
-        message: "Role fetched",
-        data: role,
-      };
-    },
-    {
-      params: t.Object({
-        id: t.String({ minLength: 1 }),
-      }),
-      detail: {
-        description: "ロール情報を取得します",
-        tags: ["Role"],
-      },
-    },
-  )
 
   .use(checkRoleTerm)
 
   .put(
     "/create",
     async ({ body: { roleName, rolePower }, _userId, server }) => {
-      //ロールレベルの計算
-      const levelFromThis = CalculateRoleLevel(rolePower);
-      const userRoleLevel = await getUsersRoleLevel(_userId);
-      if (userRoleLevel <= levelFromThis) {
-        throw status(400, "Role level not enough");
-      }
-
-      const newRole = await db.roleInfo.create({
-        data: {
-          name: roleName,
-          createdUserId: _userId,
-          ...rolePower,
-        },
-      });
+      const newRole = await ServiceRole.Create(
+        roleName,
+        rolePower,
+        _userId,
+      );
 
       //WSで通知
       server?.publish(
@@ -114,27 +72,11 @@ export const role = new Elysia({ prefix: "/role" })
   .post(
     "/update",
     async ({ body: { roleId, roleData }, _userId, server }) => {
-      if (roleId === "HOST") throw status(400, "You cannot update HOST role");
-      //事前にロールの存在と送信者のロールレベルが足りるか確認
-      if (await CompareRoleLevelToRole(_userId, roleId) === false) {
-        throw status(400, "Role level not enough or role not found");
-      }
-      //更新予定のロールレベルが送信者のロールレベルを超えていないか確認
-      const roleLevelIfUpdated = CalculateRoleLevel(roleData);
-      const userRoleLevel = await getUsersRoleLevel(_userId);
-      if (userRoleLevel < roleLevelIfUpdated) {
-        throw status(400, "Role level not enough");
-      }
-
-      const roleUpdated = await db.roleInfo.update({
-        where: {
-          id: roleId,
-        },
-        data: {
-          createdUserId: _userId,
-          ...roleData,
-        },
-      });
+      const roleUpdated = await ServiceRole.Update(
+        roleId,
+        roleData,
+        _userId,
+      );
 
       //WSで通知
       server?.publish(
@@ -170,33 +112,7 @@ export const role = new Elysia({ prefix: "/role" })
   .post(
     "/link",
     async ({ body: { userId, roleId }, _userId, server }) => {
-      //デフォルトのロールはリンク不可
-      if (roleId === "MEMBER" || roleId === "HOST") {
-        throw status(400, "You cannot link default role");
-      }
-
-      //送信者のロールレベルが足りるか確認
-      if (!(await CompareRoleLevelToRole(_userId, roleId))) {
-        throw status(400, "Role level not enough or role not found");
-      }
-      //リンク済みか確認
-      const checkRoleLinked = await db.roleLink.findFirst({
-        where: {
-          userId, //指定のユーザーId
-          roleId,
-        },
-      });
-      //リンク済みならエラー
-      if (checkRoleLinked !== null) {
-        throw status(400, "Role already linked");
-      }
-
-      await db.roleLink.create({
-        data: {
-          userId, //指定のユーザーId
-          roleId,
-        },
-      });
+      await ServiceRole.Link(userId, roleId, _userId);
 
       //WSで通知
       server?.publish(
@@ -223,22 +139,7 @@ export const role = new Elysia({ prefix: "/role" })
   .post(
     "/unlink",
     async ({ body: { userId, roleId }, _userId, server }) => {
-      //デフォルトのロールはリンク取り消し不可
-      if (roleId === "MEMBER" || roleId === "HOST") {
-        throw status(400, "You cannot unlink default role");
-      }
-
-      //送信者のロールレベルが足りるか確認
-      if (!(await CompareRoleLevelToRole(_userId, roleId))) {
-        throw status(400, "Role level not enough or role not found");
-      }
-
-      await db.roleLink.deleteMany({
-        where: {
-          userId, //指定のユーザーId
-          roleId,
-        },
-      });
+      await ServiceRole.Unlink(userId, roleId, _userId);
 
       //WSで通知
       server?.publish(
@@ -264,23 +165,7 @@ export const role = new Elysia({ prefix: "/role" })
   .delete(
     "/delete",
     async ({ body: { roleId }, _userId, server }) => {
-      //送信者のロールレベルが足りるか確認
-      if (!(await CompareRoleLevelToRole(_userId, roleId))) {
-        throw status(400, "Role level not enough or role not found");
-      }
-
-      //ユーザーのロール付与情報を全削除
-      await db.roleLink.deleteMany({
-        where: {
-          roleId,
-        },
-      });
-      //ロール情報を削除
-      await db.roleInfo.delete({
-        where: {
-          id: roleId,
-        },
-      });
+      await ServiceRole.Delete(roleId, _userId);
 
       //WSで通知
       server?.publish(
@@ -307,11 +192,7 @@ export const role = new Elysia({ prefix: "/role" })
   .get(
     "/:roleId",
     async ({ params: { roleId } }) => {
-      const role = await db.roleInfo.findUnique({
-        where: {
-          id: roleId,
-        },
-      });
+      const role = await ServiceRole.GetInfo(roleId);
 
       //ロールが存在しない
       if (role === null) {
@@ -336,12 +217,7 @@ export const role = new Elysia({ prefix: "/role" })
   .get(
     "/list",
     async () => {
-      const roles = await db.roleInfo.findMany();
-
-      //ロールが存在しない
-      if (roles === null) {
-        throw status(404, "Roles not found");
-      }
+      const roles = await ServiceRole.List();
 
       return {
         message: "Role list",
