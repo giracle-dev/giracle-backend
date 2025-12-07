@@ -6,9 +6,8 @@ import type { Message } from "../../../prisma/generated/client";
 import CalculateReactionTotal from "../../Utils/CalculateReactionTotal";
 import { db } from "../..";
 
-export abstract class ServiceChannel {
-
-  static Join = async (channelId: string, _userId: string) => {
+export namespace ServiceChannel {
+  export const Join = async (channelId: string, _userId: string) => {
     //チャンネル参加データが存在するか確認
     const channelJoined = await db.channelJoin.findFirst({
       where: {
@@ -46,7 +45,7 @@ export abstract class ServiceChannel {
     return;
   };
 
-  static Leave = async (channelId: string, _userId: string) => {
+  export const Leave = async (channelId: string, _userId: string) => {
     //チャンネル参加データが存在するか確認
     const channelJoinData = await db.channelJoin.findFirst({
       where: {
@@ -78,7 +77,7 @@ export abstract class ServiceChannel {
     });
   };
 
-  static GetInfo = async (channelId: string, _userId: string) => {
+  export const GetInfo = async (channelId: string, _userId: string) => {
     //チャンネルを見られないようなユーザーだと存在しないとしてエラーを出す
     if (!(await CheckChannelVisibility(channelId, _userId))) {
       throw status(404, "Channel not found");
@@ -104,7 +103,7 @@ export abstract class ServiceChannel {
     return channelData;
   };
 
-  static List = async (_userId: string) => {
+  export const List = async (_userId: string) => {
     //ロール閲覧制限のないチャンネルリストから取得
     const channelList = await db.channel.findMany({
       where: {
@@ -160,25 +159,25 @@ export abstract class ServiceChannel {
     //重複を取り除く
     const mergedChannels = [...channelList, ...channelsLimited];
     //channelIdをキーにしてMapに格納することで重複を排除
-    const uniqueChannelsMap = new Map<string, typeof mergedChannels[0]>();
-    mergedChannels.forEach((channel) => {
+    const uniqueChannelsMap = new Map<string, (typeof mergedChannels)[0]>();
+    for (const channel of mergedChannels) {
       uniqueChannelsMap.set(channel.id, channel);
-    });
+    }
     //配列化
     const uniqueChannels = Array.from(uniqueChannelsMap.values());
 
     return uniqueChannels;
   };
 
-  static GetHistory = async (
+  export const GetHistory = async (
     channelId: string,
     body: {
-        messageIdFrom?: string | undefined;
-        messageTimeFrom?: string | undefined;
-        fetchLength?: number | undefined;
-        fetchDirection?: "older" | "newer" | undefined;
+      messageIdFrom?: string | undefined;
+      messageTimeFrom?: string | undefined;
+      fetchLength?: number | undefined;
+      fetchDirection?: "older" | "newer" | undefined;
     } | null,
-    _userId: string
+    _userId: string,
   ) => {
     //チャンネルへのアクセス権限があるか調べる
     if (!(await CheckChannelVisibility(channelId, _userId))) {
@@ -211,8 +210,7 @@ export abstract class ServiceChannel {
     }
 
     //基準のメッセージIdか時間指定があるなら時間を取得、取得設定として設定
-    let optionDate: { createdAt: { lte: Date } | { gte: Date } } | null =
-      null;
+    let optionDate: { createdAt: { lte: Date } | { gte: Date } } | null = null;
     if (messageDataFrom !== null) {
       //基準のメッセージIdによる取得データがあるなら
       //取得時間方向に合わせて設定を指定
@@ -383,7 +381,7 @@ export abstract class ServiceChannel {
     };
   };
 
-  static Search = async (query: string, _userId: string) => {
+  export const Search = async (query: string, _userId: string) => {
     //閲覧できるチャンネルをId配列で取得
     const channelViewable = await GetUserViewableChannel(_userId);
     const channelIdsViewable = channelViewable.map((c) => c.id);
@@ -403,13 +401,17 @@ export abstract class ServiceChannel {
     return channelInfos;
   };
 
-  static Invite = async (channelId: string, targetUserId: string, _userId: string) => {
+  export const Invite = async (
+    channelId: string,
+    targetUserId: string,
+    _userId: string,
+  ) => {
     //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
     const requestedUsersChannelJoin = await db.channelJoin.findFirst({
       where: {
         userId: _userId,
-        channelId
-      }
+        channelId,
+      },
     });
     if (!requestedUsersChannelJoin) {
       throw status(403, "You are not joined this channel");
@@ -437,13 +439,17 @@ export abstract class ServiceChannel {
     return;
   };
 
-  static Kick = async (channelId: string, targetUserId: string, _userId: string) => {
+  export const Kick = async (
+    channelId: string,
+    targetUserId: string,
+    _userId: string,
+  ) => {
     //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
     const requestedUsersChannelJoin = await db.channelJoin.findFirst({
       where: {
         userId: _userId,
-        channelId
-      }
+        channelId,
+      },
     });
     if (!requestedUsersChannelJoin) {
       throw status(403, "You are not joined this channel");
@@ -460,7 +466,7 @@ export abstract class ServiceChannel {
     return;
   };
 
-  static Update = async (
+  export const Update = async (
     channelId: string,
     name: string | undefined,
     description: string | undefined,
@@ -554,7 +560,11 @@ export abstract class ServiceChannel {
     return channelDataUpdated;
   };
 
-  static Create = async (channelName: string, description: string, _userId: string) => {
+  export const Create = async (
+    channelName: string,
+    description: string,
+    _userId: string,
+  ) => {
     const newChannel = await db.channel.create({
       data: {
         name: channelName,
@@ -570,7 +580,7 @@ export abstract class ServiceChannel {
     return newChannel;
   };
 
-  static Delete = async (channelId: string) => {
+  export const Delete = async (channelId: string) => {
     //チャンネルの存在を確認
     const channel = await db.channel.findUnique({
       where: {
@@ -615,5 +625,4 @@ export abstract class ServiceChannel {
 
     return;
   };
-
 }
