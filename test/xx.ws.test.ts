@@ -1,17 +1,18 @@
 import { describe, expect, it } from "bun:test";
 import { Elysia } from "elysia";
-
-import { PrismaClient } from "@prisma/client";
 import { user } from "../src/components/User/user.module";
 import { wsHandler } from "../src/ws";
+import { PrismaClient } from "../prisma/generated/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 
 describe("ws", async () => {
   //インスタンス生成
   const app = new Elysia().use(user).use(wsHandler).listen(0);
   //テスト用DBインスタンス生成
-  const dbTest = new PrismaClient({
-    datasources: { db: { url: "file:./test.db" } },
+  const adapter = new PrismaLibSql({
+    url: process.env.DATABASE_URL || "file:./test.db",
   });
+  const dbTest = new PrismaClient({ adapter });
 
   //ここでログインして処理
   const tokenRes = await app.handle(
