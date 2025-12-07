@@ -1,4 +1,4 @@
-import {PrismaClient} from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { db } from "..";
 
 /**
@@ -7,23 +7,26 @@ import { db } from "..";
  * @param myUserId 自分がリアクションしているかどうかを調べるためのユーザーId
  * @constructor
  */
-export default async function CalculateReactionTotal(messageId: string, myUserId: string): Promise<
+export default async function CalculateReactionTotal(
+  messageId: string,
+  myUserId: string,
+): Promise<
   {
-    emojiCode: string,
-    count: number,
-    includingYou: boolean
+    emojiCode: string;
+    count: number;
+    includingYou: boolean;
   }[]
 > {
   //結果用JSON
-  const emojiTotalJson:{
-    emojiCode: string,
-    count: number,
-    includingYou: boolean
+  const emojiTotalJson: {
+    emojiCode: string;
+    count: number;
+    includingYou: boolean;
   }[] = [];
 
   //絵文字リアクションを取得、総合数計算
   const reactionSummary = await db.messageReaction.groupBy({
-    by: ['messageId', 'emojiCode'], // messageIdとemojiCodeでグループ化
+    by: ["messageId", "emojiCode"], // messageIdとemojiCodeでグループ化
     where: {
       messageId: { in: [messageId] }, // 取得したメッセージIDに限定
     },

@@ -30,11 +30,7 @@ export const role = new Elysia({ prefix: "/role" })
   .put(
     "/create",
     async ({ body: { roleName, rolePower }, _userId, server }) => {
-      const newRole = await ServiceRole.Create(
-        roleName,
-        rolePower,
-        _userId,
-      );
+      const newRole = await ServiceRole.Create(roleName, rolePower, _userId);
 
       //WSで通知
       server?.publish(
@@ -68,11 +64,7 @@ export const role = new Elysia({ prefix: "/role" })
   .post(
     "/update",
     async ({ body: { roleId, roleData }, _userId, server }) => {
-      const roleUpdated = await ServiceRole.Update(
-        roleId,
-        roleData,
-        _userId,
-      );
+      const roleUpdated = await ServiceRole.Update(roleId, roleData, _userId);
 
       //WSで通知
       server?.publish(

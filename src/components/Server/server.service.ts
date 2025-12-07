@@ -1,9 +1,9 @@
+import fs from "node:fs";
 import { unlink } from "node:fs/promises";
 import * as path from "node:path";
-import fs from "node:fs";
 import { status } from "elysia";
-import { db } from "../..";
 import sharp from "sharp";
+import { db } from "../..";
 
 export namespace ServiceServer {
   export const Config = async () => {

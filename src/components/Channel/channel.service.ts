@@ -1,10 +1,10 @@
-import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
-import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 import { status } from "elysia";
 import { imageSize } from "image-size";
+import { db } from "../..";
 import type { Message } from "../../../prisma/generated/client";
 import CalculateReactionTotal from "../../Utils/CalculateReactionTotal";
-import { db } from "../..";
+import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
+import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 
 export namespace ServiceChannel {
   export const Join = async (channelId: string, _userId: string) => {

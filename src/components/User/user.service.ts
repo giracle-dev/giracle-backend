@@ -1,11 +1,11 @@
 import crypto from "node:crypto";
 import { unlink } from "node:fs/promises";
 import { status } from "elysia";
-import { db } from "../..";
-import { userWSInstance } from "../../ws";
-import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import sharp from "sharp";
+import { db } from "../..";
+import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
+import { userWSInstance } from "../../ws";
 
 export namespace ServiceUser {
   export const SignUp = async (

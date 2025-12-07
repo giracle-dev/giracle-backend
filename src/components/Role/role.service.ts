@@ -1,8 +1,8 @@
 import { status } from "elysia";
 import { db } from "../..";
 import CalculateRoleLevel from "../../Utils/CalculateRoleLevel";
-import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
 import CompareRoleLevelToRole from "../../Utils/CompareRoleLevelToRole";
+import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
 
 export namespace ServiceRole {
   export const Search = async (name: string) => {

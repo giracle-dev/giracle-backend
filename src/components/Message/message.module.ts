@@ -1,6 +1,6 @@
 import Elysia, { file, t } from "elysia";
-import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import { db } from "../..";
+import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import { ServiceMessage } from "./message.service";
 
 export const message = new Elysia({ prefix: "/message" })

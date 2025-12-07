@@ -1,7 +1,7 @@
 import Elysia, { status, t, file } from "elysia";
+import { db } from "../..";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
-import { db } from "../..";
 import { ServiceUser } from "./user.service";
 
 export const user = new Elysia({ prefix: "/user" })
