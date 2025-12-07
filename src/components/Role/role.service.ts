@@ -4,9 +4,8 @@ import CalculateRoleLevel from "../../Utils/CalculateRoleLevel";
 import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
 import CompareRoleLevelToRole from "../../Utils/CompareRoleLevelToRole";
 
-export abstract class ServiceRole {
-  
-  static Search = async (name: string) => {
+export namespace ServiceRole {
+  export const Search = async (name: string) => {
     const roles = await db.roleInfo.findMany({
       where: {
         name: {
@@ -18,7 +17,7 @@ export abstract class ServiceRole {
     return roles;
   };
 
-  static Create = async (
+  export const Create = async (
     roleName: string,
     rolePower: {
       manageServer?: boolean;
@@ -27,7 +26,7 @@ export abstract class ServiceRole {
       manageUser?: boolean;
       manageEmoji?: boolean;
     },
-    _userId: string
+    _userId: string,
   ) => {
     //ロールレベルの計算
     const levelFromThis = CalculateRoleLevel(rolePower);
@@ -47,7 +46,7 @@ export abstract class ServiceRole {
     return newRole;
   };
 
-  static Update = async (
+  export const Update = async (
     roleId: string,
     roleData: {
       manageServer?: boolean;
@@ -58,11 +57,11 @@ export abstract class ServiceRole {
       name: string;
       color: string;
     },
-    _userId: string
+    _userId: string,
   ) => {
     if (roleId === "HOST") throw status(400, "You cannot update HOST role");
     //事前にロールの存在と送信者のロールレベルが足りるか確認
-    if (await CompareRoleLevelToRole(_userId, roleId) === false) {
+    if ((await CompareRoleLevelToRole(_userId, roleId)) === false) {
       throw status(400, "Role level not enough or role not found");
     }
     //更新予定のロールレベルが送信者のロールレベルを超えていないか確認
@@ -85,7 +84,11 @@ export abstract class ServiceRole {
     return roleUpdated;
   };
 
-  static Link = async (userId: string, roleId: string, _userId: string) => {
+  export const Link = async (
+    userId: string,
+    roleId: string,
+    _userId: string,
+  ) => {
     //デフォルトのロールはリンク不可
     if (roleId === "MEMBER" || roleId === "HOST") {
       throw status(400, "You cannot link default role");
@@ -117,7 +120,11 @@ export abstract class ServiceRole {
     return;
   };
 
-  static Unlink = async (userId: string, roleId: string, _userId: string) => {
+  export const Unlink = async (
+    userId: string,
+    roleId: string,
+    _userId: string,
+  ) => {
     //デフォルトのロールはリンク取り消し不可
     if (roleId === "MEMBER" || roleId === "HOST") {
       throw status(400, "You cannot unlink default role");
@@ -138,7 +145,7 @@ export abstract class ServiceRole {
     return;
   };
 
-  static Delete = async (roleId: string, _userId: string) => {
+  export const Delete = async (roleId: string, _userId: string) => {
     //送信者のロールレベルが足りるか確認
     if (!(await CompareRoleLevelToRole(_userId, roleId))) {
       throw status(400, "Role level not enough or role not found");
@@ -160,7 +167,7 @@ export abstract class ServiceRole {
     return;
   };
 
-  static GetInfo = async (id: string) => {
+  export const GetInfo = async (id: string) => {
     const role = await db.roleInfo.findUnique({
       where: {
         id,
@@ -174,9 +181,8 @@ export abstract class ServiceRole {
     return role;
   };
 
-  static List = async () => {
+  export const List = async () => {
     const roles = await db.roleInfo.findMany();
     return roles;
-  }
-
+  };
 }
