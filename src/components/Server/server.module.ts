@@ -11,7 +11,8 @@ export const server = new Elysia({ prefix: "/server" })
   .get(
     "/config",
     async () => {
-      const { config, isFirstUser, defaultJoinChannel} = await ServiceServer.Config();
+      const { config, isFirstUser, defaultJoinChannel } =
+        await ServiceServer.Config();
 
       return {
         message: "Server config fetched",
