@@ -1,15 +1,14 @@
 import { mkdir } from "node:fs/promises";
 import { unlink } from "node:fs/promises";
-import { type Message } from "../../../prisma/generated/client";
+import type { Message } from "../../../prisma/generated/client";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
 import sharp from "sharp";
 import { status } from "elysia";
 import { db } from "../..";
 
-export abstract class ServiceMessage {
-  
-  static Get = async (messageId: string, _userId: string) => {
+export namespace ServiceMessage {
+  export const Get = async (messageId: string, _userId: string) => {
     const messageData = await db.message.findUnique({
       where: {
         id: messageId,
@@ -21,14 +20,14 @@ export abstract class ServiceMessage {
     }
 
     //チャンネルの閲覧制限があるか確認してから返す
-    if (!await CheckChannelVisibility(messageData.channelId, _userId)) {
+    if (!(await CheckChannelVisibility(messageData.channelId, _userId))) {
       throw status(404, "Message not found");
     }
 
     return messageData;
   };
 
-  static GetNew = async (_userId: string) => {
+  export const GetNew = async (_userId: string) => {
     // ユーザーが参加しているチャンネルを取得
     const userChannelJoined = await db.channelJoin.findMany({
       where: {
@@ -79,10 +78,12 @@ export abstract class ServiceMessage {
         createdAt: true,
       },
       where: {
-        OR: latestTimes.map((lt) => ({
-          channelId: lt.channelId,
-          createdAt: lt._max.createdAt!,
-        })),
+        OR: latestTimes
+          .filter((lt) => lt._max.createdAt !== null)
+          .map((lt) => ({
+            channelId: lt.channelId,
+            createdAt: lt._max.createdAt as Date,
+          })),
       },
     });
     for (const newestMessage of newests) {
@@ -96,7 +97,8 @@ export abstract class ServiceMessage {
       //既読時間が存在するなら比較してBooleanを返す、ないならfalse
       if (targetReadTime) {
         JSONNews[channelId] =
-          newestMessage.createdAt.valueOf() > targetReadTime?.readTime.valueOf();
+          newestMessage.createdAt.valueOf() >
+          targetReadTime?.readTime.valueOf();
       } else {
         JSONNews[channelId] = false;
       }
@@ -105,7 +107,7 @@ export abstract class ServiceMessage {
     return JSONNews;
   };
 
-  static GetReadTime = async (_userId: string) => {
+  export const GetReadTime = async (_userId: string) => {
     const readTime = await db.messageReadTime.findMany({
       where: {
         userId: _userId,
@@ -119,7 +121,11 @@ export abstract class ServiceMessage {
     return readTime;
   };
 
-  static UpdateReadTime = async (channelId: string, readTime: Date, _userId: string) => {
+  export const UpdateReadTime = async (
+    channelId: string,
+    readTime: Date,
+    _userId: string,
+  ) => {
     //既読時間を取得して更新する必要があるか調べる
     const readTimeSaved = await db.messageReadTime.findUnique({
       where: {
@@ -156,18 +162,16 @@ export abstract class ServiceMessage {
     return readTimeUpdated;
   };
 
-  static Search = async (
+  export const Search = async (
     content: string | undefined,
     channelId: string | undefined,
     userId: string | undefined,
     hasUrlPreview: boolean | undefined,
     hasFileAttachment: boolean | undefined,
     loadIndex: number | undefined,
-    sort: "asc" | "desc" | undefined,
     _userId: string,
+    sort: "asc" | "desc" | undefined = "desc",
   ) => {
-    //デフォルトのソート順を設定
-    if (sort === undefined) sort = "desc";
     //読み込みインデックス指定があるならスキップするメッセ数を計算
     const messageSkipping = loadIndex ? (loadIndex - 1) * 50 : 0;
 
@@ -227,7 +231,11 @@ export abstract class ServiceMessage {
     return messages;
   };
 
-  static UploadFile = async (channelId: string, file: File, _userId: string) => {
+  export const UploadFile = async (
+    channelId: string,
+    file: File,
+    _userId: string,
+  ) => {
     //ファイルサイズが500MBを超える場合はエラー
     if (file.size > 1024 * 1024 * 500) {
       throw status(400, "File size is too large");
@@ -277,13 +285,13 @@ export abstract class ServiceMessage {
       },
       select: {
         id: true,
-      }
+      },
     });
 
     return fileData;
   };
 
-  static GetFile = async (fileId: string) => {
+  export const GetFile = async (fileId: string) => {
     const fileData = await db.messageFileAttached.findUnique({
       where: {
         id: fileId,
@@ -297,13 +305,13 @@ export abstract class ServiceMessage {
     return fileData;
   };
 
-  static Delete = async (messageId: string, _userId: string) => {
+  export const Delete = async (messageId: string, _userId: string) => {
     //取得
     const messageData = await db.message.findUnique({
       select: {
         id: true,
         userId: true,
-        channelId: true
+        channelId: true,
       },
       where: {
         id: messageId,
@@ -341,9 +349,7 @@ export abstract class ServiceMessage {
     });
     for (const file of fileData) {
       try {
-        await unlink(
-          `./STORAGE/file/${file.channelId}/${file.savedFileName}`,
-        );
+        await unlink(`./STORAGE/file/${file.channelId}/${file.savedFileName}`);
       } catch (e) {
         console.error("message.module :: /message/delete : 削除エラー->", e);
       }
@@ -377,7 +383,7 @@ export abstract class ServiceMessage {
     return messageData;
   };
 
-  static GetInbox = async (_userId: string) => {
+  export const GetInbox = async (_userId: string) => {
     //通知を取得する
     const inboxAll = await db.inbox.findMany({
       where: {
@@ -391,7 +397,7 @@ export abstract class ServiceMessage {
     return inboxAll;
   };
 
-  static ReadInbox = async (messageId: string, _userId: string) => {
+  export const ReadInbox = async (messageId: string, _userId: string) => {
     //通知を削除
     await db.inbox.delete({
       where: {
@@ -405,7 +411,7 @@ export abstract class ServiceMessage {
     return;
   };
 
-  static ClearInbox = async (_userId: string) => {
+  export const ClearInbox = async (_userId: string) => {
     //通知を全部削除
     await db.inbox.deleteMany({
       where: {
@@ -416,7 +422,12 @@ export abstract class ServiceMessage {
     return;
   };
 
-  static Reaction = async (messageId: string, channelId: string, emojiCode: string, _userId: string) => {
+  export const Reaction = async (
+    messageId: string,
+    channelId: string,
+    emojiCode: string,
+    _userId: string,
+  ) => {
     //自分のリアクションデータを取得して条件確認する
     const MyReactions = await db.messageReaction.findMany({
       where: {
@@ -446,7 +457,11 @@ export abstract class ServiceMessage {
     return reaction;
   };
 
-  static GetWhoReacted = async (messageId: string, emojiCode: string, _userId: string) => {
+  export const GetWhoReacted = async (
+    messageId: string,
+    emojiCode: string,
+    _userId: string,
+  ) => {
     //メッセージが存在するか確認
     const message = await db.message.findUnique({
       where: {
@@ -477,7 +492,11 @@ export abstract class ServiceMessage {
     return message;
   };
 
-  static DeleteEmojiReaction = async (messageId: string, emojiCode: string, _userId: string) => {
+  export const DeleteEmojiReaction = async (
+    messageId: string,
+    emojiCode: string,
+    _userId: string,
+  ) => {
     //自分のリアクションを取得して無ければエラー
     const hasMyReaction = await db.messageReaction.findFirst({
       where: {
@@ -500,12 +519,12 @@ export abstract class ServiceMessage {
     return reactionDeleted;
   };
 
-  static Send = async (
+  export const Send = async (
     channelId: string,
     message: string,
     fileIds: string[],
     replyingMessageId: string | undefined,
-    _userId: string
+    _userId: string,
   ) => {
     //メッセージが空白か改行しか含まれていないならエラー(ファイル添付があるなら除外)
     const spaceCount =
@@ -597,7 +616,11 @@ export abstract class ServiceMessage {
     return { messageSaved, messageReplyingTo, mentionedUserIds };
   };
 
-  static Edit = async (messageId: string, content: string, _userId: string) => {
+  export const Edit = async (
+    messageId: string,
+    content: string,
+    _userId: string,
+  ) => {
     const messageEditing = await db.message.findUnique({
       where: {
         id: messageId,
@@ -629,5 +652,4 @@ export abstract class ServiceMessage {
 
     return messageEditing;
   };
-
 }
