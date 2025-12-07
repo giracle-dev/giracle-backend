@@ -1,17 +1,20 @@
 import { describe, expect, it } from "bun:test";
-import { Cookie, Elysia } from "elysia";
+import { Elysia } from "elysia";
 
 import { execSync } from "node:child_process";
-import { PrismaClient } from "@prisma/client";
 import { user } from "../src/components/User/user.module";
+import { PrismaClient } from "../prisma/generated/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { app } from "../src";
 
 describe("auth", async () => {
   //インスタンス生成
-  const app = new Elysia().use(user);
+  //const app = new Elysia().use(user);
   //テスト用DBインスタンス生成
-  const dbTest = new PrismaClient({
-    datasources: { db: { url: "file:./test.db" } },
+  const adapter = new PrismaLibSql({
+    url: process.env.DATABASE_URL || "file:./test.db",
   });
+  const dbTest = new PrismaClient({ adapter });
   //DBのマイグレーション
   execSync("bunx prisma db push --accept-data-loss");
 
@@ -31,6 +34,7 @@ describe("auth", async () => {
 
   //DBの初期シード挿入
   execSync("bunx prisma db seed");
+  execSync("bun ./prisma/seeds.ts");
   //テスト用の招待コードをここで作成しておく
   await dbTest.invitation.create({
     data: {
