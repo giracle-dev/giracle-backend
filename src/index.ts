@@ -1,6 +1,6 @@
 import { cors } from "@elysiajs/cors";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
-import { Elysia } from "elysia";
+import { Elysia, status } from "elysia";
 import { PrismaClient } from "../prisma/generated/client";
 import { rateLimiter } from "./Middlewares";
 
@@ -32,8 +32,9 @@ export const app = new Elysia()
   )
   .use(Bun.env.RATE_LIMIT_ENABLED === "true" ? rateLimiter : undefined)
   .onError(({ error, code }) => {
-    if (code === "NOT_FOUND") return "Not Found :(";
+    if (code === "NOT_FOUND") return status(404, "Not Found :(");
     console.error("index :: エラー->", error);
+    return status(500, "somethin went wrong :(");
   })
   .use(wsHandler)
   .use(user)
