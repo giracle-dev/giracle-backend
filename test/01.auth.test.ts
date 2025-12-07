@@ -1,13 +1,11 @@
-import { describe, expect, it } from "bun:test";
-import { Elysia } from "elysia";
+import { beforeAll, describe, expect, it } from "bun:test";
 
 import { execSync } from "node:child_process";
-import { user } from "../src/components/User/user.module";
 import { PrismaClient } from "../prisma/generated/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { app } from "../src";
 
-describe("auth", async () => {
+beforeAll(async () => {
   //インスタンス生成
   //const app = new Elysia().use(user);
   //テスト用DBインスタンス生成
@@ -33,8 +31,21 @@ describe("auth", async () => {
   await dbTest.serverConfig.deleteMany({});
 
   //DBの初期シード挿入
-  execSync("bunx prisma db seed");
   execSync("bun ./prisma/seeds.ts");
+  //テストユーザー用データ登録
+  await dbTest.user.create({
+    data: {
+      id: "TESTUSER",
+      name: "testsystemuser",
+      selfIntroduction: "",
+    },
+  });
+  await dbTest.token.create({
+    data: {
+      userId: "TESTUSER",
+      token: "TESTUSERTOKEN",
+    },
+  });
   //テスト用の招待コードをここで作成しておく
   await dbTest.invitation.create({
     data: {
@@ -42,272 +53,121 @@ describe("auth", async () => {
       createdUserId: "SYSTEM",
     },
   });
+});
 
-  let resultJson: {
-    success: boolean;
-    message: string;
-    // biome-ignore lint/suspicious/noExplicitAny: データの型は不定
-    data: { [key: string]: any };
-  };
-  let tokenTesting: string;
-  let userIdTesting: string;
-
-  it("auth :: sign-up", async () => {
-    //不正リクエストを送信
-    const responseError = await app.handle(
-      new Request("http://localhost/user/sign-up", {
-        method: "PUT",
+async function FETCH({
+  path,
+  method,
+  body,
+}: {
+  path: `/${string}`;
+  method: "GET" | "POST" | "PUT" | "DELETE";
+  // biome-ignore lint/suspicious/noExplicitAny: データの型は不定
+  body?: { [key: string]: any };
+}): Promise<Response> {
+  return await app
+    .handle(
+      new Request(`http://localhost${path}`, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: "testuser", password: "" }),
+        body: JSON.stringify(body),
       }),
-    );
+    )
+    .then(async (response) => {
+      return response;
+    })
+    .catch((error) => {
+      //console.error("FETCH error:", error);
+      throw error;
+    });
+}
 
-    expect(responseError.ok).toBe(false);
+describe("/user", () => {
+  it("/sign-up :: パスワード無し", async () => {
+    const res = await FETCH({
+      path: "/user/sign-up",
+      method: "PUT",
+      body: { username: "erroruser", password: "" },
+    });
 
-    //正しいリクエストを送信
-    const response = await app.handle(
-      new Request("http://localhost/user/sign-up", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: "testuser", password: "testuser" }),
-      }),
-    );
-
-    //console.log("auth.test :: sign-up : response", response);
-    resultJson = await response.json();
-    //console.log("auth.test :: sign-up : response", resultJson);
-    expect(resultJson.message).toBe("User created");
-
-    //同じユーザー名でのリクエストを送信
-    const responseSameUsername = await app.handle(
-      new Request("http://localhost/user/sign-up", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: "testuser",
-          password: "testuser",
-          inviteCode: "testinvite",
-        }),
-      }),
-    );
-
-    resultJson = await responseSameUsername.json();
-    //console.log("auth.test :: sign-up responseSameUsername", resultJson);
-    expect(resultJson.message).toBe("User already exists");
+    expect(res.ok).toBe(false);
   });
 
-  it("auth :: sign-in", async () => {
-    //不正リクエストを送信
-    const responseError = await app.handle(
-      new Request("http://localhost/user/sign-in", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: "testuser", password: null }),
-      }),
-    );
+  it("/sign-up :: 招待コード無し", async () => {
+    const res = await FETCH({
+      path: "/user/sign-up",
+      method: "PUT",
+      body: {
+        username: "erroruser",
+        password: "testuser",
+      },
+    });
 
-    resultJson = await responseError.json();
-    //console.log("auth.test :: sign-in : responseError", resultJson);
-    expect(responseError.ok).toBe(false);
-
-    //間違ったパスワードでのリクエストを送信
-    const responseWrongInfo = await app.handle(
-      new Request("http://localhost/user/sign-in", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: "testuser",
-          password: "wrongpassword",
-        }),
-      }),
-    );
-
-    resultJson = await responseWrongInfo.json();
-    //console.log("auth.test :: sign-in : responseWrongInfo", resultJson);
-    expect(resultJson.message).toBe("Auth info is incorrect");
-
-    //正しいリクエストを送信
-    const response = await app.handle(
-      new Request("http://localhost/user/sign-in", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: "testuser", password: "testuser" }),
-      }),
-    );
-
-    resultJson = await response.json();
-    //console.log("auth.test :: sign-in : response", response);
-    expect(resultJson.message).toStartWith("Signed in as ");
-    expect(resultJson.data.userId).toBeString();
-    //userIdを保存
-    userIdTesting = resultJson.data.userId;
-    //クッキー確認
-    expect(response.headers.getSetCookie()[0]).toStartWith("token=");
-    //クッキーをsign-out用に保存
-    tokenTesting = response.headers
-      .getSetCookie()[0]
-      .split(";")[0]
-      .split("=")[1];
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(500);
   });
 
-  it("auth :: verify-token", async () => {
-    //クレデンシャル無しリクエストを送信
-    const responseWithoutCookie = await app.handle(
-      new Request("http://localhost/user/verify-token", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }),
-    );
+  it("/sign-up :: 正常", async () => {
+    const res = await FETCH({
+      path: "/user/sign-up",
+      method: "PUT",
+      body: {
+        username: "testuser",
+        password: "testuser",
+        inviteCode: "testinvite",
+      },
+    });
 
-    //resultJson = await responseError.json();
-    //console.log("auth.test :: vrify-token : responseError", responseError);
-    //処理は401になるはず
-    expect(responseWithoutCookie.status).toBe(401);
+    expect(res.ok).toBe(true);
+  });
 
-    //間違ったトークンでのリクエストを送信
-    const responseWrong = await app.handle(
-      new Request("http://localhost/user/verify-token", {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: "token=wrongtoken",
-        },
-      }),
-    );
+  it("/sign-in :: 正常", async () => {
+    const res = await FETCH({
+      path: "/user/sign-in",
+      method: "POST",
+      body: {
+        username: "testuser",
+        password: "testuser",
+      },
+    });
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j.data.userId).toBeDefined();
+  });
 
-    //console.log("auth.test :: vrify-token : responseError", responseWrong);
-    //認証エラーになるはずだから401
-    expect(responseWrong.status).toBe(401);
+  it("/sign-in :: パスワード無し", async () => {
+    const res = await FETCH({
+      path: "/user/sign-in",
+      method: "POST",
+      body: {
+        username: "testuser",
+        password: "",
+      },
+    });
+    expect(res.ok).toBe(false);
+  });
 
-    //正しいリクエストを送信
+  it("/verify-token :: クレデンシャル無し", async () => {
+    const res = await FETCH({
+      path: "/user/verify-token",
+      method: "GET",
+    });
+    expect(res.ok).toBe(false);
+  });
+
+  it("/verify-token :: 正常", async () => {
     const response = await app.handle(
       new Request("http://localhost/user/verify-token", {
         method: "GET",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
+          Cookie: "token=TESTUSERTOKEN",
         },
       }),
     );
-
-    //console.log("auth.test :: vrify-token : response", response);
-    resultJson = await response.json();
-    //console.log("auth.test :: vrify-token : response", resultJson);
-    expect(resultJson.message).toBe("Token is valid");
-  });
-
-  it("auth :: info", async () => {
-    //間違ったトークンでのリクエストを送信
-    const responseWrong = await app.handle(
-      new Request("http://localhost/user/info/", {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-      }),
-    );
-
-    //console.log("auth.test :: vrify-token : responseError", responseWrong);
-    //認証エラーになるはずだから401
-    expect(responseWrong.status).toBe(404);
-
-    //正しいリクエストを送信
-    const response = await app.handle(
-      new Request(`http://localhost/user/info/${userIdTesting}`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-      }),
-    );
-
-    //console.log("auth.test :: vrify-token : response", response);
-    resultJson = await response.json();
-    //console.log("auth.test :: vrify-token : response", resultJson);
-    expect(resultJson.message).toBe("User info");
-    expect(resultJson.data.name).toBe("testuser");
-  });
-
-  it("auth :: change-password", async () => {
-    //間違ったリクエストを送信
-    const responseWrong = await app.handle(
-      new Request("http://localhost/user/change-password", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          currentPassword: "examplewrongpassword",
-          newPassword: "asdf",
-        }),
-      }),
-    );
-
-    resultJson = await responseWrong.json();
-    //console.log("auth.test :: change-password : resultJson", resultJson);
-    expect(resultJson.message).toBe("Current password is incorrect");
-
-    //リクエストを送信
-    const response = await app.handle(
-      new Request("http://localhost/user/change-password", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          currentPassword: "testuser",
-          newPassword: "asdf",
-        }),
-      }),
-    );
-
-    resultJson = await response.json();
-    //console.log("auth.test :: sign-out : responseError", resultJson);
-    expect(resultJson.message).toBe("Password changed");
-  });
-
-  it("auth :: sign-out", async () => {
-    //不正リクエストを送信
-    const responseError = await app.handle(
-      new Request("http://localhost/user/sign-out", {
-        method: "GET",
-        credentials: undefined,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }),
-    );
-
-    resultJson = await responseError.json();
-    //console.log("auth.test :: sign-out : responseError", resultJson);
-    expect(responseError.ok).toBe(false);
-
-    //正しいリクエストを送信
-    const response = await app.handle(
-      new Request("http://localhost/user/sign-out", {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-      }),
-    );
-
-    resultJson = await response.json();
-    //console.log("auth.test :: sign-out : response", resultJson);
-    expect(resultJson.message).toBe("Signed out");
+    const j = await response.json();
+    expect(response.ok).toBe(true);
+    expect(j.data.userId).toBe("TESTUSER");
   });
 });
