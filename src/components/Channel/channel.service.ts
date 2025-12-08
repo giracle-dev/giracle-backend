@@ -470,6 +470,11 @@ export namespace ServiceChannel {
     targetUserId: string,
     _userId: string,
   ) => {
+    //自分はKickできない
+    if (targetUserId === _userId) {
+      throw status(400, "You cannot kick yourself");
+    }
+
     //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
     const requestedUsersChannelJoin = await db.channelJoin.findFirst({
       where: {
