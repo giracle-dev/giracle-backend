@@ -1,343 +1,555 @@
-import { describe, expect, it } from "bun:test";
-import { Elysia } from "elysia";
+import { beforeAll, describe, expect, it } from "bun:test";
+import { PrismaClient } from "../prisma/generated/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { FETCH } from "./util";
 
-import { PrismaClient } from "@prisma/client";
-import { channel } from "../src/components/Channel/channel.module";
-import { user } from "../src/components/User/user.module";
-
-describe("channel", async () => {
-  //インスタンス生成
-  const app = new Elysia().use(user).use(channel);
-
-  // ----------------- テスト用DB整備 ---------------------------
-  const dbTest = new PrismaClient({
-    datasources: { db: { url: "file:./test.db" } },
+beforeAll(async () => {
+  const adapter = new PrismaLibSql({
+    url: process.env.DATABASE_URL || "file:./test.db",
   });
-  await dbTest.message.deleteMany({});
-  await dbTest.channel.deleteMany({});
-  // -----------------------------------------------------------
+  const dbTest = new PrismaClient({ adapter });
+  //await dbTest.message.deleteMany({});
+  //await dbTest.channel.deleteMany({});
+  await dbTest.channel.createMany({
+    data: [
+      {
+        id: "TESTCHANNEL1",
+        name: "General",
+        description: "General channel",
+        createdUserId: "TESTUSER",
+      },
+      {
+        id: "TESTCHANNEL2",
+        name: "Random",
+        description: "Random discussions",
+        createdUserId: "TESTUSER",
+      },
+    ],
+  });
+  await dbTest.message.createMany({
+    data: [
+      {
+        id: "TESTMESSAGE1",
+        channelId: "TESTCHANNEL1",
+        content: "Welcome to the General channel!",
+        userId: "TESTUSER",
+      },
+      {
+        channelId: "TESTCHANNEL1",
+        content: "Feel free to chat here.",
+        userId: "TESTUSER",
+      },
+    ],
+  });
+  await dbTest.channelJoin.createMany({
+    data: [
+      {
+        userId: "TESTUSER",
+        channelId: "TESTCHANNEL1",
+      },
+      {
+        userId: "TESTUSER2",
+        channelId: "TESTCHANNEL2",
+      },
+    ],
+  });
+  await dbTest.roleInfo.create({
+    data: {
+      id: "ChannelManage",
+      name: "Channel Manage Role",
+      createdUserId: "TESTUSER",
+      manageChannel: true,
+    },
+  });
+  await dbTest.roleLink.create({
+    data: {
+      userId: "TESTUSER",
+      roleId: "ChannelManage",
+    },
+  });
+});
 
-  let resultJson: {
-    message: string;
-    // biome-ignore lint/suspicious/noExplicitAny: データの型は不定
-    data: { [key: string]: any };
-  };
-  let createdChannelId: string;
-
-  //ここでログインして処理
-  const tokenRes = await app.handle(
-    new Request("http://localhost/user/sign-in", {
+describe("/channel/join", async () => {
+  it("正常", async () => {
+    const res = await FETCH({
+      path: "/channel/join",
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: "testuser",
-        password: "asdf",
-      }),
-    }),
-  );
-  //console.log("channel.test :: sign-in : tokenRes->", await tokenRes.json());
-  const tokenTesting = tokenRes.headers
-    .getSetCookie()[0]
-    .split(";")[0]
-    .split("=")[1];
-
-  it("channel :: create", async () => {
-    //不正リクエストを送信
-    const responseError = await app.handle(
-      new Request("http://localhost/channel/create", {
-        method: "PUT",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          channelName: "",
-          description: "これはテスト用のチャンネルです。",
-        }),
-      }),
-    );
-    expect(responseError.ok).toBe(false);
-
-    //正しいリクエストを送信
-    const response = await app.handle(
-      new Request("http://localhost/channel/create", {
-        method: "PUT",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          channelName: "testChannel",
-          description: "これはテスト用のチャンネルです。",
-        }),
-      }),
-    );
-    //console.log("channel.test : create : response", response);
-    resultJson = await response.json();
-    //console.log("auth.test :: sign-up : response", resultJson);
-    expect(resultJson.message).toBe("Channel created");
-    expect(resultJson.data.channelId).toBeString();
-
-    //作成したチャンネルIDを保存
-    createdChannelId = resultJson.data.channelId;
-
-    //テスト用のサンプル履歴をここで作る
-    await dbTest.message.create({
-      data: {
-        content: "これはテスト用のメッセージです。",
-        channelId: createdChannelId,
-        userId: "SYSTEM",
+      body: {
+        userId: "TESTUSER",
+        channelId: "TESTCHANNEL2",
       },
     });
-    await dbTest.message.create({
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j).toEqual({
+      message: "Channel joined",
       data: {
-        content: "これは２個目",
-        channelId: createdChannelId,
-        userId: "SYSTEM",
+        channelId: "TESTCHANNEL2",
       },
     });
   });
 
-  it("channel :: join", async () => {
-    //不正リクエストを送信
-    const responseError = await app.handle(
-      new Request("http://localhost/channel/join", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          channelId: "asdf",
-        }),
-      }),
-    );
-    //console.log("channel.test : join : responseError", responseError);
-    expect(responseError.ok).toBe(false);
-    expect(responseError.status).toBe(404);
-
-    //正しいリクエストを送信
-    const response = await app.handle(
-      new Request("http://localhost/channel/join", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          channelId: createdChannelId,
-        }),
-      }),
-    );
-    //console.log("channel.test : create : response", response);
-    resultJson = await response.json();
-    //console.log("auth.test :: sign-up : response", resultJson);
-    expect(resultJson.message).toBe("Channel joined");
-
-    //また参加しようとしているリクエストを送信
-    const responseAgain = await app.handle(
-      new Request("http://localhost/channel/join", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          channelId: createdChannelId,
-        }),
-      }),
-    );
-    expect(responseAgain.ok).toBe(false);
-    expect(responseAgain.status).toBe(400);
+  it("再参加してみる", async () => {
+    const res = await FETCH({
+      path: "/channel/join",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+        channelId: "TESTCHANNEL2",
+      },
+    });
+    const t = await res.text();
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(400);
+    expect(t).toBe("Already joined");
   });
 
-  it("channel :: leave", async () => {
-    //不正リクエストを送信
-    const responseError = await app.handle(
-      new Request("http://localhost/channel/leave", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          channelId: "asdf",
-        }),
-      }),
-    );
-    //console.log("channel.test : leave : responseError", responseError);
-    expect(responseError.ok).toBe(false);
-    expect(responseError.status).toBe(400);
+  it("存在しないチャンネルに参加しようとする", async () => {
+    const res = await FETCH({
+      path: "/channel/join",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+        channelId: "NON_EXISTENT_CHANNEL",
+      },
+    });
+    const t = await res.text();
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(404);
+    expect(t).toBe("Channel not found");
+  });
+});
 
-    //正しいリクエストを送信
-    const response = await app.handle(
-      new Request("http://localhost/channel/leave", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          channelId: createdChannelId,
-        }),
-      }),
-    );
-    //console.log("channel.test : create : response", response);
-    resultJson = await response.json();
-    //console.log("auth.test :: sign-up : response", resultJson);
-    expect(resultJson.message).toBe("Channel left");
-
-    //また脱退しようとしているリクエストを送信
-    const responseAgain = await app.handle(
-      new Request("http://localhost/channel/leave", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          channelId: createdChannelId,
-        }),
-      }),
-    );
-    expect(responseAgain.ok).toBe(false);
-    expect(responseAgain.status).toBe(400);
+describe("/channel/leave", async () => {
+  it("正常", async () => {
+    const res = await FETCH({
+      path: "/channel/leave",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+        channelId: "TESTCHANNEL2",
+      },
+    });
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j).toEqual({
+      message: "Channel left",
+    });
   });
 
-  it("channel :: get list", async () => {
-    //正しいリクエストを送信
-    const response = await app.handle(
-      new Request("http://localhost/channel/list", {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-      }),
-    );
-    resultJson = await response.json();
-    //console.log("channel.test : get list : response", resultJson);
-    expect(resultJson.message).toBe("Channel list ready");
-    expect(resultJson.data[0].name).toBe("testChannel");
+  it("また抜けてみる", async () => {
+    const res = await FETCH({
+      path: "/channel/leave",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+        channelId: "TESTCHANNEL2",
+      },
+    });
+    const t = await res.text();
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(404);
+    expect(t).toBe("You are not joined this channel");
   });
 
-  it("channel :: get history", async () => {
-    //不正リクエストを送信
-    const responseError = await app.handle(
-      new Request(`http://localhost/channel/get-history/${createdChannelId}`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          messageTimeFrom: "ErrorTimeString",
-        }),
-      }),
-    );
-    //console.log("channel.test : get-history : response", response);
-    expect(responseError.ok).toBe(false);
-    expect(responseError.status).toBe(400);
+  it("存在しないチャンネル", async () => {
+    const res = await FETCH({
+      path: "/channel/leave",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+        channelId: "TESTCHANNEL999",
+      },
+    });
+    const t = await res.text();
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(404);
+    expect(t).toBe("You are not joined this channel");
+  });
+});
 
-    //不正リクエストを送信
-    const responseUnknwown = await app.handle(
-      new Request(`http://localhost/channel/get-history/${createdChannelId}`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          messageTimeFrom: "2024-8-1",
-        }),
-      }),
-    );
-    //console.log("channel.test : get-history : response", responseUnknwown);
-    expect(responseUnknwown.ok).toBe(false);
-    expect(responseUnknwown.status).toBe(404);
-
-    //正しいリクエストを送信
-    const response = await app.handle(
-      new Request(`http://localhost/channel/get-history/${createdChannelId}`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-      }),
-    );
-    //console.log("channel.test : get-history : response", response);
-    resultJson = await response.json();
-    //console.log("channel.test : get-history : response", resultJson);
-    expect(resultJson.message).toBe("History fetched");
-    expect(resultJson.data.atTop).toBe(true);
-    expect(resultJson.data.atEnd).toBe(true);
-
-    const messageTimeForTesting: string = resultJson.data.history[1].createdAt;
-
-    //正しいPart2、時間を指定しての取得
-    const responseWithTime = await app.handle(
-      new Request(`http://localhost/channel/get-history/${createdChannelId}`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({
-          messageTimeFrom: messageTimeForTesting,
-        }),
-      }),
-    );
-    //console.log("channel.test : get-history : responseWithTime", responseWithTime);
-    resultJson = await responseWithTime.json();
-    //console.log("channel.test : get-history : responseWithTime json", resultJson);
-    expect(resultJson.data.history.length).toBe(1);
-    expect(resultJson.data.atTop).toBe(true);
-    expect(resultJson.data.atEnd).toBe(false);
+describe("/channel/get-info/:channelId", async () => {
+  it("正常", async () => {
+    const res = await FETCH({
+      path: "/channel/get-info/TESTCHANNEL1",
+      method: "GET",
+      body: {
+        userId: "TESTUSER",
+      },
+    });
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j.data.id).toBe("TESTCHANNEL1");
+    expect(j.data.name).toBe("General");
+    expect(j.data.description).toBe("General channel");
+    expect(j.data.createdUserId).toBe("TESTUSER");
+    expect(j.data).toContainKey("ChannelViewableRole");
   });
 
-  it("channel :: delete", async () => {
-    //不正リクエストを送信
-    const responseError = await app.handle(
-      new Request("http://localhost/channel/delete", {
-        method: "PUT",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({ channelId: "asdf" }),
-      }),
-    );
-    expect(responseError.ok).toBe(false);
+  it("存在しないチャンネル", async () => {
+    const res = await FETCH({
+      path: "/channel/get-info/TESTCHANNEL999",
+      method: "GET",
+      body: {
+        userId: "TESTUSER",
+      },
+    });
+    const t = await res.text();
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(404);
+    expect(t).toBe("Channel not found");
+  });
+});
 
-    //正しいリクエストを送信
-    const response = await app.handle(
-      new Request("http://localhost/channel/delete", {
-        method: "DELETE",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `token=${tokenTesting}`,
-        },
-        body: JSON.stringify({ channelId: createdChannelId }),
-      }),
-    );
-    resultJson = await response.json();
-    //console.log("channel.test : delete : response", resultJson);
-    expect(resultJson.message).toBe("Channel deleted");
+describe("/channel/list", async () => {
+  it("正常", async () => {
+    const res = await FETCH({
+      path: "/channel/list",
+      method: "GET",
+      body: {
+        userId: "TESTUSER",
+      },
+    });
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j.data.length).toBe(2);
+    expect(j.data[0].id).toBe("TESTCHANNEL1");
+    expect(j.data[0].name).toBe("General");
+  });
+});
+
+describe("/channel/get-history/:channelId", async () => {
+  it("正常", async () => {
+    const res = await FETCH({
+      path: "/channel/get-history/TESTCHANNEL1",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+      },
+    });
+    const j = await res.json();
+    console.log("j:", j);
+    expect(res.ok).toBe(true);
+    expect(j.data.history[0].content).toBe("Welcome to the General channel!");
+  });
+
+  it("正常 :: 違うポジションから", async () => {
+    const res = await FETCH({
+      path: "/channel/get-history/TESTCHANNEL1",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+        messageIdFrom: "TESTMESSAGE1",
+      },
+    });
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j.data.history[0].content).toBe("Welcome to the General channel!");
+  });
+
+  it("存在しないチャンネル", async () => {
+    const res = await FETCH({
+      path: "/channel/get-history/TESTCHANNEL999",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+      },
+    });
+    const t = await res.text();
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(404);
+    expect(t).toBe("Channel not found");
+  });
+});
+
+describe("/channel/search", async () => {
+  it("正常", async () => {
+    const res = await FETCH({
+      path: "/channel/search/?query=Gen",
+      method: "GET",
+    });
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j.data.length).toBe(1);
+    expect(j.data[0].id).toBe("TESTCHANNEL1");
+  });
+
+  it("存在しないチャンネル", async () => {
+    const res = await FETCH({
+      path: "/channel/search/?query=123",
+      method: "GET",
+    });
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j.data.length).toBe(0);
+  });
+
+  it("クエリー無し", async () => {
+    const res = await FETCH({
+      path: "/channel/search",
+      method: "GET",
+    });
+    expect(res.ok).toBe(false);
+  });
+});
+
+describe("/channel/invite", async () => {
+  it("存在しないユーザー", async () => {
+    const res = await FETCH({
+      path: "/channel/invite",
+      method: "POST",
+      body: {
+        userId: "TESTUSER999",
+        channelId: "TESTCHANNEL1",
+      },
+    });
+    const t = await res.text();
+    expect(t).toBe("User not found");
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(404);
+  });
+
+  it("存在しないチャンネル", async () => {
+    const res = await FETCH({
+      path: "/channel/invite",
+      method: "POST",
+      body: {
+        userId: "TESTUSER2",
+        channelId: "TESTCHANNEL999",
+      },
+    });
+    const t = await res.text();
+    expect(t).toBe("You are not joined this channel or channel not found");
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(403);
+  });
+
+  it("自分がいないチャンネルへ招待", async () => {
+    const res = await FETCH({
+      path: "/channel/invite",
+      method: "POST",
+      body: {
+        userId: "TESTUSER2",
+        channelId: "TESTCHANNEL2",
+      },
+    });
+    const t = await res.text();
+    expect(t).toBe("You are not joined this channel or channel not found");
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(403);
+  });
+
+  it("正常", async () => {
+    const res = await FETCH({
+      path: "/channel/invite",
+      method: "POST",
+      body: {
+        userId: "TESTUSER2",
+        channelId: "TESTCHANNEL1",
+      },
+    });
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j.message).toBe("User invited");
+  });
+
+  it("同じチャンネルに再度招待", async () => {
+    const res = await FETCH({
+      path: "/channel/invite",
+      method: "POST",
+      body: {
+        userId: "TESTUSER2",
+        channelId: "TESTCHANNEL1",
+      },
+    });
+    const t = await res.text();
+    expect(t).toBe("Already joined");
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(400);
+  });
+
+  it("ロールを持たない人による招待", async () => {
+    const res = await FETCH({
+      path: "/channel/invite",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+        channelId: "TESTCHANNEL2",
+      },
+      useSecondaryUser: true,
+    });
+    const t = await res.text();
+    expect(t).toBe("Role level not enough");
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(401);
+  });
+});
+
+describe("/channel/kick", async () => {
+  it("自分をキック", async () => {
+    const res = await FETCH({
+      path: "/channel/kick",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+        channelId: "TESTCHANNEL1",
+      },
+    });
+    const t = await res.text();
+    expect(t).toBe("You cannot kick yourself");
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(400);
+  });
+
+  it("自分が参加していないチャンネルからキック", async () => {
+    const res = await FETCH({
+      path: "/channel/kick",
+      method: "POST",
+      body: {
+        userId: "TESTUSER2",
+        channelId: "TESTCHANNEL2",
+      },
+    });
+    const t = await res.text();
+    expect(t).toBe("You are not joined this channel");
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(403);
+  });
+
+  it("正常", async () => {
+    const res = await FETCH({
+      path: "/channel/kick",
+      method: "POST",
+      body: {
+        userId: "TESTUSER2",
+        channelId: "TESTCHANNEL1",
+      },
+    });
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j.message).toBe("User kicked");
+  });
+});
+
+describe("/channel/update", async () => {
+  it("存在しないチャンネル", async () => {
+    const res = await FETCH({
+      path: "/channel/update",
+      method: "POST",
+      body: {
+        channelId: "TESTCHANNEL999",
+        name: "Updated",
+      },
+    });
+    const t = await res.text();
+    expect(t).toBe("Channel not found");
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(404);
+  });
+
+  it("何も渡さない", async () => {
+    const res = await FETCH({
+      path: "/channel/update",
+      method: "POST",
+      body: {
+        channelId: "TESTCHANNEL1",
+      },
+    });
+    const t = await res.text();
+    expect(t).toBe("There is no data to update");
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(400);
+  });
+
+  it("正常", async () => {
+    const res = await FETCH({
+      path: "/channel/update",
+      method: "POST",
+      body: {
+        channelId: "TESTCHANNEL1",
+        name: "Updated general",
+      },
+    });
+    const j = await res.json();
+    expect(j.message).toBe("Channel updated");
+    expect(j.data.name).toBe("Updated general");
+    expect(res.ok).toBe(true);
+  });
+
+  it("正常 :: 一応戻す", async () => {
+    const res = await FETCH({
+      path: "/channel/update",
+      method: "POST",
+      body: {
+        channelId: "TESTCHANNEL1",
+        name: "General",
+      },
+    });
+    const j = await res.json();
+    expect(j.message).toBe("Channel updated");
+    expect(j.data.name).toBe("General");
+    expect(res.ok).toBe(true);
+  });
+});
+
+//作成したチャンネルをすぐ削除テストで使うためにグローバル変数で保持しておく
+let TEST__NEW_CREATED_CHANNELID = "";
+describe("/channel/create", async () => {
+  it("名前空欄", async () => {
+    const res = await FETCH({
+      path: "/channel/create",
+      method: "PUT",
+      body: {
+        channelName: "",
+        description: "new created channel",
+      },
+    });
+    expect(res.ok).toBe(false);
+  });
+
+  it("正常", async () => {
+    const res = await FETCH({
+      path: "/channel/create",
+      method: "PUT",
+      body: {
+        channelName: "new channel",
+        description: "new created channel",
+      },
+    });
+    const j = await res.json();
+    expect(j.message).toBe("Channel created");
+    expect(j.data).toContainKey("channelId");
+    expect(res.ok).toBe(true);
+    //グローバル変数に保存
+    TEST__NEW_CREATED_CHANNELID = j.data.channelId;
+  });
+});
+
+describe("/channel/delete", async () => {
+  it("正常", async () => {
+    const res = await FETCH({
+      path: "/channel/delete",
+      method: "DELETE",
+      body: {
+        channelId: TEST__NEW_CREATED_CHANNELID,
+      },
+    });
+    const j = await res.json();
+    expect(j.message).toBe("Channel deleted");
+    expect(res.ok).toBe(true);
+  });
+
+  it("存在しないチャンネルを削除", async () => {
+    const res = await FETCH({
+      path: "/channel/delete",
+      method: "DELETE",
+      body: {
+        channelId: "TESTCHANNEL999",
+      },
+    });
+    const t = await res.text();
+    expect(t).toBe("Channel not found");
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(404);
   });
 });
