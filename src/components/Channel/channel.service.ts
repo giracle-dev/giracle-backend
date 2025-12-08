@@ -54,7 +54,7 @@ export namespace ServiceChannel {
       },
     });
     if (channelJoinData === null) {
-      throw status(400, "You are not joined this channel");
+      throw status(404, "You are not joined this channel");
     }
 
     //既読時間データを削除
