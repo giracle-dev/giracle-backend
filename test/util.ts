@@ -1,40 +1,34 @@
-import { PrismaClient } from "@prisma/client";
+import { app } from "../src";
 
-const dbTest = new PrismaClient({
-  datasources: { db: { url: "file:./test.db" } },
-});
-
-export const Userinfo = {};
-
-export const getMyuserinfo = async () => {
-  return await dbTest.user.findFirst({
-    where: {
-      name: "testuser",
-    },
-  });
-};
-
-export const joinAnyChannel = async () => {
-  let channel = await dbTest.channel.findFirst();
-  const user = await getMyuserinfo();
-
-  //ユーザーがいない場合はエラー
-  if (user === null) throw Error("No user");
-  //チャンネルがない場合は作成する
-  if (channel === null) {
-    channel = await dbTest.channel.create({
-      data: {
-        name: "testchannel",
-        createdUserId: user.id,
-        description: "testchannel description",
-      },
+export async function FETCH({
+  path,
+  method,
+  body,
+  excludeCredential = false,
+}: {
+  path: `/${string}`;
+  method: "GET" | "POST" | "PUT" | "DELETE";
+  // biome-ignore lint/suspicious/noExplicitAny: データの型は不定
+  body?: { [key: string]: any };
+  excludeCredential?: boolean;
+}): Promise<Response> {
+  return await app
+    .handle(
+      new Request(`http://localhost${path}`, {
+        method,
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: excludeCredential ? "" : "token=TESTUSERTOKEN",
+        },
+        body: JSON.stringify(body),
+      }),
+    )
+    .then(async (response) => {
+      return response;
+    })
+    .catch((error) => {
+      //console.error("FETCH error:", error);
+      throw error;
     });
-  }
-
-  return await dbTest.channelJoin.create({
-    data: {
-      userId: user.id,
-      channelId: channel.id,
-    },
-  });
-};
+}

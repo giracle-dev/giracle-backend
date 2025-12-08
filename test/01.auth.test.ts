@@ -4,6 +4,7 @@ import { execSync } from "node:child_process";
 import { PrismaClient } from "../prisma/generated/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { app } from "../src";
+import { FETCH } from "./util";
 
 beforeAll(async () => {
   //インスタンス生成
@@ -55,39 +56,13 @@ beforeAll(async () => {
   });
 });
 
-async function FETCH({
-  path,
-  method,
-  body,
-}: {
-  path: `/${string}`;
-  method: "GET" | "POST" | "PUT" | "DELETE";
-  // biome-ignore lint/suspicious/noExplicitAny: データの型は不定
-  body?: { [key: string]: any };
-}): Promise<Response> {
-  return await app
-    .handle(
-      new Request(`http://localhost${path}`, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      }),
-    )
-    .then(async (response) => {
-      return response;
-    })
-    .catch((error) => {
-      //console.error("FETCH error:", error);
-      throw error;
-    });
-}
-
 describe("/user", () => {
   it("/sign-up :: パスワード無し", async () => {
     const res = await FETCH({
       path: "/user/sign-up",
       method: "PUT",
       body: { username: "erroruser", password: "" },
+      excludeCredential: true,
     });
 
     expect(res.ok).toBe(false);
@@ -101,10 +76,11 @@ describe("/user", () => {
         username: "erroruser",
         password: "testuser",
       },
+      excludeCredential: true,
     });
 
     expect(res.ok).toBe(false);
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(400);
   });
 
   it("/sign-up :: 正常", async () => {
@@ -116,6 +92,7 @@ describe("/user", () => {
         password: "testuser",
         inviteCode: "testinvite",
       },
+      excludeCredential: true,
     });
 
     expect(res.ok).toBe(true);
@@ -129,6 +106,7 @@ describe("/user", () => {
         username: "testuser",
         password: "testuser",
       },
+      excludeCredential: true,
     });
     const j = await res.json();
     expect(res.ok).toBe(true);
@@ -151,6 +129,7 @@ describe("/user", () => {
     const res = await FETCH({
       path: "/user/verify-token",
       method: "GET",
+      excludeCredential: true,
     });
     expect(res.ok).toBe(false);
   });
