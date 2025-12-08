@@ -34,18 +34,31 @@ beforeAll(async () => {
   //DBの初期シード挿入
   execSync("bun ./prisma/seeds.ts");
   //テストユーザー用データ登録
-  await dbTest.user.create({
-    data: {
-      id: "TESTUSER",
-      name: "testsystemuser",
-      selfIntroduction: "",
-    },
+  await dbTest.user.createMany({
+    data: [
+      {
+        id: "TESTUSER",
+        name: "testsystemuser",
+        selfIntroduction: "",
+      },
+      {
+        id: "TESTUSER2",
+        name: "testsystemuser2",
+        selfIntroduction: "",
+      },
+    ],
   });
-  await dbTest.token.create({
-    data: {
-      userId: "TESTUSER",
-      token: "TESTUSERTOKEN",
-    },
+  await dbTest.token.createMany({
+    data: [
+      {
+        userId: "TESTUSER",
+        token: "TESTUSERTOKEN",
+      },
+      {
+        userId: "TESTUSER2",
+        token: "TESTUSER2TOKEN",
+      },
+    ],
   });
   //テスト用の招待コードをここで作成しておく
   await dbTest.invitation.create({
