@@ -489,7 +489,7 @@ export namespace ServiceChannel {
     //チャンネル参加データを削除(退出させる)
     await db.channelJoin.deleteMany({
       where: {
-        userId: _userId,
+        userId: targetUserId,
         channelId,
       },
     });
