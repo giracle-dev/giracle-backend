@@ -75,18 +75,23 @@ export namespace ServiceRole {
     const roleLevelIfUpdated = CalculateRoleLevel(roleData);
     const userRoleLevel = await getUsersRoleLevel(_userId);
     if (userRoleLevel < roleLevelIfUpdated) {
-      throw status(400, "Role level not enough");
+      throw status(400, "Role power is too powerful");
     }
 
-    const roleUpdated = await db.roleInfo.update({
-      where: {
-        id: roleId,
-      },
-      data: {
-        createdUserId: _userId,
-        ...roleData,
-      },
-    });
+    const roleUpdated = await db.roleInfo
+      .update({
+        where: {
+          id: roleId,
+        },
+        data: {
+          createdUserId: _userId,
+          ...roleData,
+        },
+      })
+      .catch((e) => {
+        console.error("role.service :: Update :: db error", e);
+        throw status(500, "Database error");
+      });
 
     return roleUpdated;
   };
