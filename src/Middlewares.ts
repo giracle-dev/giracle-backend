@@ -50,26 +50,18 @@ const checkRoleTerm = new Elysia({ name: "checkRoleTerm" })
         async beforeHandle({ _userId }) {
           //console.log("Middlewares :: checkRoleTerm : 送信者のユーザーId->", _userId);
 
-          //管理者権限を持つユーザーなら問答無用で通す
-          const isAdmin = await db.roleLink.findFirst({
-            where: {
-              userId: _userId,
-              role: {
-                manageServer: true,
-              },
-            },
-          });
-          if (isAdmin !== null) {
-            return;
-          }
-
-          //該当権限を持つロール付与情報を検索
+          //該当権限を持つロール付与情報あるいはサーバー管理権限を検索
           const roleLink = await db.roleLink.findFirst({
             where: {
               userId: _userId,
-              role: {
-                [roleTerm]: true,
-              },
+              OR: [
+                {
+                  role: { [roleTerm]: true },
+                },
+                {
+                  role: { manageServer: true },
+                },
+              ],
             },
           });
 
