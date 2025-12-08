@@ -35,13 +35,20 @@ export namespace ServiceRole {
       throw status(400, "Role level not enough");
     }
 
-    const newRole = await db.roleInfo.create({
-      data: {
-        name: roleName,
-        createdUserId: _userId,
-        ...rolePower,
-      },
-    });
+    const newRole = await db.roleInfo
+      .create({
+        data: {
+          name: roleName,
+          createdUserId: _userId,
+          ...rolePower,
+        },
+      })
+      .catch((e) => {
+        if (e.code === "P2002") {
+          throw status(400, "Role name already exists");
+        }
+        throw status(500, "Database error");
+      });
 
     return newRole;
   };
