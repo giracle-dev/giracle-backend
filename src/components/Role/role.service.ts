@@ -32,7 +32,7 @@ export namespace ServiceRole {
     const levelFromThis = CalculateRoleLevel(rolePower);
     const userRoleLevel = await getUsersRoleLevel(_userId);
     if (userRoleLevel <= levelFromThis) {
-      throw status(400, "Role level not enough");
+      throw status(400, "Role power is too powerful");
     }
 
     const newRole = await db.roleInfo
