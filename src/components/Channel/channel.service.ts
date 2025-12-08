@@ -504,6 +504,16 @@ export namespace ServiceChannel {
     isArchived: boolean | undefined,
     viewableRole: string[] | undefined,
   ) => {
+    //チャンネルの存在を確認
+    const channel = await db.channel.findUnique({
+      where: {
+        id: channelId,
+      },
+    });
+    if (channel === null) {
+      throw status(404, "Channel not found");
+    }
+
     //適用するデータ群のJSON
     const updatingValues: {
       name?: string;
