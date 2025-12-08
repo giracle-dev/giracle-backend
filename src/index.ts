@@ -34,6 +34,8 @@ export const app = new Elysia()
   .onError(({ error, code }) => {
     if (code === "NOT_FOUND") return status(404, "Not Found :(");
     console.error("index :: エラー->", error);
+    if (typeof code === "number")
+      return status(code, error.response || "somethin went wrong :(");
     return status(500, "somethin went wrong :(");
   })
   .use(wsHandler)
