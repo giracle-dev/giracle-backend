@@ -416,25 +416,41 @@ export namespace ServiceChannel {
     targetUserId: string,
     _userId: string,
   ) => {
-    //このリクエストをしたユーザーがチャンネルに参加しているかどうかを確認
+    //このリクエストをしたユーザーがチャンネルに参加しているかどうかをチャンネル情報と共に確認
     const requestedUsersChannelJoin = await db.channelJoin.findFirst({
       where: {
         userId: _userId,
         channelId,
       },
-    });
-    if (!requestedUsersChannelJoin) {
-      throw status(403, "You are not joined this channel");
-    }
-
-    //対象ユーザーがすでに参加しているかどうかを確認
-    const targetUserJoinedData = await db.channelJoin.findFirst({
-      where: {
-        userId: targetUserId,
-        channelId,
+      include: {
+        channel: true,
       },
     });
-    if (targetUserJoinedData !== null) {
+    if (!requestedUsersChannelJoin || !requestedUsersChannelJoin.channel) {
+      throw status(403, "You are not joined this channel or channel not found");
+    }
+
+    //対象ユーザーの存在を参加情報とともに確認
+    const user = await db.user.findUnique({
+      where: {
+        id: targetUserId,
+      },
+      include: {
+        ChannelJoin: {
+          where: {
+            channelId,
+          },
+          select: {
+            userId: true,
+          },
+        },
+      },
+    });
+    if (!user) {
+      throw status(404, "User not found");
+    }
+    //対象ユーザーがすでに参加しているかどうかを確認
+    if (user.ChannelJoin.length > 0) {
       throw status(400, "Already joined");
     }
 
