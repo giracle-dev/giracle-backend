@@ -110,24 +110,37 @@ export namespace ServiceRole {
     if (!(await CompareRoleLevelToRole(_userId, roleId))) {
       throw status(400, "Role level not enough or role not found");
     }
-    //リンク済みか確認
-    const checkRoleLinked = await db.roleLink.findFirst({
+
+    //ユーザー存在とロールリンクの確認
+    const userWithRoleLink = await db.user.findUnique({
       where: {
-        userId, //指定のユーザーId
-        roleId,
+        id: userId,
+      },
+      include: {
+        RoleLink: {
+          where: {
+            roleId,
+          },
+        },
       },
     });
-    //リンク済みならエラー
-    if (checkRoleLinked !== null) {
+    if (!userWithRoleLink) {
+      throw status(404, "User not found");
+    }
+    if (userWithRoleLink.RoleLink.length > 0) {
       throw status(400, "Role already linked");
     }
 
-    await db.roleLink.create({
-      data: {
-        userId, //指定のユーザーId
-        roleId,
-      },
-    });
+    await db.roleLink
+      .create({
+        data: {
+          userId, //指定のユーザーId
+          roleId,
+        },
+      })
+      .catch((e) => {
+        throw status(500, "Database error");
+      });
 
     return;
   };
