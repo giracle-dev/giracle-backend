@@ -514,6 +514,16 @@ export namespace ServiceChannel {
       throw status(404, "Channel not found");
     }
 
+    //更新データが一つも無い場合はエラー
+    if (
+      name === undefined &&
+      description === undefined &&
+      isArchived === undefined &&
+      viewableRole === undefined
+    ) {
+      throw status(400, "There is no data to update");
+    }
+
     //適用するデータ群のJSON
     const updatingValues: {
       name?: string;
