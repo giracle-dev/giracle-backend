@@ -179,6 +179,16 @@ export namespace ServiceChannel {
     } | null,
     _userId: string,
   ) => {
+    //チャンネルの存在確認
+    const channel = await db.channel.findUnique({
+      where: {
+        id: channelId,
+      },
+      select: { id: true },
+    });
+    if (channel === null) {
+      throw status(404, "Channel not found");
+    }
     //チャンネルへのアクセス権限があるか調べる
     if (!(await CheckChannelVisibility(channelId, _userId))) {
       throw status(403, "You don't have permission to access this channel");
