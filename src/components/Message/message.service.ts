@@ -541,7 +541,7 @@ export namespace ServiceMessage {
     emojiCode: string,
     _userId: string,
   ) => {
-    const messageWithRection = await db.message.findUnique({
+    const messageWithReaction = await db.message.findUnique({
       where: {
         id: messageId,
       },
@@ -555,18 +555,18 @@ export namespace ServiceMessage {
       },
     });
     //メッセージの存在確認
-    if (messageWithRection === null) {
+    if (messageWithReaction === null) {
       throw status(404, "Message not found");
     }
     //自分による指定リアクションの存在確認
-    if (messageWithRection.MessageReaction.length === 0) {
+    if (messageWithReaction.MessageReaction.length === 0) {
       throw status(404, "Reaction does not exists");
     }
 
     //リアクションを削除
     const reactionDeleted = await db.messageReaction.delete({
       where: {
-        id: messageWithRection.MessageReaction[0].id,
+        id: messageWithReaction.MessageReaction[0].id,
       },
     });
 
