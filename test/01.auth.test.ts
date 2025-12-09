@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, it } from "bun:test";
 
 import { execSync } from "node:child_process";
-import { PrismaClient } from "../prisma/generated/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaClient } from "../prisma/generated/client";
 import { app } from "../src";
 import { FETCH } from "./util";
 

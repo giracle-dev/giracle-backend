@@ -180,15 +180,17 @@ export namespace ServiceRole {
       throw status(400, "Role level not enough or role not found");
     }
 
-    await db.roleLink.deleteMany({
-      where: {
-        userId, //指定のユーザーId
-        roleId,
-      },
-    }).catch((e) => {
-      console.error("role.service :: Unlink :: db error", e);
-      throw status(500, "Database error");
-    });
+    await db.roleLink
+      .deleteMany({
+        where: {
+          userId, //指定のユーザーId
+          roleId,
+        },
+      })
+      .catch((e) => {
+        console.error("role.service :: Unlink :: db error", e);
+        throw status(500, "Database error");
+      });
 
     return;
   };

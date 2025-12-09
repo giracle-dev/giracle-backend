@@ -1,9 +1,9 @@
 import { describe, expect, it } from "bun:test";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { Elysia } from "elysia";
+import { PrismaClient } from "../prisma/generated/client";
 import { user } from "../src/components/User/user.module";
 import { wsHandler } from "../src/ws";
-import { PrismaClient } from "../prisma/generated/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
 
 describe("ws", async () => {
   //インスタンス生成

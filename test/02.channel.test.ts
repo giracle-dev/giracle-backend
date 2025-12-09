@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "bun:test";
-import { PrismaClient } from "../prisma/generated/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaClient } from "../prisma/generated/client";
 import { FETCH } from "./util";
 
 beforeAll(async () => {

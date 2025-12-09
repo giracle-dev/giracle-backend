@@ -136,8 +136,8 @@ export namespace ServiceMessage {
             channelId: channelId,
             userId: _userId,
           },
-        }
-      }
+        },
+      },
     });
     //チャンネルの存在確認
     if (channelWithReadtime === null) {
@@ -413,17 +413,22 @@ export namespace ServiceMessage {
 
   export const ReadInbox = async (messageId: string, _userId: string) => {
     //通知を削除
-    await db.inbox.delete({
-      where: {
-        messageId_userId: {
-          messageId,
-          userId: _userId,
+    await db.inbox
+      .delete({
+        where: {
+          messageId_userId: {
+            messageId,
+            userId: _userId,
+          },
         },
-      },
-    }).catch((e) => {
-      console.error("message.module :: /message/inbox/read : 削除エラー->", e);
-      throw status(404, "Inbox not found");
-    });
+      })
+      .catch((e) => {
+        console.error(
+          "message.module :: /message/inbox/read : 削除エラー->",
+          e,
+        );
+        throw status(404, "Inbox not found");
+      });
 
     return;
   };
@@ -461,9 +466,9 @@ export namespace ServiceMessage {
           select: {
             id: true,
             emojiCode: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
     //メッセージが存在しなければエラー
     if (targetMessage === null) {
@@ -495,7 +500,7 @@ export namespace ServiceMessage {
     messageId: string,
     emojiCode: string,
     _userId: string,
-    cursor: number = 1,
+    cursor = 1,
   ) => {
     //スキップ数と取得数を設定
     const skip = (cursor - 1) * 30;
@@ -545,9 +550,9 @@ export namespace ServiceMessage {
           where: {
             userId: _userId,
             emojiCode,
-          }
-        }
-      }
+          },
+        },
+      },
     });
     //メッセージの存在確認
     if (messageWithRection === null) {
@@ -571,6 +576,7 @@ export namespace ServiceMessage {
   export const Send = async (
     channelId: string,
     message: string,
+    // biome-ignore lint/style/useDefaultParameterLast: 許して
     fileIds: string[] = [],
     replyingMessageId: string | undefined,
     _userId: string,

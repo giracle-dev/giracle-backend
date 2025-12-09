@@ -16,7 +16,7 @@ beforeAll(async () => {
       channelId: "TESTCHANNEL1",
       id: {
         not: "TESTMESSAGE1",
-      }
+      },
     },
   });
 
@@ -55,35 +55,35 @@ beforeAll(async () => {
     create: {
       id: "CHANNELVIEWABLEROLE1",
       name: "channelviewablerole1",
-      createdUserId: "SYSTEM"
+      createdUserId: "SYSTEM",
     },
-    update: {}
+    update: {},
   });
   await dbTest.channelViewableRole.upsert({
     where: {
       channelId_roleId: {
         channelId: "TESTCHANNEL1",
         roleId: "CHANNELVIEWABLEROLE1",
-      }
+      },
     },
     create: {
       channelId: "TESTCHANNEL1",
       roleId: "CHANNELVIEWABLEROLE1",
     },
-    update: {}
+    update: {},
   });
   await dbTest.roleLink.upsert({
     where: {
       userId_roleId: {
         userId: "TESTUSER",
         roleId: "CHANNELVIEWABLEROLE1",
-      }
+      },
     },
     create: {
       userId: "TESTUSER",
       roleId: "CHANNELVIEWABLEROLE1",
     },
-    update: {}
+    update: {},
   });
 
   //通知検証用のInbox作成(２つ)
@@ -92,7 +92,7 @@ beforeAll(async () => {
       messageId_userId: {
         messageId: "TESTMESSAGE1",
         userId: "TESTUSER",
-      }
+      },
     },
     create: {
       type: "message",
@@ -106,7 +106,7 @@ beforeAll(async () => {
       messageId_userId: {
         messageId: "TESTMESSAGE1",
         userId: "TESTUSER2",
-      }
+      },
     },
     create: {
       type: "message",
@@ -162,7 +162,7 @@ describe("/message/get-new :: 既読時間無し", async () => {
     const j = await res.json();
     console.log("/message/get-new :: j->", j);
     expect(j.message).toBe("Fetched news");
-    expect(j.data["TESTCHANNEL1"]).toBeFalse();
+    expect(j.data.TESTCHANNEL1).toBeFalse();
   });
 
   it("正常 :: 第２ユーザーとして", async () => {
@@ -173,7 +173,7 @@ describe("/message/get-new :: 既読時間無し", async () => {
     });
     const j = await res.json();
     expect(j.message).toBe("Fetched news");
-    expect(j.data["TESTCHANNEL2"]).toBeFalse();
+    expect(j.data.TESTCHANNEL2).toBeFalse();
   });
 });
 
@@ -232,7 +232,7 @@ describe("/message/get-new :: 既読時間アリ", async () => {
     const j = await res.json();
     console.log("/message/get-new :: j->", j);
     expect(j.message).toBe("Fetched news");
-    expect(j.data["TESTCHANNEL1"]).toBeTrue();
+    expect(j.data.TESTCHANNEL1).toBeTrue();
   });
 
   it("正常 :: 第２ユーザーとして", async () => {
@@ -243,7 +243,7 @@ describe("/message/get-new :: 既読時間アリ", async () => {
     });
     const j = await res.json();
     expect(j.message).toBe("Fetched news");
-    expect(j.data["TESTCHANNEL2"]).toBeFalse();
+    expect(j.data.TESTCHANNEL2).toBeFalse();
   });
 });
 
@@ -334,7 +334,7 @@ describe("/message/inbox/read", async () => {
       method: "POST",
       body: {
         messageId: "TESTMESSAGE1",
-      }
+      },
     });
     const j = await res.json();
     expect(j.message).toBe("Inbox read");
@@ -347,7 +347,7 @@ describe("/message/inbox/read", async () => {
       method: "POST",
       body: {
         messageId: "TESTMESSAGE999",
-      }
+      },
     });
     const t = await res.text();
     expect(t).toBe("Inbox not found");
@@ -615,4 +615,4 @@ describe("/message/edit", async () => {
     expect(res.status).toBe(404);
     expect(res.ok).toBeFalse();
   });
-})
+});

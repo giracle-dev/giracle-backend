@@ -336,7 +336,7 @@ export const message = new Elysia({ prefix: "/message" })
         messageId,
         emojiCode,
         _userId,
-        cursor
+        cursor,
       );
 
       return {
@@ -470,9 +470,7 @@ export const message = new Elysia({ prefix: "/message" })
       body: t.Object({
         channelId: t.String({ minLength: 1 }),
         message: t.String(),
-        fileIds: t.Optional(
-          t.Array(t.String({ minLength: 1 }))
-        ),
+        fileIds: t.Optional(t.Array(t.String({ minLength: 1 }))),
         replyingMessageId: t.Optional(t.String()),
       }),
       detail: {
