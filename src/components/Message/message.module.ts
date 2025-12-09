@@ -330,12 +330,13 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .get(
     "/who-reacted",
-    async ({ query: { messageId, emojiCode, length }, _userId }) => {
+    async ({ query: { messageId, emojiCode, cursor }, _userId }) => {
       //リアクションしたユーザーを取得
       const messageWithReactions = await ServiceMessage.GetWhoReacted(
         messageId,
         emojiCode,
         _userId,
+        cursor
       );
 
       return {
@@ -347,7 +348,7 @@ export const message = new Elysia({ prefix: "/message" })
       query: t.Object({
         messageId: t.String({ minLength: 1 }),
         emojiCode: t.String({ minLength: 1 }),
-        length: t.Number({ minimum: 1, default: 5 }),
+        cursor: t.Optional(t.Number({ minimum: 1 })),
       }),
       detail: {
         description: "絵文字リアクションをしたユーザーを取得する",

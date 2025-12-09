@@ -495,7 +495,11 @@ export namespace ServiceMessage {
     messageId: string,
     emojiCode: string,
     _userId: string,
+    cursor: number = 1,
   ) => {
+    //スキップ数と取得数を設定
+    const skip = (cursor - 1) * 30;
+    const length = 30;
     //メッセージが存在するか確認
     const message = await db.message.findUnique({
       where: {
@@ -503,6 +507,7 @@ export namespace ServiceMessage {
       },
       include: {
         MessageReaction: {
+          skip: skip,
           take: length,
           select: {
             userId: true,
@@ -514,13 +519,13 @@ export namespace ServiceMessage {
       },
     });
     if (message === null) {
-      throw status(400, "Message not found or is private.");
+      throw status(400, "Message not found or is private");
     }
 
     //チャンネルの閲覧制限があるか確認
     const viewable = await CheckChannelVisibility(message.channelId, _userId);
     if (!viewable) {
-      throw status(400, "Message not found or is private.");
+      throw status(400, "Message not found or is private");
     }
 
     return message;
