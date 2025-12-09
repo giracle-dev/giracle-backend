@@ -375,7 +375,7 @@ export const message = new Elysia({ prefix: "/message" })
       );
 
       return {
-        message: "Reaction deleted.",
+        message: "Reaction deleted",
         data: reactionDeleted,
       };
     },
