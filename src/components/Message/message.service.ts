@@ -536,22 +536,32 @@ export namespace ServiceMessage {
     emojiCode: string,
     _userId: string,
   ) => {
-    //自分のリアクションを取得して無ければエラー
-    const hasMyReaction = await db.messageReaction.findFirst({
+    const messageWithRection = await db.message.findUnique({
       where: {
-        messageId,
-        userId: _userId,
-        emojiCode,
+        id: messageId,
       },
+      include: {
+        MessageReaction: {
+          where: {
+            userId: _userId,
+            emojiCode,
+          }
+        }
+      }
     });
-    if (hasMyReaction === null) {
+    //メッセージの存在確認
+    if (messageWithRection === null) {
+      throw status(404, "Message not found");
+    }
+    //自分による指定リアクションの存在確認
+    if (messageWithRection.MessageReaction.length === 0) {
       throw status(404, "Reaction does not exists");
     }
 
     //リアクションを削除
     const reactionDeleted = await db.messageReaction.delete({
       where: {
-        id: hasMyReaction.id,
+        id: messageWithRection.MessageReaction[0].id,
       },
     });
 
