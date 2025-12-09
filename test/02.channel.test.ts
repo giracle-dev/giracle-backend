@@ -26,20 +26,29 @@ beforeAll(async () => {
       },
     ],
   });
-  await dbTest.message.createMany({
-    data: [
-      {
-        id: "TESTMESSAGE1",
-        channelId: "TESTCHANNEL1",
-        content: "Welcome to the General channel!",
-        userId: "TESTUSER",
-      },
-      {
-        channelId: "TESTCHANNEL1",
-        content: "Feel free to chat here.",
-        userId: "TESTUSER",
-      },
-    ],
+  await dbTest.message.upsert({
+    where: {
+      id: "TESTMESSAGE1",
+    },
+    create: {
+      id: "TESTMESSAGE1",
+      channelId: "TESTCHANNEL1",
+      content: "Welcome to the General channel!",
+      userId: "TESTUSER",
+    },
+    update: {},
+  });
+  await dbTest.message.upsert({
+    where: {
+      id: "TESTMESSAGE2",
+    },
+    create: {
+      id: "TESTMESSAGE2",
+      channelId: "TESTCHANNEL2",
+      content: "Feel free to chat here.",
+      userId: "TESTUSER",
+    },
+    update: {},
   });
   await dbTest.channelJoin.createMany({
     data: [

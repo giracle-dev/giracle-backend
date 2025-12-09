@@ -22,11 +22,13 @@ beforeAll(async () => {
   await dbTest.password.deleteMany({});
   await dbTest.channelViewableRole.deleteMany({});
   await dbTest.channelJoin.deleteMany({});
+  await dbTest.inbox.deleteMany({});
   await dbTest.messageReadTime.deleteMany({});
+  await dbTest.messageReaction.deleteMany({});
   await dbTest.message.deleteMany({});
-  await dbTest.channel.deleteMany({});
   await dbTest.roleLink.deleteMany({});
   await dbTest.roleInfo.deleteMany({});
+  await dbTest.channel.deleteMany({});
   await dbTest.invitation.deleteMany({});
   await dbTest.user.deleteMany({});
   await dbTest.serverConfig.deleteMany({});
