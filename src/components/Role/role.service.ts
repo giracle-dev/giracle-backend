@@ -155,6 +155,26 @@ export namespace ServiceRole {
       throw status(400, "You cannot unlink default role");
     }
 
+    //ユーザー存在とロールリンクの確認
+    const targetUserWithRole = await db.user.findUnique({
+      where: {
+        id: userId,
+      },
+      include: {
+        RoleLink: {
+          where: {
+            roleId,
+          },
+        },
+      },
+    });
+    if (!targetUserWithRole) {
+      throw status(404, "User not found");
+    }
+    if (targetUserWithRole.RoleLink.length === 0) {
+      throw status(400, "Role not linked to user");
+    }
+
     //送信者のロールレベルが足りるか確認
     if (!(await CompareRoleLevelToRole(_userId, roleId))) {
       throw status(400, "Role level not enough or role not found");
@@ -165,6 +185,9 @@ export namespace ServiceRole {
         userId, //指定のユーザーId
         roleId,
       },
+    }).catch((e) => {
+      console.error("role.service :: Unlink :: db error", e);
+      throw status(500, "Database error");
     });
 
     return;
