@@ -1,15 +1,14 @@
 import { mkdir } from "node:fs/promises";
 import { unlink } from "node:fs/promises";
-import { type Message } from "../../../prisma/generated/client";
+import { status } from "elysia";
+import sharp from "sharp";
+import { db } from "../..";
+import type { Message } from "../../../prisma/generated/client";
 import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import GetUserViewableChannel from "../../Utils/GetUserViewableChannel";
-import sharp from "sharp";
-import { status } from "elysia";
-import { db } from "../..";
 
-export abstract class ServiceMessage {
-  
-  static Get = async (messageId: string, _userId: string) => {
+export namespace ServiceMessage {
+  export const Get = async (messageId: string, _userId: string) => {
     const messageData = await db.message.findUnique({
       where: {
         id: messageId,
@@ -21,14 +20,14 @@ export abstract class ServiceMessage {
     }
 
     //チャンネルの閲覧制限があるか確認してから返す
-    if (!await CheckChannelVisibility(messageData.channelId, _userId)) {
+    if (!(await CheckChannelVisibility(messageData.channelId, _userId))) {
       throw status(404, "Message not found");
     }
 
     return messageData;
   };
 
-  static GetNew = async (_userId: string) => {
+  export const GetNew = async (_userId: string) => {
     // ユーザーが参加しているチャンネルを取得
     const userChannelJoined = await db.channelJoin.findMany({
       where: {
@@ -79,10 +78,12 @@ export abstract class ServiceMessage {
         createdAt: true,
       },
       where: {
-        OR: latestTimes.map((lt) => ({
-          channelId: lt.channelId,
-          createdAt: lt._max.createdAt!,
-        })),
+        OR: latestTimes
+          .filter((lt) => lt._max.createdAt !== null)
+          .map((lt) => ({
+            channelId: lt.channelId,
+            createdAt: lt._max.createdAt as Date,
+          })),
       },
     });
     for (const newestMessage of newests) {
@@ -96,7 +97,8 @@ export abstract class ServiceMessage {
       //既読時間が存在するなら比較してBooleanを返す、ないならfalse
       if (targetReadTime) {
         JSONNews[channelId] =
-          newestMessage.createdAt.valueOf() > targetReadTime?.readTime.valueOf();
+          newestMessage.createdAt.valueOf() >
+          targetReadTime?.readTime.valueOf();
       } else {
         JSONNews[channelId] = false;
       }
@@ -105,7 +107,7 @@ export abstract class ServiceMessage {
     return JSONNews;
   };
 
-  static GetReadTime = async (_userId: string) => {
+  export const GetReadTime = async (_userId: string) => {
     const readTime = await db.messageReadTime.findMany({
       where: {
         userId: _userId,
@@ -119,21 +121,39 @@ export abstract class ServiceMessage {
     return readTime;
   };
 
-  static UpdateReadTime = async (channelId: string, readTime: Date, _userId: string) => {
-    //既読時間を取得して更新する必要があるか調べる
-    const readTimeSaved = await db.messageReadTime.findUnique({
+  export const UpdateReadTime = async (
+    channelId: string,
+    readTime: Date,
+    _userId: string,
+  ) => {
+    const channelWithReadtime = await db.channel.findUnique({
       where: {
-        channelId_userId: {
-          channelId,
-          userId: _userId,
+        id: channelId,
+      },
+      include: {
+        MessageReadTime: {
+          where: {
+            channelId: channelId,
+            userId: _userId,
+          },
         },
       },
     });
-    if (
-      readTimeSaved !== null &&
-      readTimeSaved.readTime.valueOf() > readTime.valueOf()
-    ) {
-      throw status(400, "Read time is already newer");
+    //チャンネルの存在確認
+    if (channelWithReadtime === null) {
+      throw status(404, "Channel not found");
+    }
+    //既読時間があるなら現在の既読時間と更新予定時間を比較
+    if (channelWithReadtime.MessageReadTime.length !== 0) {
+      //時間取得
+      const readTimeNow = channelWithReadtime.MessageReadTime[0];
+      //比較
+      if (
+        readTimeNow !== null &&
+        readTimeNow.readTime.valueOf() > readTime.valueOf()
+      ) {
+        throw status(400, "Read time is already newer");
+      }
     }
 
     const readTimeUpdated = await db.messageReadTime.upsert({
@@ -156,18 +176,16 @@ export abstract class ServiceMessage {
     return readTimeUpdated;
   };
 
-  static Search = async (
+  export const Search = async (
     content: string | undefined,
     channelId: string | undefined,
     userId: string | undefined,
     hasUrlPreview: boolean | undefined,
     hasFileAttachment: boolean | undefined,
     loadIndex: number | undefined,
-    sort: "asc" | "desc" | undefined,
     _userId: string,
+    sort: "asc" | "desc" | undefined = "desc",
   ) => {
-    //デフォルトのソート順を設定
-    if (sort === undefined) sort = "desc";
     //読み込みインデックス指定があるならスキップするメッセ数を計算
     const messageSkipping = loadIndex ? (loadIndex - 1) * 50 : 0;
 
@@ -227,7 +245,11 @@ export abstract class ServiceMessage {
     return messages;
   };
 
-  static UploadFile = async (channelId: string, file: File, _userId: string) => {
+  export const UploadFile = async (
+    channelId: string,
+    file: File,
+    _userId: string,
+  ) => {
     //ファイルサイズが500MBを超える場合はエラー
     if (file.size > 1024 * 1024 * 500) {
       throw status(400, "File size is too large");
@@ -277,13 +299,13 @@ export abstract class ServiceMessage {
       },
       select: {
         id: true,
-      }
+      },
     });
 
     return fileData;
   };
 
-  static GetFile = async (fileId: string) => {
+  export const GetFile = async (fileId: string) => {
     const fileData = await db.messageFileAttached.findUnique({
       where: {
         id: fileId,
@@ -297,13 +319,13 @@ export abstract class ServiceMessage {
     return fileData;
   };
 
-  static Delete = async (messageId: string, _userId: string) => {
+  export const Delete = async (messageId: string, _userId: string) => {
     //取得
     const messageData = await db.message.findUnique({
       select: {
         id: true,
         userId: true,
-        channelId: true
+        channelId: true,
       },
       where: {
         id: messageId,
@@ -341,9 +363,7 @@ export abstract class ServiceMessage {
     });
     for (const file of fileData) {
       try {
-        await unlink(
-          `./STORAGE/file/${file.channelId}/${file.savedFileName}`,
-        );
+        await unlink(`./STORAGE/file/${file.channelId}/${file.savedFileName}`);
       } catch (e) {
         console.error("message.module :: /message/delete : 削除エラー->", e);
       }
@@ -377,7 +397,7 @@ export abstract class ServiceMessage {
     return messageData;
   };
 
-  static GetInbox = async (_userId: string) => {
+  export const GetInbox = async (_userId: string) => {
     //通知を取得する
     const inboxAll = await db.inbox.findMany({
       where: {
@@ -391,21 +411,29 @@ export abstract class ServiceMessage {
     return inboxAll;
   };
 
-  static ReadInbox = async (messageId: string, _userId: string) => {
+  export const ReadInbox = async (messageId: string, _userId: string) => {
     //通知を削除
-    await db.inbox.delete({
-      where: {
-        messageId_userId: {
-          messageId,
-          userId: _userId,
+    await db.inbox
+      .delete({
+        where: {
+          messageId_userId: {
+            messageId,
+            userId: _userId,
+          },
         },
-      },
-    });
+      })
+      .catch((e) => {
+        console.error(
+          "message.module :: /message/inbox/read : 削除エラー->",
+          e,
+        );
+        throw status(404, "Inbox not found");
+      });
 
     return;
   };
 
-  static ClearInbox = async (_userId: string) => {
+  export const ClearInbox = async (_userId: string) => {
     //通知を全部削除
     await db.inbox.deleteMany({
       where: {
@@ -416,20 +444,42 @@ export abstract class ServiceMessage {
     return;
   };
 
-  static Reaction = async (messageId: string, channelId: string, emojiCode: string, _userId: string) => {
+  export const Reaction = async (
+    messageId: string,
+    channelId: string,
+    emojiCode: string,
+    _userId: string,
+  ) => {
+    //チャンネルの閲覧制限があるか確認する
+    if (!(await CheckChannelVisibility(channelId, _userId))) {
+      throw status(404, "Message not found");
+    }
+
     //自分のリアクションデータを取得して条件確認する
-    const MyReactions = await db.messageReaction.findMany({
+    const targetMessage = await db.message.findUnique({
       where: {
-        messageId,
+        id: messageId,
         userId: _userId,
       },
+      include: {
+        MessageReaction: {
+          select: {
+            id: true,
+            emojiCode: true,
+          },
+        },
+      },
     });
-    //同じ絵文字コードのリアクションがあればエラー
-    if (MyReactions.some((r) => r.emojiCode === emojiCode)) {
+    //メッセージが存在しなければエラー
+    if (targetMessage === null) {
+      throw status(404, "Message not found");
+    }
+    //自分による同じ絵文字コードのリアクションがあればエラー
+    if (targetMessage.MessageReaction.some((r) => r.emojiCode === emojiCode)) {
       throw status(400, "You already reacted this message");
     }
-    //同じユーザーリアクションが10以上ならエラー
-    if (MyReactions.length >= 10) {
+    //自分のリアクションが10以上ならエラー
+    if (targetMessage.MessageReaction.length >= 10) {
       throw status(400, "You can't react more than 10 times");
     }
 
@@ -446,7 +496,15 @@ export abstract class ServiceMessage {
     return reaction;
   };
 
-  static GetWhoReacted = async (messageId: string, emojiCode: string, _userId: string) => {
+  export const GetWhoReacted = async (
+    messageId: string,
+    emojiCode: string,
+    _userId: string,
+    cursor = 1,
+  ) => {
+    //スキップ数と取得数を設定
+    const skip = (cursor - 1) * 30;
+    const length = 30;
     //メッセージが存在するか確認
     const message = await db.message.findUnique({
       where: {
@@ -454,6 +512,7 @@ export abstract class ServiceMessage {
       },
       include: {
         MessageReaction: {
+          skip: skip,
           take: length,
           select: {
             userId: true,
@@ -465,47 +524,62 @@ export abstract class ServiceMessage {
       },
     });
     if (message === null) {
-      throw status(400, "Message not found or is private.");
+      throw status(400, "Message not found or is private");
     }
 
     //チャンネルの閲覧制限があるか確認
     const viewable = await CheckChannelVisibility(message.channelId, _userId);
     if (!viewable) {
-      throw status(400, "Message not found or is private.");
+      throw status(400, "Message not found or is private");
     }
 
     return message;
   };
 
-  static DeleteEmojiReaction = async (messageId: string, emojiCode: string, _userId: string) => {
-    //自分のリアクションを取得して無ければエラー
-    const hasMyReaction = await db.messageReaction.findFirst({
+  export const DeleteEmojiReaction = async (
+    messageId: string,
+    emojiCode: string,
+    _userId: string,
+  ) => {
+    const messageWithReaction = await db.message.findUnique({
       where: {
-        messageId,
-        userId: _userId,
-        emojiCode,
+        id: messageId,
+      },
+      include: {
+        MessageReaction: {
+          where: {
+            userId: _userId,
+            emojiCode,
+          },
+        },
       },
     });
-    if (hasMyReaction === null) {
+    //メッセージの存在確認
+    if (messageWithReaction === null) {
+      throw status(404, "Message not found");
+    }
+    //自分による指定リアクションの存在確認
+    if (messageWithReaction.MessageReaction.length === 0) {
       throw status(404, "Reaction does not exists");
     }
 
     //リアクションを削除
     const reactionDeleted = await db.messageReaction.delete({
       where: {
-        id: hasMyReaction.id,
+        id: messageWithReaction.MessageReaction[0].id,
       },
     });
 
     return reactionDeleted;
   };
 
-  static Send = async (
+  export const Send = async (
     channelId: string,
     message: string,
-    fileIds: string[],
+    // biome-ignore lint/style/useDefaultParameterLast: 許して
+    fileIds: string[] = [],
     replyingMessageId: string | undefined,
-    _userId: string
+    _userId: string,
   ) => {
     //メッセージが空白か改行しか含まれていないならエラー(ファイル添付があるなら除外)
     const spaceCount =
@@ -597,7 +671,11 @@ export abstract class ServiceMessage {
     return { messageSaved, messageReplyingTo, mentionedUserIds };
   };
 
-  static Edit = async (messageId: string, content: string, _userId: string) => {
+  export const Edit = async (
+    messageId: string,
+    message: string,
+    _userId: string,
+  ) => {
     const messageEditing = await db.message.findUnique({
       where: {
         id: messageId,
@@ -612,7 +690,7 @@ export abstract class ServiceMessage {
       throw status(403, "You are not sender of this message");
     }
     //内容が同じならエラー
-    if (messageEditing.content === content) {
+    if (messageEditing.content === message) {
       throw status(400, "Message is already same");
     }
 
@@ -622,12 +700,11 @@ export abstract class ServiceMessage {
         id: messageId,
       },
       data: {
-        content,
+        content: message,
         isEdited: true,
       },
     });
 
-    return messageEditing;
+    return msgUpdated;
   };
-
 }

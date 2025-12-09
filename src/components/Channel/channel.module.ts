@@ -1,8 +1,8 @@
 import Elysia, { status, t } from "elysia";
+import { db } from "../..";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
 import { WSSubscribe, WSUnsubscribe } from "../../ws";
-import { db } from "../..";
 import { ServiceChannel } from "./channel.service";
 
 export const channel = new Elysia({ prefix: "/channel" })
@@ -140,11 +140,7 @@ export const channel = new Elysia({ prefix: "/channel" })
   .post(
     "/get-history/:channelId",
     async ({ params: { channelId }, body, _userId }) => {
-      const results = await ServiceChannel.GetHistory(
-        channelId,
-        body,
-        _userId,
-      );
+      const results = await ServiceChannel.GetHistory(channelId, body, _userId);
 
       return {
         message: "History fetched",

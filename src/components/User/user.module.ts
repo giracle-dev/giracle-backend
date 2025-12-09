@@ -1,14 +1,18 @@
 import Elysia, { status, t, file } from "elysia";
+import { db } from "../..";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import SendSystemMessage from "../../Utils/SendSystemMessage";
-import { db } from "../..";
 import { ServiceUser } from "./user.service";
 
 export const user = new Elysia({ prefix: "/user" })
   .put(
     "/sign-up",
     async ({ body: { username, password, inviteCode }, server }) => {
-      const { createdUser } = await ServiceUser.SignUp(username, password, inviteCode);
+      const { createdUser } = await ServiceUser.SignUp(
+        username,
+        password,
+        inviteCode,
+      );
 
       //新規登録を通知するチャンネルId
       const serverConfigAnnounceChannelId = await db.serverConfig.findFirst({
@@ -216,11 +220,7 @@ export const user = new Elysia({ prefix: "/user" })
   .post(
     "/change-password",
     async ({ body: { currentPassword, newPassword }, _userId }) => {
-      await ServiceUser.ChangePassword(
-        currentPassword,
-        newPassword,
-        _userId,
-      );
+      await ServiceUser.ChangePassword(currentPassword, newPassword, _userId);
 
       return {
         message: "Password changed",
@@ -275,7 +275,14 @@ export const user = new Elysia({ prefix: "/user" })
   .get(
     "/sign-out",
     async ({ cookie: { token } }) => {
-      await ServiceUser.SignOut(token.value!);
+      //トークン確認
+      const tokenValue = token.value;
+      if (!tokenValue) {
+        throw status(400, "No token provided");
+      }
+
+      //サインアウト処理
+      await ServiceUser.SignOut(tokenValue);
 
       //クッキー削除
       token.remove();

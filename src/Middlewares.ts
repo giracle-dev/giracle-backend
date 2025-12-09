@@ -1,25 +1,23 @@
-import { type Message, PrismaClient } from "@prisma/client";
 import { Elysia, status, t } from "elysia";
 import ogs from "open-graph-scraper";
 import { db } from ".";
+import type { Message } from "../prisma/generated/client";
 
 const CheckToken = new Elysia({ name: "CheckToken" })
   .guard({
-    cookie: t.Object(
-      { token: t.String({ minLength: 1 }) },
-      { error: "Cookie for token is not valid." },
-    ),
+    cookie: t.Object({ token: t.String({ minLength: 1 }) }),
   })
   .resolve({ as: "scoped" }, async ({ cookie: { token } }) => {
+    const tokenValue = token.value as string | undefined;
     //そもそもCookieが無いならエラー
-    if (token.value === undefined) {
+    if (tokenValue === undefined) {
       return status(401, "Invalid token");
     }
 
     //トークンがDBにあるか確認
     const tokenData = await db.token.findUnique({
       where: {
-        token: token.value,
+        token: tokenValue,
       },
       include: {
         user: true,
@@ -52,26 +50,18 @@ const checkRoleTerm = new Elysia({ name: "checkRoleTerm" })
         async beforeHandle({ _userId }) {
           //console.log("Middlewares :: checkRoleTerm : 送信者のユーザーId->", _userId);
 
-          //管理者権限を持つユーザーなら問答無用で通す
-          const isAdmin = await db.roleLink.findFirst({
-            where: {
-              userId: _userId,
-              role: {
-                manageServer: true,
-              },
-            },
-          });
-          if (isAdmin !== null) {
-            return;
-          }
-
-          //該当権限を持つロール付与情報を検索
+          //該当権限を持つロール付与情報あるいはサーバー管理権限を検索
           const roleLink = await db.roleLink.findFirst({
             where: {
               userId: _userId,
-              role: {
-                [roleTerm]: true,
-              },
+              OR: [
+                {
+                  role: { [roleTerm]: true },
+                },
+                {
+                  role: { manageServer: true },
+                },
+              ],
             },
           });
 
@@ -99,31 +89,50 @@ setInterval(() => {
 //制限設定
 const limitConfig = {
   anonymous: {
-    limit: parseInt(Bun.env.RATE_LIMIT_ANONYMOUS_COUNT ?? "25"),
-    windowMs: parseInt(Bun.env.RATE_LIMIT_ANONYMOUS_TIMEOUT ?? "60") * 1000,
+    limit: Number.parseInt(Bun.env.RATE_LIMIT_ANONYMOUS_COUNT ?? "25"),
+    windowMs:
+      Number.parseInt(Bun.env.RATE_LIMIT_ANONYMOUS_TIMEOUT ?? "60") * 1000,
   },
   authenticated: {
-    limit: parseInt(Bun.env.RATE_LIMIT_AUTHORIZED_COUNT ?? "200"),
-    windowMs: parseInt(Bun.env.RATE_LIMIT_AUTHORIZED_TIMEOUT ?? "60") * 1000,
+    limit: Number.parseInt(Bun.env.RATE_LIMIT_AUTHORIZED_COUNT ?? "200"),
+    windowMs:
+      Number.parseInt(Bun.env.RATE_LIMIT_AUTHORIZED_TIMEOUT ?? "60") * 1000,
   },
 };
-export const rateLimiter = new Elysia({ name: "rateLimiter" })
-  .resolve({ as: "scoped" }, async ({ request, cookie: { token } }) => {
+export const rateLimiter = new Elysia({ name: "rateLimiter" }).resolve(
+  { as: "scoped" },
+  async ({ request, cookie: { token } }) => {
     //未ログインであるかどうか
     let isAnonymous = false;
     //識別キー
-    let key: string = token.value ?? "anonymous";
+    let key: string = (token.value as string | undefined) ?? "anonymous";
 
     //未ログインの場合は状態を設定しIPアドレス等をキーにする
     if (token?.value === undefined) {
       isAnonymous = true;
-      key = request.headers.get("x-real-ip") ?? request.headers.get("x-forwarded-for") ?? request.headers.get("cf-connecting-ip") ?? request.headers.get("x-client-ip") ?? request.headers.get("x-forwarded") ?? request.headers.get("forwarded") ?? request.headers.get("via") ?? request.headers.get("remote-addr") ?? request.headers.get("x-cluster-client-ip") ?? request.headers.get("proxy-client-ip") ?? request.headers.get("wl-proxy-client-ip") ?? request.headers.get("x-forwarded-host") ?? request.headers.get("x-forwarded-server") ?? request.headers.get("host") ?? request.headers.get("user-agent") ?? "anonymous" as string;
+      key =
+        request.headers.get("x-real-ip") ??
+        request.headers.get("x-forwarded-for") ??
+        request.headers.get("cf-connecting-ip") ??
+        request.headers.get("x-client-ip") ??
+        request.headers.get("x-forwarded") ??
+        request.headers.get("forwarded") ??
+        request.headers.get("via") ??
+        request.headers.get("remote-addr") ??
+        request.headers.get("x-cluster-client-ip") ??
+        request.headers.get("proxy-client-ip") ??
+        request.headers.get("wl-proxy-client-ip") ??
+        request.headers.get("x-forwarded-host") ??
+        request.headers.get("x-forwarded-server") ??
+        request.headers.get("host") ??
+        request.headers.get("user-agent") ??
+        ("anonymous" as string);
 
       //IPアドレスが既にブロックされているか確認
       const blockedIP = await db.blockedIPAddress.findUnique({
         where: {
           address: key,
-        }
+        },
       });
       if (blockedIP) {
         //ブロックされている場合はカウントを増加させて429を返す
@@ -144,7 +153,9 @@ export const rateLimiter = new Elysia({ name: "rateLimiter" })
     const bucket = buckets.get(key);
 
     //認証しているかどうかで使用設定を変更
-    const configUsing = isAnonymous ? limitConfig.anonymous : limitConfig.authenticated;
+    const configUsing = isAnonymous
+      ? limitConfig.anonymous
+      : limitConfig.authenticated;
 
     //バケットが無いかリセット時間を過ぎているなら新規作成
     if (!bucket || bucket.resetAt < now) {
@@ -164,7 +175,8 @@ export const rateLimiter = new Elysia({ name: "rateLimiter" })
             token: key,
           },
         });
-      } else { //匿名の場合の処理
+      } else {
+        //匿名の場合の処理
         //カウントがプラス10を超過している場合はIPアドレスでブロック
         if (bucket.count > configUsing.limit + 10) {
           db.blockedIPAddress.upsert({
@@ -186,11 +198,12 @@ export const rateLimiter = new Elysia({ name: "rateLimiter" })
       }
 
       return status(429, "Too Many Requests");
-    } else {
-      //カウント増加
-      bucket.count += 1;
     }
-  });
+
+    //カウント増加
+    bucket.count += 1;
+  },
+);
 
 //URLプレビュー生成
 const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
@@ -198,7 +211,10 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
     body: t.Object({
       channelId: t.String({ minLength: 1 }),
       message: t.String({ minLength: 1 }),
-    })
+    }),
+    response: t.Object({
+      data: t.Union([t.Unsafe<Message>(), t.Undefined()]),
+    }),
   })
   .onError(({ error }) => {
     console.error("Middleware :: urlPreviewControl : エラー->", error);
@@ -207,11 +223,14 @@ const urlPreviewControl = new Elysia({ name: "urlPreviewControl" })
     bindUrlPreview(isEnabled: boolean) {
       return {
         async afterResponse({ server, responseValue }) {
+          //レスポンスデータ取り出し
+          const responseData = responseValue?.data;
           //URLプレビューが無効あるいはレスポンスが存在しないなら何もしない
-          if (!isEnabled || responseValue === undefined || responseValue === null) return;
-          
+          if (!isEnabled || responseData === undefined || responseData === null)
+            return;
+
           //メッセージデータを取得
-          const messageData = responseValue.data as Message;
+          const messageData = responseData;
           //メッセージId取り出し
           const messageId = messageData.id;
 

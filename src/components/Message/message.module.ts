@@ -1,6 +1,6 @@
 import Elysia, { file, t } from "elysia";
-import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import { db } from "../..";
+import CheckToken, { urlPreviewControl } from "../../Middlewares";
 import { ServiceMessage } from "./message.service";
 
 export const message = new Elysia({ prefix: "/message" })
@@ -62,7 +62,11 @@ export const message = new Elysia({ prefix: "/message" })
   .post(
     "/read-time/update",
     async ({ _userId, body: { channelId, readTime }, server }) => {
-      const readTimeUpdated = await ServiceMessage.UpdateReadTime(channelId, readTime, _userId);
+      const readTimeUpdated = await ServiceMessage.UpdateReadTime(
+        channelId,
+        readTime,
+        _userId,
+      );
 
       //WSで通知
       server?.publish(
@@ -110,8 +114,8 @@ export const message = new Elysia({ prefix: "/message" })
         hasUrlPreview,
         hasFileAttachment,
         loadIndex,
-        sort,
         _userId,
+        sort,
       );
 
       return {
@@ -143,7 +147,7 @@ export const message = new Elysia({ prefix: "/message" })
       return {
         message: "File uploaded",
         data: {
-          fileId
+          fileId,
         },
       };
     },
@@ -291,7 +295,12 @@ export const message = new Elysia({ prefix: "/message" })
   .post(
     "/emoji-reaction",
     async ({ body: { messageId, channelId, emojiCode }, _userId, server }) => {
-      const reaction = await ServiceMessage.Reaction(messageId, channelId, emojiCode, _userId);
+      const reaction = await ServiceMessage.Reaction(
+        messageId,
+        channelId,
+        emojiCode,
+        _userId,
+      );
 
       //WSで通知
       server?.publish(
@@ -321,9 +330,14 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .get(
     "/who-reacted",
-    async ({ query: { messageId, emojiCode, length }, _userId }) => {
+    async ({ query: { messageId, emojiCode, cursor }, _userId }) => {
       //リアクションしたユーザーを取得
-      const messageWithReactions = await ServiceMessage.GetWhoReacted(messageId, emojiCode, _userId);
+      const messageWithReactions = await ServiceMessage.GetWhoReacted(
+        messageId,
+        emojiCode,
+        _userId,
+        cursor,
+      );
 
       return {
         message: "Fetched reactions",
@@ -334,7 +348,7 @@ export const message = new Elysia({ prefix: "/message" })
       query: t.Object({
         messageId: t.String({ minLength: 1 }),
         emojiCode: t.String({ minLength: 1 }),
-        length: t.Number({ minimum: 1, default: 5 }),
+        cursor: t.Optional(t.Number({ minimum: 1 })),
       }),
       detail: {
         description: "絵文字リアクションをしたユーザーを取得する",
@@ -345,7 +359,11 @@ export const message = new Elysia({ prefix: "/message" })
   .delete(
     "/delete-emoji-reaction",
     async ({ body: { messageId, channelId, emojiCode }, _userId, server }) => {
-      const reactionDeleted = await ServiceMessage.DeleteEmojiReaction(messageId, emojiCode, _userId);
+      const reactionDeleted = await ServiceMessage.DeleteEmojiReaction(
+        messageId,
+        emojiCode,
+        _userId,
+      );
 
       //WSで通知
       server?.publish(
@@ -357,7 +375,7 @@ export const message = new Elysia({ prefix: "/message" })
       );
 
       return {
-        message: "Reaction deleted.",
+        message: "Reaction deleted",
         data: reactionDeleted,
       };
     },
@@ -384,13 +402,14 @@ export const message = new Elysia({ prefix: "/message" })
       server,
     }) => {
       //メッセージの保存処理
-      const { messageSaved, messageReplyingTo, mentionedUserIds } = await ServiceMessage.Send(
-        channelId,
-        message,
-        fileIds,
-        replyingMessageId,
-        _userId
-      );
+      const { messageSaved, messageReplyingTo, mentionedUserIds } =
+        await ServiceMessage.Send(
+          channelId,
+          message,
+          fileIds,
+          replyingMessageId,
+          _userId,
+        );
 
       //WSで通知
       server?.publish(
@@ -451,7 +470,7 @@ export const message = new Elysia({ prefix: "/message" })
       body: t.Object({
         channelId: t.String({ minLength: 1 }),
         message: t.String(),
-        fileIds: t.Array(t.String({ minLength: 1 })),
+        fileIds: t.Optional(t.Array(t.String({ minLength: 1 }))),
         replyingMessageId: t.Optional(t.String()),
       }),
       detail: {
@@ -463,8 +482,12 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .post(
     "/edit",
-    async ({ body: { messageId, content }, _userId, server }) => {
-      const messageEditing = await ServiceMessage.Edit(messageId, content, _userId);
+    async ({ body: { messageId, message }, _userId, server }) => {
+      const messageEditing = await ServiceMessage.Edit(
+        messageId,
+        message,
+        _userId,
+      );
 
       //WSで通知
       server?.publish(
@@ -483,7 +506,7 @@ export const message = new Elysia({ prefix: "/message" })
     {
       body: t.Object({
         messageId: t.String({ minLength: 1 }),
-        content: t.String({ minLength: 1 }),
+        message: t.String({ minLength: 1 }),
       }),
       detail: {
         description: "メッセージを編集します",

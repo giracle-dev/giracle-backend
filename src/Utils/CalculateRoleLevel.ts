@@ -3,15 +3,13 @@
  * @param rolePower ロール情報
  * @returns ロールレベル
  */
-export default function CalculateRoleLevel (
-  rolePower: {
-    manageServer?: boolean;
-    manageChannel?: boolean;
-    manageUser?: boolean;
-    manageRole?: boolean;
-    manageEmoji?: boolean;
-  }
-): number {
+export default function CalculateRoleLevel(rolePower: {
+  manageServer?: boolean;
+  manageChannel?: boolean;
+  manageUser?: boolean;
+  manageRole?: boolean;
+  manageEmoji?: boolean;
+}): number {
   if (rolePower.manageServer !== undefined && rolePower.manageServer) {
     return 5;
   }

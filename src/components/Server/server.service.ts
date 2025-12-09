@@ -1,13 +1,12 @@
+import fs from "node:fs";
 import { unlink } from "node:fs/promises";
 import * as path from "node:path";
-import fs from "node:fs";
 import { status } from "elysia";
-import { db } from "../..";
 import sharp from "sharp";
+import { db } from "../..";
 
-export abstract class ServiceServer {
-  
-  static Config = async () => {
+export namespace ServiceServer {
+  export const Config = async () => {
     //サーバーの情報取得
     const config = await db.serverConfig.findFirst();
     //最初のユーザーになるかどうか
@@ -21,9 +20,7 @@ export abstract class ServiceServer {
         channel: true,
       },
     });
-    const defaultJoinChannel = defaultJoinChannelFetched.map(
-      (c) => c.channel,
-    );
+    const defaultJoinChannel = defaultJoinChannelFetched.map((c) => c.channel);
 
     return {
       config,
@@ -32,7 +29,7 @@ export abstract class ServiceServer {
     };
   };
 
-  static Banner = async () => {
+  export const Banner = async () => {
     //バナー読み取り、存在確認して返す
     const serverFilePng = Bun.file("./STORAGE/banner/SERVER.png");
     if (await serverFilePng.exists()) {
@@ -50,12 +47,12 @@ export abstract class ServiceServer {
     throw status(404, "Banner not found");
   };
 
-  static GetInvite = async () => {
+  export const GetInvite = async () => {
     const invites = await db.invitation.findMany();
     return invites;
   };
 
-  static CreateInvite = async (inviteCode: string, _userId: string) => {
+  export const CreateInvite = async (inviteCode: string, _userId: string) => {
     const newInvite = await db.invitation.create({
       data: {
         inviteCode,
@@ -66,7 +63,7 @@ export abstract class ServiceServer {
     return newInvite;
   };
 
-  static DeleteInvite = async (inviteId: number) => {
+  export const DeleteInvite = async (inviteId: number) => {
     await db.invitation.delete({
       where: {
         id: inviteId,
@@ -76,7 +73,7 @@ export abstract class ServiceServer {
     return;
   };
 
-  static ChangeInfo = async (name: string, introduction: string) => {
+  export const ChangeInfo = async (name: string, introduction: string) => {
     const serverinfo = await db.serverConfig.updateManyAndReturn({
       data: {
         name,
@@ -90,7 +87,7 @@ export abstract class ServiceServer {
     return serverinfo[0];
   };
 
-  static ChangeConfig = async (
+  export const ChangeConfig = async (
     RegisterAvailable?: boolean,
     RegisterInviteOnly?: boolean,
     RegisterAnnounceChannelId?: string,
@@ -126,7 +123,7 @@ export abstract class ServiceServer {
     return serverinfo[0];
   };
 
-  static ChangeBanner = async (banner: File) => {
+  export const ChangeBanner = async (banner: File) => {
     if (banner.size > 15 * 1024 * 1024) {
       throw status(400, "File size is too large");
     }
@@ -152,7 +149,7 @@ export abstract class ServiceServer {
     return;
   };
 
-  static GetCustomEmoji = async (code: string) => {
+  export const GetCustomEmoji = async (code: string) => {
     //絵文字データを取得、無ければエラー
     const emoji = await db.customEmoji.findFirst({
       where: {
@@ -172,12 +169,16 @@ export abstract class ServiceServer {
     return null;
   };
 
-  static GetCustomEmojis = async () => {
+  export const GetCustomEmojis = async () => {
     const emojis = await db.customEmoji.findMany();
     return emojis;
   };
 
-  static uploadCustomEmoji = async (emoji: File, emojiCode: string, _userId: string) => {
+  export const uploadCustomEmoji = async (
+    emoji: File,
+    emojiCode: string,
+    _userId: string,
+  ) => {
     if (emoji.size > 8 * 1024 * 1024) {
       throw status(400, "Emoji's file size is too large");
     }
@@ -234,7 +235,7 @@ export abstract class ServiceServer {
     return emojiUploaded;
   };
 
-  static DeleteCustomEmoji = async (emojiCode: string) => {
+  export const DeleteCustomEmoji = async (emojiCode: string) => {
     //絵文字を削除しデータ取得
     const emojiDeleted = await db.customEmoji.delete({
       where: {
@@ -259,7 +260,7 @@ export abstract class ServiceServer {
     return emojiDeleted;
   };
 
-  static StorageUsage = async () => {
+  export const StorageUsage = async () => {
     //ディレクトリ一覧を取得
     const dirs = fs.readdirSync("./STORAGE/file");
     if (dirs.length === 0) return 0;
@@ -276,5 +277,4 @@ export abstract class ServiceServer {
     }
     return totalSize;
   };
-
 }

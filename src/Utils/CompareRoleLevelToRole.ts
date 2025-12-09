@@ -1,5 +1,5 @@
-import getUsersRoleLevel from "./getUsersRoleLevel";
 import { db } from "..";
+import getUsersRoleLevel from "./getUsersRoleLevel";
 
 const levelIndex = {
   manageServer: 5,

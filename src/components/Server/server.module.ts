@@ -2,16 +2,17 @@ import fs from "node:fs";
 import { unlink } from "node:fs/promises";
 import * as path from "node:path";
 import Elysia, { status, t } from "elysia";
-import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import sharp from "sharp";
 import { db } from "../..";
+import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import { ServiceServer } from "./server.service";
 
 export const server = new Elysia({ prefix: "/server" })
   .get(
     "/config",
     async () => {
-      const { config, isFirstUser, defaultJoinChannel} = await ServiceServer.Config();
+      const { config, isFirstUser, defaultJoinChannel } =
+        await ServiceServer.Config();
 
       return {
         message: "Server config fetched",

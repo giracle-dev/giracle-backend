@@ -1,14 +1,14 @@
 import { cors } from "@elysiajs/cors";
-import { Elysia } from "elysia";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { Elysia, status } from "elysia";
 import { PrismaClient } from "../prisma/generated/client";
 import { rateLimiter } from "./Middlewares";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
 
 import { channel } from "./components/Channel/channel.module";
 import { message } from "./components/Message/message.module";
 import { role } from "./components/Role/role.module";
-import { user } from "./components/User/user.module";
 import { server } from "./components/Server/server.module";
+import { user } from "./components/User/user.module";
 import { wsHandler } from "./ws";
 
 //ユーザーアップロード用のディレクトリ作成
@@ -32,8 +32,11 @@ export const app = new Elysia()
   )
   .use(Bun.env.RATE_LIMIT_ENABLED === "true" ? rateLimiter : undefined)
   .onError(({ error, code }) => {
-    if (code === "NOT_FOUND") return "Not Found :(";
+    if (code === "NOT_FOUND") return status(404, "Not Found :(");
     console.error("index :: エラー->", error);
+    if (typeof code === "number")
+      return status(code, error.response || "somethin went wrong :(");
+    return status(500, "somethin went wrong :(");
   })
   .use(wsHandler)
   .use(user)

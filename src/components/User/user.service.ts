@@ -1,15 +1,18 @@
 import crypto from "node:crypto";
 import { unlink } from "node:fs/promises";
 import { status } from "elysia";
-import { db } from "../..";
-import { userWSInstance } from "../../ws";
-import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import sharp from "sharp";
+import { db } from "../..";
+import CheckChannelVisibility from "../../Utils/CheckChannelVisitiblity";
 import getUsersRoleLevel from "../../Utils/getUsersRoleLevel";
+import { userWSInstance } from "../../ws";
 
-export abstract class ServiceUser {
-
-  static SignUp = async (username: string, password: string, inviteCode?: string) => {
+export namespace ServiceUser {
+  export const SignUp = async (
+    username: string,
+    password: string,
+    inviteCode?: string,
+  ) => {
     //初めてのユーザーかどうか
     let flagFirstUser = false;
     //ユーザー数を取得して最初ならtrue
@@ -89,7 +92,10 @@ export abstract class ServiceUser {
     const channelJoinOnDefault = await db.channelJoinOnDefault.findMany({});
     const joiningData: { userId: string; channelId: string }[] = [];
     for (const channelIdJson of channelJoinOnDefault) {
-      joiningData.push({ userId: createdUser.id, channelId: channelIdJson.channelId });
+      joiningData.push({
+        userId: createdUser.id,
+        channelId: channelIdJson.channelId,
+      });
     }
     //DBへ挿入
     await db.channelJoin.createMany({
@@ -99,7 +105,7 @@ export abstract class ServiceUser {
     return { createdUser };
   };
 
-  static SignIn = async (username: string, password: string) => {
+  export const SignIn = async (username: string, password: string) => {
     //ユーザー情報取得
     const user = await db.user.findUnique({
       where: { name: username },
@@ -155,28 +161,21 @@ export abstract class ServiceUser {
     return tokenGenerated;
   };
 
-  static GetOnline = async () => {
+  export const GetOnline = async () => {
     //オンラインユーザーIDを取得
     const onlineUserIds = Array.from(userWSInstance.keys());
     //重複を削除
-    const uniqueOnlineUserIds = Array.from(new Set(onlineUserIds)).map(
-      String,
-    );
+    const uniqueOnlineUserIds = Array.from(new Set(onlineUserIds)).map(String);
 
     return uniqueOnlineUserIds;
   };
 
-  static Search = async (
+  export const Search = async (
     _userId: string,
     username?: string,
     joinedChannel?: string,
-    cursor?: number,
+    cursor = 0,
   ) => {
-    //もしcursorがundefinedなら0にする
-    if (cursor === undefined) {
-      cursor = 0;
-    }
-
     //チャンネル指定をしているならそれぞれが閲覧可能であるかを調べる
     if (joinedChannel !== undefined) {
       const canView = await CheckChannelVisibility(joinedChannel, _userId);
@@ -219,7 +218,7 @@ export abstract class ServiceUser {
     return users;
   };
 
-  static GetUserIcon = async (userId: string) => {
+  export const GetUserIcon = async (userId: string) => {
     //アイコン読み取り、存在確認して返す
     const iconFilePng = Bun.file(`./STORAGE/icon/${userId}.png`);
     if (await iconFilePng.exists()) {
@@ -241,7 +240,7 @@ export abstract class ServiceUser {
     return null;
   };
 
-  static GetUserBanner = async (userId: string) => {
+  export const GetUserBanner = async (userId: string) => {
     //アイコン読み取り、存在確認して返す
     const bannerFilePng = Bun.file(`./STORAGE/banner/${userId}.png`);
     if (await bannerFilePng.exists()) {
@@ -263,7 +262,7 @@ export abstract class ServiceUser {
     return null;
   };
 
-  static ChangeIcon = async (icon: File, _userId: string) => {
+  export const ChangeIcon = async (icon: File, _userId: string) => {
     if (icon.size > 8 * 1024 * 1024) {
       throw status(400, "File size is too large");
     }
@@ -303,7 +302,7 @@ export abstract class ServiceUser {
     return;
   };
 
-  static ChangeBanner = async (banner: File, _userId: string) => {
+  export const ChangeBanner = async (banner: File, _userId: string) => {
     if (banner.size > 10 * 1024 * 1024) {
       throw status(400, "File size is too large");
     }
@@ -342,7 +341,11 @@ export abstract class ServiceUser {
     return;
   };
 
-  static ChangePassword = async (currentPassword: string, newPassword: string, _userId: string) => {
+  export const ChangePassword = async (
+    currentPassword: string,
+    newPassword: string,
+    _userId: string,
+  ) => {
     //ユーザー情報取得
     const userdata = await db.user.findFirst({
       where: {
@@ -375,16 +378,18 @@ export abstract class ServiceUser {
         userId: userdata.id,
       },
       data: {
-        password: await Bun.password.hash(
-          newPassword + userdata.password.salt,
-        ),
+        password: await Bun.password.hash(newPassword + userdata.password.salt),
       },
     });
 
     return;
   };
 
-  static UpdateProfile = async (_userId: string, name?: string, selfIntroduction?: string) => {
+  export const UpdateProfile = async (
+    _userId: string,
+    name?: string,
+    selfIntroduction?: string,
+  ) => {
     //ユーザー情報取得
     const user = await db.user.findUnique({
       where: {
@@ -416,7 +421,7 @@ export abstract class ServiceUser {
     return userUpdated;
   };
 
-  static SignOut = async (token: string) => {
+  export const SignOut = async (token: string) => {
     //トークン削除
     await db.token.delete({
       where: {
@@ -427,7 +432,7 @@ export abstract class ServiceUser {
     return;
   };
 
-  static GetUserInfo = async (userId: string) => {
+  export const GetUserInfo = async (userId: string) => {
     const user = await db.user.findFirst({
       where: {
         id: userId,
@@ -453,7 +458,7 @@ export abstract class ServiceUser {
     return user;
   };
 
-  static GetUserList = async () => {
+  export const GetUserList = async () => {
     const users = await db.user.findMany({
       include: {
         ChannelJoin: {
@@ -472,7 +477,7 @@ export abstract class ServiceUser {
     return users;
   };
 
-  static Ban = async (userId: string, _userId: string) => {
+  export const Ban = async (userId: string, _userId: string) => {
     //HOSTをBANすることはできない
     if (userId === "HOST") {
       throw status(400, "You can't ban HOST");
@@ -501,7 +506,7 @@ export abstract class ServiceUser {
     return userBanned;
   };
 
-  static Unban = async (userId: string, _userId: string) => {
+  export const Unban = async (userId: string, _userId: string) => {
     //自分自身をUNBANすることはできない
     if (userId === _userId) {
       throw status(400, "You can't unban yourself");
@@ -525,5 +530,4 @@ export abstract class ServiceUser {
 
     return userUnbanned;
   };
-
 }
