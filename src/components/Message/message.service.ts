@@ -561,7 +561,7 @@ export namespace ServiceMessage {
   export const Send = async (
     channelId: string,
     message: string,
-    fileIds: string[],
+    fileIds: string[] = [],
     replyingMessageId: string | undefined,
     _userId: string,
   ) => {
