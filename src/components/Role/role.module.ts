@@ -148,6 +148,7 @@ export const role = new Elysia({ prefix: "/role" })
         description: "ユーザーからロールを剥奪します",
         tags: ["Role"],
       },
+      checkRoleTerm: "manageRole",
     },
   )
   .delete(
