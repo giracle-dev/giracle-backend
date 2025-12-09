@@ -420,6 +420,9 @@ export namespace ServiceMessage {
           userId: _userId,
         },
       },
+    }).catch((e) => {
+      console.error("message.module :: /message/inbox/read : 削除エラー->", e);
+      throw status(404, "Inbox not found");
     });
 
     return;
