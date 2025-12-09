@@ -126,20 +126,34 @@ export namespace ServiceMessage {
     readTime: Date,
     _userId: string,
   ) => {
-    //既読時間を取得して更新する必要があるか調べる
-    const readTimeSaved = await db.messageReadTime.findUnique({
+    const channelWithReadtime = await db.channel.findUnique({
       where: {
-        channelId_userId: {
-          channelId,
-          userId: _userId,
-        },
+        id: channelId,
       },
+      include: {
+        MessageReadTime: {
+          where: {
+            channelId: channelId,
+            userId: _userId,
+          },
+        }
+      }
     });
-    if (
-      readTimeSaved !== null &&
-      readTimeSaved.readTime.valueOf() > readTime.valueOf()
-    ) {
-      throw status(400, "Read time is already newer");
+    //チャンネルの存在確認
+    if (channelWithReadtime === null) {
+      throw status(404, "Channel not found");
+    }
+    //既読時間があるなら現在の既読時間と更新予定時間を比較
+    if (channelWithReadtime.MessageReadTime.length !== 0) {
+      //時間取得
+      const readTimeNow = channelWithReadtime.MessageReadTime[0];
+      //比較
+      if (
+        readTimeNow !== null &&
+        readTimeNow.readTime.valueOf() > readTime.valueOf()
+      ) {
+        throw status(400, "Read time is already newer");
+      }
     }
 
     const readTimeUpdated = await db.messageReadTime.upsert({
