@@ -484,10 +484,10 @@ export const message = new Elysia({ prefix: "/message" })
   )
   .post(
     "/edit",
-    async ({ body: { messageId, content }, _userId, server }) => {
+    async ({ body: { messageId, message }, _userId, server }) => {
       const messageEditing = await ServiceMessage.Edit(
         messageId,
-        content,
+        message,
         _userId,
       );
 
@@ -508,7 +508,7 @@ export const message = new Elysia({ prefix: "/message" })
     {
       body: t.Object({
         messageId: t.String({ minLength: 1 }),
-        content: t.String({ minLength: 1 }),
+        message: t.String({ minLength: 1 }),
       }),
       detail: {
         description: "メッセージを編集します",

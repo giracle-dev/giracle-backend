@@ -657,7 +657,7 @@ export namespace ServiceMessage {
 
   export const Edit = async (
     messageId: string,
-    content: string,
+    message: string,
     _userId: string,
   ) => {
     const messageEditing = await db.message.findUnique({
@@ -674,7 +674,7 @@ export namespace ServiceMessage {
       throw status(403, "You are not sender of this message");
     }
     //内容が同じならエラー
-    if (messageEditing.content === content) {
+    if (messageEditing.content === message) {
       throw status(400, "Message is already same");
     }
 
@@ -684,11 +684,11 @@ export namespace ServiceMessage {
         id: messageId,
       },
       data: {
-        content,
+        content: message,
         isEdited: true,
       },
     });
 
-    return messageEditing;
+    return msgUpdated;
   };
 }
