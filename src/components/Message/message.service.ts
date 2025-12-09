@@ -445,19 +445,36 @@ export namespace ServiceMessage {
     emojiCode: string,
     _userId: string,
   ) => {
+    //チャンネルの閲覧制限があるか確認する
+    if (!(await CheckChannelVisibility(channelId, _userId))) {
+      throw status(404, "Message not found");
+    }
+
     //自分のリアクションデータを取得して条件確認する
-    const MyReactions = await db.messageReaction.findMany({
+    const targetMessage = await db.message.findUnique({
       where: {
-        messageId,
+        id: messageId,
         userId: _userId,
       },
+      include: {
+        MessageReaction: {
+          select: {
+            id: true,
+            emojiCode: true,
+          }
+        }
+      }
     });
-    //同じ絵文字コードのリアクションがあればエラー
-    if (MyReactions.some((r) => r.emojiCode === emojiCode)) {
+    //メッセージが存在しなければエラー
+    if (targetMessage === null) {
+      throw status(404, "Message not found");
+    }
+    //自分による同じ絵文字コードのリアクションがあればエラー
+    if (targetMessage.MessageReaction.some((r) => r.emojiCode === emojiCode)) {
       throw status(400, "You already reacted this message");
     }
-    //同じユーザーリアクションが10以上ならエラー
-    if (MyReactions.length >= 10) {
+    //自分のリアクションが10以上ならエラー
+    if (targetMessage.MessageReaction.length >= 10) {
       throw status(400, "You can't react more than 10 times");
     }
 
