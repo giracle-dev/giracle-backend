@@ -459,13 +459,15 @@ export namespace ServiceMessage {
     const targetMessage = await db.message.findUnique({
       where: {
         id: messageId,
-        userId: _userId,
       },
       include: {
         MessageReaction: {
           select: {
             id: true,
             emojiCode: true,
+          },
+          where: {
+            userId: _userId,
           },
         },
       },
