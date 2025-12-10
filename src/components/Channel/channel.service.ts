@@ -127,6 +127,11 @@ export namespace ServiceChannel {
     }
     //指定のロールでしか閲覧できない、また他条件でのチャンネルを取得
     const roleIds = user.RoleLink.map((roleLink) => roleLink.roleId);
+    //HOSTロールがあるなら全チャンネルを取得
+    if (roleIds.includes("HOST")) {
+      return await db.channel.findMany();
+    }
+
     const channelsLimited = await db.channel.findMany({
       where: {
         OR: [
