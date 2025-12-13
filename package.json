@@ -1,6 +1,6 @@
 {
   "name": "giracle-backend",
-  "version": "0.22.7-alpha",
+  "version": "0.22.8-alpha",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
