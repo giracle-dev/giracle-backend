@@ -312,13 +312,27 @@ export namespace ServiceChannel {
       orderBy: { createdAt: "desc" },
     });
 
-    //履歴の最新まで取ったかどうかを判別するために最初のメッセージを取得
+    //履歴の最新まで取ったかどうかを判別するために最初と最後のメッセージを取得
     const firstMessageOfChannel = await db.message.findFirst({
+      select: {
+        id: true,
+      },
       where: {
         channelId: channelId,
       },
       orderBy: {
         createdAt: "asc",
+      },
+    });
+    const latestMessageOfChannel = await db.message.findFirst({
+      select: {
+        id: true,
+      },
+      where: {
+        channelId: channelId,
+      },
+      orderBy: {
+        createdAt: "desc",
       },
     });
 
@@ -338,7 +352,7 @@ export namespace ServiceChannel {
     } else {
       //取得した履歴がある場合
       if (history[0] !== undefined) {
-        atEnd = firstMessageOfChannel?.id === history[0].id;
+        atEnd = latestMessageOfChannel?.id === history[0].id;
       } else {
         //取得した履歴がない場合、最初まで取得したと判定
         atEnd = true;
