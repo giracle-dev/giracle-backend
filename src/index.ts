@@ -19,9 +19,10 @@ await mkdir("./STORAGE/icon", { recursive: true }).catch((e) => {});
 await mkdir("./STORAGE/banner", { recursive: true }).catch((e) => {});
 await mkdir("./STORAGE/custom-emoji", { recursive: true }).catch((e) => {});
 
-const adapter = new PrismaLibSql({
-  url: process.env.DATABASE_URL || "file:./dev.db",
-});
+const adapter = new PrismaLibSql(
+  { url: process.env.DATABASE_URL || "file:./dev.db" },
+  { timestampFormat: "unixepoch-ms" },
+);
 export const db = new PrismaClient({ adapter });
 
 export const app = new Elysia()
