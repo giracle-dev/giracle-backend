@@ -343,7 +343,7 @@ export namespace ServiceChannel {
     if (fetchDirection === "newer") {
       //取得した履歴がある場合
       if (history[0] !== undefined) {
-        atTop = firstMessageOfChannel?.id === history[0].id;
+        atTop = firstMessageOfChannel?.id === history.at(-1)?.id;
       } else {
         //取得した履歴がない場合、最初まで取得したと判定
         atTop = true;
