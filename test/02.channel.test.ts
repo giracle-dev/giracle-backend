@@ -252,6 +252,38 @@ describe("/channel/get-history/:channelId", async () => {
     expect(j.data.history[0].content).toBe("Welcome to the General channel!");
   });
 
+  it("過去を取得してみる", async () => {
+    const res = await FETCH({
+      path: "/channel/get-history/TESTCHANNEL1",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+        messageTimeFrom: "2001-01-01",
+        fetchDirection: "older"
+      },
+    });
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j.data.atEnd).toBeFalse();
+    expect(j.data.atTop).toBeTrue();
+  });
+
+  it("未来を取得してみる", async () => {
+    const res = await FETCH({
+      path: "/channel/get-history/TESTCHANNEL1",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+        messageTimeFrom: "2099-01-01",
+        fetchDirection: "newer"
+      },
+    });
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j.data.atEnd).toBeTrue();
+    expect(j.data.atTop).toBeFalse();
+  });
+
   it("存在しないチャンネル", async () => {
     const res = await FETCH({
       path: "/channel/get-history/TESTCHANNEL999",

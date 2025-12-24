@@ -341,8 +341,11 @@ export namespace ServiceChannel {
     let atTop = false;
     //取得方向によって判別方法が異なる
     if (fetchDirection === "newer") {
-      //取得した履歴がある場合
-      if (history[0] !== undefined) {
+      if (history.length === 0 && firstMessageOfChannel !== null) {
+        //取得した履歴が空だけど最古のメッセージが存在する場合
+        atTop = false;
+      } else if (history[0] !== undefined && firstMessageOfChannel !== null) {
+        //取得した履歴がある場合
         atTop = firstMessageOfChannel?.id === history.at(-1)?.id;
       } else {
         //取得した履歴がない場合、最初まで取得したと判定
@@ -350,8 +353,11 @@ export namespace ServiceChannel {
       }
       atEnd = history.length < (fetchLength || 30);
     } else {
-      //取得した履歴がある場合
-      if (history[0] !== undefined) {
+      if (history.length === 0 && latestMessageOfChannel !== null) {
+        //取得した履歴が空だけど最新のメッセージが存在する場合
+        atEnd = false;
+      } else if (history[0] !== undefined && latestMessageOfChannel !== null) {
+        //取得した履歴がある場合
         atEnd = latestMessageOfChannel?.id === history[0].id;
       } else {
         //取得した履歴がない場合、最初まで取得したと判定
