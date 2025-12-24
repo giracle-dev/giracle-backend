@@ -1,4 +1,10 @@
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { app } from "../src";
+
+export const adapter = new PrismaLibSql(
+  { url: process.env.DATABASE_URL || "file:./test.db" },
+  { timestampFormat: "unixepoch-ms" }
+);
 
 export async function FETCH({
   path,

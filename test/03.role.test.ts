@@ -1,12 +1,8 @@
 import { beforeAll, describe, expect, it } from "bun:test";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { PrismaClient } from "../prisma/generated/client";
-import { FETCH } from "./util";
+import { adapter, FETCH } from "./util";
 
 beforeAll(async () => {
-  const adapter = new PrismaLibSql({
-    url: process.env.DATABASE_URL || "file:./test.db",
-  });
   const dbTest = new PrismaClient({ adapter });
 
   //ロール管理権限を付与
