@@ -1,12 +1,8 @@
 import { beforeAll, describe, expect, it } from "bun:test";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { PrismaClient } from "../prisma/generated/client";
-import { FETCH } from "./util";
+import { adapter, FETCH } from "./util";
 
 beforeAll(async () => {
-  const adapter = new PrismaLibSql({
-    url: process.env.DATABASE_URL || "file:./test.db",
-  });
   const dbTest = new PrismaClient({ adapter });
   //await dbTest.message.deleteMany({});
   //await dbTest.channel.deleteMany({});
@@ -254,6 +250,38 @@ describe("/channel/get-history/:channelId", async () => {
     const j = await res.json();
     expect(res.ok).toBe(true);
     expect(j.data.history[0].content).toBe("Welcome to the General channel!");
+  });
+
+  it("過去を取得してみる", async () => {
+    const res = await FETCH({
+      path: "/channel/get-history/TESTCHANNEL1",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+        messageTimeFrom: "2001-01-01",
+        fetchDirection: "older"
+      },
+    });
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j.data.atEnd).toBeFalse();
+    expect(j.data.atTop).toBeTrue();
+  });
+
+  it("未来を取得してみる", async () => {
+    const res = await FETCH({
+      path: "/channel/get-history/TESTCHANNEL1",
+      method: "POST",
+      body: {
+        userId: "TESTUSER",
+        messageTimeFrom: "2099-01-01",
+        fetchDirection: "newer"
+      },
+    });
+    const j = await res.json();
+    expect(res.ok).toBe(true);
+    expect(j.data.atEnd).toBeTrue();
+    expect(j.data.atTop).toBeFalse();
   });
 
   it("存在しないチャンネル", async () => {

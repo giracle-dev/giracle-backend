@@ -1,18 +1,11 @@
 import { beforeAll, describe, expect, it } from "bun:test";
 
 import { execSync } from "node:child_process";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { PrismaClient } from "../prisma/generated/client";
 import { app } from "../src";
-import { FETCH } from "./util";
+import { adapter, FETCH } from "./util";
 
 beforeAll(async () => {
-  //インスタンス生成
-  //const app = new Elysia().use(user);
-  //テスト用DBインスタンス生成
-  const adapter = new PrismaLibSql({
-    url: process.env.DATABASE_URL || "file:./test.db",
-  });
   const dbTest = new PrismaClient({ adapter });
   //DBのマイグレーション
   execSync("bunx prisma db push --accept-data-loss");
