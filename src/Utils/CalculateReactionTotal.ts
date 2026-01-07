@@ -33,21 +33,24 @@ export default async function CalculateReactionTotal(
       emojiCode: true, // 各emojiCodeの出現数をカウント
     },
   });
+
+  //対象メッセージにおける自分のリアクションを一括で取得
+  const myReactions = await db.messageReaction.findMany({
+    where: {
+      messageId: messageId,
+      userId: myUserId,
+    },
+  });
+
   //パースして配列にし、参照しやすいように
   for (const react of reactionSummary) {
-    //自分がリアクションしていたかどうかを調べてそれも追加
-    const didYouReact = await db.messageReaction.findFirst({
-      where: {
-        messageId: messageId,
-        emojiCode: react.emojiCode,
-        userId: myUserId,
-      },
-    });
+    //自分のリアクションがあるかどうか
+    const hasMyReaction = myReactions.some((r) => r.emojiCode === react.emojiCode);
     //結果に格納
     emojiTotalJson.push({
       emojiCode: react.emojiCode,
       count: react._count.emojiCode,
-      includingYou: didYouReact !== null,
+      includingYou: hasMyReaction !== null, //自分が入るかどうかをboolで示す
     });
   }
 
