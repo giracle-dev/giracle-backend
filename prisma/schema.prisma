@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client"
-  output  = "./generated/"
+  output   = "./generated/"
 }
 
 datasource db {
@@ -133,6 +133,7 @@ model MessageReaction {
   userId    String
   emojiCode String
   messageId String?
+  reactedAt DateTime @default(now())
   Message   Message? @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)

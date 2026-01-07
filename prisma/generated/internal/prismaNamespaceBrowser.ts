@@ -186,7 +186,8 @@ export const MessageReactionScalarFieldEnum = {
   channelId: 'channelId',
   userId: 'userId',
   emojiCode: 'emojiCode',
-  messageId: 'messageId'
+  messageId: 'messageId',
+  reactedAt: 'reactedAt'
 } as const
 
 export type MessageReactionScalarFieldEnum = (typeof MessageReactionScalarFieldEnum)[keyof typeof MessageReactionScalarFieldEnum]
