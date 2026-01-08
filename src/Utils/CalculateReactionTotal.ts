@@ -25,13 +25,16 @@ export default async function CalculateReactionTotal(
 
   //絵文字リアクションを取得、総合数計算
   const reactionSummary = await db.messageReaction.groupBy({
-    by: ["messageId", "emojiCode"], // messageIdとemojiCodeでグループ化
+    by: ["messageId", "emojiCode", "reactedAt"], // messageIdとemojiCodeでグループ化
     where: {
       messageId: { in: [messageId] }, // 取得したメッセージIDに限定
     },
     _count: {
       emojiCode: true, // 各emojiCodeの出現数をカウント
     },
+    orderBy: {
+      reactedAt: "asc",
+    }
   });
 
   //対象メッセージにおける自分のリアクションを一括で取得
