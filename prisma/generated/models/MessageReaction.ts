@@ -30,6 +30,7 @@ export type MessageReactionMinAggregateOutputType = {
   userId: string | null
   emojiCode: string | null
   messageId: string | null
+  reactedAt: Date | null
 }
 
 export type MessageReactionMaxAggregateOutputType = {
@@ -38,6 +39,7 @@ export type MessageReactionMaxAggregateOutputType = {
   userId: string | null
   emojiCode: string | null
   messageId: string | null
+  reactedAt: Date | null
 }
 
 export type MessageReactionCountAggregateOutputType = {
@@ -46,6 +48,7 @@ export type MessageReactionCountAggregateOutputType = {
   userId: number
   emojiCode: number
   messageId: number
+  reactedAt: number
   _all: number
 }
 
@@ -56,6 +59,7 @@ export type MessageReactionMinAggregateInputType = {
   userId?: true
   emojiCode?: true
   messageId?: true
+  reactedAt?: true
 }
 
 export type MessageReactionMaxAggregateInputType = {
@@ -64,6 +68,7 @@ export type MessageReactionMaxAggregateInputType = {
   userId?: true
   emojiCode?: true
   messageId?: true
+  reactedAt?: true
 }
 
 export type MessageReactionCountAggregateInputType = {
@@ -72,6 +77,7 @@ export type MessageReactionCountAggregateInputType = {
   userId?: true
   emojiCode?: true
   messageId?: true
+  reactedAt?: true
   _all?: true
 }
 
@@ -153,6 +159,7 @@ export type MessageReactionGroupByOutputType = {
   userId: string
   emojiCode: string
   messageId: string | null
+  reactedAt: Date
   _count: MessageReactionCountAggregateOutputType | null
   _min: MessageReactionMinAggregateOutputType | null
   _max: MessageReactionMaxAggregateOutputType | null
@@ -182,6 +189,7 @@ export type MessageReactionWhereInput = {
   userId?: Prisma.StringFilter<"MessageReaction"> | string
   emojiCode?: Prisma.StringFilter<"MessageReaction"> | string
   messageId?: Prisma.StringNullableFilter<"MessageReaction"> | string | null
+  reactedAt?: Prisma.DateTimeFilter<"MessageReaction"> | Date | string
   Message?: Prisma.XOR<Prisma.MessageNullableScalarRelationFilter, Prisma.MessageWhereInput> | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   channel?: Prisma.XOR<Prisma.ChannelScalarRelationFilter, Prisma.ChannelWhereInput>
@@ -193,6 +201,7 @@ export type MessageReactionOrderByWithRelationInput = {
   userId?: Prisma.SortOrder
   emojiCode?: Prisma.SortOrder
   messageId?: Prisma.SortOrderInput | Prisma.SortOrder
+  reactedAt?: Prisma.SortOrder
   Message?: Prisma.MessageOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
   channel?: Prisma.ChannelOrderByWithRelationInput
@@ -207,6 +216,7 @@ export type MessageReactionWhereUniqueInput = Prisma.AtLeast<{
   userId?: Prisma.StringFilter<"MessageReaction"> | string
   emojiCode?: Prisma.StringFilter<"MessageReaction"> | string
   messageId?: Prisma.StringNullableFilter<"MessageReaction"> | string | null
+  reactedAt?: Prisma.DateTimeFilter<"MessageReaction"> | Date | string
   Message?: Prisma.XOR<Prisma.MessageNullableScalarRelationFilter, Prisma.MessageWhereInput> | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   channel?: Prisma.XOR<Prisma.ChannelScalarRelationFilter, Prisma.ChannelWhereInput>
@@ -218,6 +228,7 @@ export type MessageReactionOrderByWithAggregationInput = {
   userId?: Prisma.SortOrder
   emojiCode?: Prisma.SortOrder
   messageId?: Prisma.SortOrderInput | Prisma.SortOrder
+  reactedAt?: Prisma.SortOrder
   _count?: Prisma.MessageReactionCountOrderByAggregateInput
   _max?: Prisma.MessageReactionMaxOrderByAggregateInput
   _min?: Prisma.MessageReactionMinOrderByAggregateInput
@@ -232,11 +243,13 @@ export type MessageReactionScalarWhereWithAggregatesInput = {
   userId?: Prisma.StringWithAggregatesFilter<"MessageReaction"> | string
   emojiCode?: Prisma.StringWithAggregatesFilter<"MessageReaction"> | string
   messageId?: Prisma.StringNullableWithAggregatesFilter<"MessageReaction"> | string | null
+  reactedAt?: Prisma.DateTimeWithAggregatesFilter<"MessageReaction"> | Date | string
 }
 
 export type MessageReactionCreateInput = {
   id?: string
   emojiCode: string
+  reactedAt?: Date | string
   Message?: Prisma.MessageCreateNestedOneWithoutMessageReactionInput
   user: Prisma.UserCreateNestedOneWithoutMessageReactionInput
   channel: Prisma.ChannelCreateNestedOneWithoutMessageReactionInput
@@ -248,11 +261,13 @@ export type MessageReactionUncheckedCreateInput = {
   userId: string
   emojiCode: string
   messageId?: string | null
+  reactedAt?: Date | string
 }
 
 export type MessageReactionUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   emojiCode?: Prisma.StringFieldUpdateOperationsInput | string
+  reactedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   Message?: Prisma.MessageUpdateOneWithoutMessageReactionNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutMessageReactionNestedInput
   channel?: Prisma.ChannelUpdateOneRequiredWithoutMessageReactionNestedInput
@@ -264,6 +279,7 @@ export type MessageReactionUncheckedUpdateInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   emojiCode?: Prisma.StringFieldUpdateOperationsInput | string
   messageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reactedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MessageReactionCreateManyInput = {
@@ -272,11 +288,13 @@ export type MessageReactionCreateManyInput = {
   userId: string
   emojiCode: string
   messageId?: string | null
+  reactedAt?: Date | string
 }
 
 export type MessageReactionUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   emojiCode?: Prisma.StringFieldUpdateOperationsInput | string
+  reactedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MessageReactionUncheckedUpdateManyInput = {
@@ -285,6 +303,7 @@ export type MessageReactionUncheckedUpdateManyInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   emojiCode?: Prisma.StringFieldUpdateOperationsInput | string
   messageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reactedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MessageReactionListRelationFilter = {
@@ -303,6 +322,7 @@ export type MessageReactionCountOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   emojiCode?: Prisma.SortOrder
   messageId?: Prisma.SortOrder
+  reactedAt?: Prisma.SortOrder
 }
 
 export type MessageReactionMaxOrderByAggregateInput = {
@@ -311,6 +331,7 @@ export type MessageReactionMaxOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   emojiCode?: Prisma.SortOrder
   messageId?: Prisma.SortOrder
+  reactedAt?: Prisma.SortOrder
 }
 
 export type MessageReactionMinOrderByAggregateInput = {
@@ -319,6 +340,7 @@ export type MessageReactionMinOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   emojiCode?: Prisma.SortOrder
   messageId?: Prisma.SortOrder
+  reactedAt?: Prisma.SortOrder
 }
 
 export type MessageReactionCreateNestedManyWithoutUserInput = {
@@ -450,6 +472,7 @@ export type MessageReactionUncheckedUpdateManyWithoutMessageNestedInput = {
 export type MessageReactionCreateWithoutUserInput = {
   id?: string
   emojiCode: string
+  reactedAt?: Date | string
   Message?: Prisma.MessageCreateNestedOneWithoutMessageReactionInput
   channel: Prisma.ChannelCreateNestedOneWithoutMessageReactionInput
 }
@@ -459,6 +482,7 @@ export type MessageReactionUncheckedCreateWithoutUserInput = {
   channelId: string
   emojiCode: string
   messageId?: string | null
+  reactedAt?: Date | string
 }
 
 export type MessageReactionCreateOrConnectWithoutUserInput = {
@@ -495,11 +519,13 @@ export type MessageReactionScalarWhereInput = {
   userId?: Prisma.StringFilter<"MessageReaction"> | string
   emojiCode?: Prisma.StringFilter<"MessageReaction"> | string
   messageId?: Prisma.StringNullableFilter<"MessageReaction"> | string | null
+  reactedAt?: Prisma.DateTimeFilter<"MessageReaction"> | Date | string
 }
 
 export type MessageReactionCreateWithoutChannelInput = {
   id?: string
   emojiCode: string
+  reactedAt?: Date | string
   Message?: Prisma.MessageCreateNestedOneWithoutMessageReactionInput
   user: Prisma.UserCreateNestedOneWithoutMessageReactionInput
 }
@@ -509,6 +535,7 @@ export type MessageReactionUncheckedCreateWithoutChannelInput = {
   userId: string
   emojiCode: string
   messageId?: string | null
+  reactedAt?: Date | string
 }
 
 export type MessageReactionCreateOrConnectWithoutChannelInput = {
@@ -539,6 +566,7 @@ export type MessageReactionUpdateManyWithWhereWithoutChannelInput = {
 export type MessageReactionCreateWithoutMessageInput = {
   id?: string
   emojiCode: string
+  reactedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutMessageReactionInput
   channel: Prisma.ChannelCreateNestedOneWithoutMessageReactionInput
 }
@@ -548,6 +576,7 @@ export type MessageReactionUncheckedCreateWithoutMessageInput = {
   channelId: string
   userId: string
   emojiCode: string
+  reactedAt?: Date | string
 }
 
 export type MessageReactionCreateOrConnectWithoutMessageInput = {
@@ -580,11 +609,13 @@ export type MessageReactionCreateManyUserInput = {
   channelId: string
   emojiCode: string
   messageId?: string | null
+  reactedAt?: Date | string
 }
 
 export type MessageReactionUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   emojiCode?: Prisma.StringFieldUpdateOperationsInput | string
+  reactedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   Message?: Prisma.MessageUpdateOneWithoutMessageReactionNestedInput
   channel?: Prisma.ChannelUpdateOneRequiredWithoutMessageReactionNestedInput
 }
@@ -594,6 +625,7 @@ export type MessageReactionUncheckedUpdateWithoutUserInput = {
   channelId?: Prisma.StringFieldUpdateOperationsInput | string
   emojiCode?: Prisma.StringFieldUpdateOperationsInput | string
   messageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reactedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MessageReactionUncheckedUpdateManyWithoutUserInput = {
@@ -601,6 +633,7 @@ export type MessageReactionUncheckedUpdateManyWithoutUserInput = {
   channelId?: Prisma.StringFieldUpdateOperationsInput | string
   emojiCode?: Prisma.StringFieldUpdateOperationsInput | string
   messageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reactedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MessageReactionCreateManyChannelInput = {
@@ -608,11 +641,13 @@ export type MessageReactionCreateManyChannelInput = {
   userId: string
   emojiCode: string
   messageId?: string | null
+  reactedAt?: Date | string
 }
 
 export type MessageReactionUpdateWithoutChannelInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   emojiCode?: Prisma.StringFieldUpdateOperationsInput | string
+  reactedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   Message?: Prisma.MessageUpdateOneWithoutMessageReactionNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutMessageReactionNestedInput
 }
@@ -622,6 +657,7 @@ export type MessageReactionUncheckedUpdateWithoutChannelInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   emojiCode?: Prisma.StringFieldUpdateOperationsInput | string
   messageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reactedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MessageReactionUncheckedUpdateManyWithoutChannelInput = {
@@ -629,6 +665,7 @@ export type MessageReactionUncheckedUpdateManyWithoutChannelInput = {
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   emojiCode?: Prisma.StringFieldUpdateOperationsInput | string
   messageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reactedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MessageReactionCreateManyMessageInput = {
@@ -636,11 +673,13 @@ export type MessageReactionCreateManyMessageInput = {
   channelId: string
   userId: string
   emojiCode: string
+  reactedAt?: Date | string
 }
 
 export type MessageReactionUpdateWithoutMessageInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   emojiCode?: Prisma.StringFieldUpdateOperationsInput | string
+  reactedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutMessageReactionNestedInput
   channel?: Prisma.ChannelUpdateOneRequiredWithoutMessageReactionNestedInput
 }
@@ -650,6 +689,7 @@ export type MessageReactionUncheckedUpdateWithoutMessageInput = {
   channelId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   emojiCode?: Prisma.StringFieldUpdateOperationsInput | string
+  reactedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MessageReactionUncheckedUpdateManyWithoutMessageInput = {
@@ -657,6 +697,7 @@ export type MessageReactionUncheckedUpdateManyWithoutMessageInput = {
   channelId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   emojiCode?: Prisma.StringFieldUpdateOperationsInput | string
+  reactedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -667,6 +708,7 @@ export type MessageReactionSelect<ExtArgs extends runtime.Types.Extensions.Inter
   userId?: boolean
   emojiCode?: boolean
   messageId?: boolean
+  reactedAt?: boolean
   Message?: boolean | Prisma.MessageReaction$MessageArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.ChannelDefaultArgs<ExtArgs>
@@ -678,6 +720,7 @@ export type MessageReactionSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   userId?: boolean
   emojiCode?: boolean
   messageId?: boolean
+  reactedAt?: boolean
   Message?: boolean | Prisma.MessageReaction$MessageArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.ChannelDefaultArgs<ExtArgs>
@@ -689,6 +732,7 @@ export type MessageReactionSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   userId?: boolean
   emojiCode?: boolean
   messageId?: boolean
+  reactedAt?: boolean
   Message?: boolean | Prisma.MessageReaction$MessageArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   channel?: boolean | Prisma.ChannelDefaultArgs<ExtArgs>
@@ -700,9 +744,10 @@ export type MessageReactionSelectScalar = {
   userId?: boolean
   emojiCode?: boolean
   messageId?: boolean
+  reactedAt?: boolean
 }
 
-export type MessageReactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "channelId" | "userId" | "emojiCode" | "messageId", ExtArgs["result"]["messageReaction"]>
+export type MessageReactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "channelId" | "userId" | "emojiCode" | "messageId" | "reactedAt", ExtArgs["result"]["messageReaction"]>
 export type MessageReactionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   Message?: boolean | Prisma.MessageReaction$MessageArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -732,6 +777,7 @@ export type $MessageReactionPayload<ExtArgs extends runtime.Types.Extensions.Int
     userId: string
     emojiCode: string
     messageId: string | null
+    reactedAt: Date
   }, ExtArgs["result"]["messageReaction"]>
   composites: {}
 }
@@ -1163,6 +1209,7 @@ export interface MessageReactionFieldRefs {
   readonly userId: Prisma.FieldRef<"MessageReaction", 'String'>
   readonly emojiCode: Prisma.FieldRef<"MessageReaction", 'String'>
   readonly messageId: Prisma.FieldRef<"MessageReaction", 'String'>
+  readonly reactedAt: Prisma.FieldRef<"MessageReaction", 'DateTime'>
 }
     
 

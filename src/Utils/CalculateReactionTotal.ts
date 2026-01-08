@@ -25,29 +25,35 @@ export default async function CalculateReactionTotal(
 
   //絵文字リアクションを取得、総合数計算
   const reactionSummary = await db.messageReaction.groupBy({
-    by: ["messageId", "emojiCode"], // messageIdとemojiCodeでグループ化
+    by: ["messageId", "emojiCode", "reactedAt"], // messageIdとemojiCodeでグループ化
     where: {
       messageId: { in: [messageId] }, // 取得したメッセージIDに限定
     },
     _count: {
       emojiCode: true, // 各emojiCodeの出現数をカウント
     },
+    orderBy: {
+      reactedAt: "asc",
+    }
   });
+
+  //対象メッセージにおける自分のリアクションを一括で取得
+  const myReactions = await db.messageReaction.findMany({
+    where: {
+      messageId: messageId,
+      userId: myUserId,
+    },
+  });
+
   //パースして配列にし、参照しやすいように
   for (const react of reactionSummary) {
-    //自分がリアクションしていたかどうかを調べてそれも追加
-    const didYouReact = await db.messageReaction.findFirst({
-      where: {
-        messageId: messageId,
-        emojiCode: react.emojiCode,
-        userId: myUserId,
-      },
-    });
+    //自分のリアクションがあるかどうか
+    const hasMyReaction = myReactions.some((r) => r.emojiCode === react.emojiCode);
     //結果に格納
     emojiTotalJson.push({
       emojiCode: react.emojiCode,
       count: react._count.emojiCode,
-      includingYou: didYouReact !== null,
+      includingYou: hasMyReaction !== null, //自分が入るかどうかをboolで示す
     });
   }
 
