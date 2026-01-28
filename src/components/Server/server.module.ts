@@ -1,9 +1,4 @@
-import fs from "node:fs";
-import { unlink } from "node:fs/promises";
-import * as path from "node:path";
 import Elysia, { status, t } from "elysia";
-import sharp from "sharp";
-import { db } from "../..";
 import CheckToken, { checkRoleTerm } from "../../Middlewares";
 import { ServiceServer } from "./server.service";
 
@@ -145,6 +140,7 @@ export const server = new Elysia({ prefix: "/server" })
         RegisterInviteOnly,
         RegisterAnnounceChannelId,
         MessageMaxLength,
+        MessageMaxFileSize,
         DefaultJoinChannel,
       },
       server,
@@ -154,6 +150,7 @@ export const server = new Elysia({ prefix: "/server" })
         RegisterInviteOnly,
         RegisterAnnounceChannelId,
         MessageMaxLength,
+        MessageMaxFileSize,
         DefaultJoinChannel,
       );
 
@@ -177,6 +174,7 @@ export const server = new Elysia({ prefix: "/server" })
         RegisterInviteOnly: t.Optional(t.Boolean()),
         RegisterAnnounceChannelId: t.Optional(t.String()),
         MessageMaxLength: t.Optional(t.Number()),
+        MessageMaxFileSize: t.Optional(t.Number()),
         DefaultJoinChannel: t.Optional(t.Array(t.String())),
       }),
       detail: {

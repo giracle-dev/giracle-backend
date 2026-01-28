@@ -242,4 +242,5 @@ model ServerConfig {
   RegisterInviteOnly        Boolean @default(true)
   RegisterAnnounceChannelId String  @default("")
   MessageMaxLength          Int     @default(3000)
+  MessageMaxFileSize        Int     @default(512000)
 }

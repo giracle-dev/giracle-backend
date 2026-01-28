@@ -287,7 +287,8 @@ export const ServerConfigScalarFieldEnum = {
   RegisterAvailable: 'RegisterAvailable',
   RegisterInviteOnly: 'RegisterInviteOnly',
   RegisterAnnounceChannelId: 'RegisterAnnounceChannelId',
-  MessageMaxLength: 'MessageMaxLength'
+  MessageMaxLength: 'MessageMaxLength',
+  MessageMaxFileSize: 'MessageMaxFileSize'
 } as const
 
 export type ServerConfigScalarFieldEnum = (typeof ServerConfigScalarFieldEnum)[keyof typeof ServerConfigScalarFieldEnum]

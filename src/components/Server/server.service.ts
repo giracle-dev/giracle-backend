@@ -92,6 +92,7 @@ export namespace ServiceServer {
     RegisterInviteOnly?: boolean,
     RegisterAnnounceChannelId?: string,
     MessageMaxLength?: number,
+    MessageMaxFileSize?: number,
     DefaultJoinChannel?: string[],
   ) => {
     const serverinfo = await db.serverConfig.updateManyAndReturn({
@@ -100,6 +101,7 @@ export namespace ServiceServer {
         RegisterInviteOnly,
         RegisterAnnounceChannelId,
         MessageMaxLength,
+        MessageMaxFileSize,
       },
     });
 
