@@ -140,6 +140,7 @@ export const server = new Elysia({ prefix: "/server" })
         RegisterInviteOnly,
         RegisterAnnounceChannelId,
         MessageMaxLength,
+        MessageMaxFileSize,
         DefaultJoinChannel,
       },
       server,
@@ -149,6 +150,7 @@ export const server = new Elysia({ prefix: "/server" })
         RegisterInviteOnly,
         RegisterAnnounceChannelId,
         MessageMaxLength,
+        MessageMaxFileSize,
         DefaultJoinChannel,
       );
 
@@ -172,6 +174,7 @@ export const server = new Elysia({ prefix: "/server" })
         RegisterInviteOnly: t.Optional(t.Boolean()),
         RegisterAnnounceChannelId: t.Optional(t.String()),
         MessageMaxLength: t.Optional(t.Number()),
+        MessageMaxFileSize: t.Optional(t.Number()),
         DefaultJoinChannel: t.Optional(t.Array(t.String())),
       }),
       detail: {
