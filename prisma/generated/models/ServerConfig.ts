@@ -29,11 +29,13 @@ export type AggregateServerConfig = {
 export type ServerConfigAvgAggregateOutputType = {
   id: number | null
   MessageMaxLength: number | null
+  MessageMaxFileSize: number | null
 }
 
 export type ServerConfigSumAggregateOutputType = {
   id: number | null
   MessageMaxLength: number | null
+  MessageMaxFileSize: number | null
 }
 
 export type ServerConfigMinAggregateOutputType = {
@@ -44,6 +46,7 @@ export type ServerConfigMinAggregateOutputType = {
   RegisterInviteOnly: boolean | null
   RegisterAnnounceChannelId: string | null
   MessageMaxLength: number | null
+  MessageMaxFileSize: number | null
 }
 
 export type ServerConfigMaxAggregateOutputType = {
@@ -54,6 +57,7 @@ export type ServerConfigMaxAggregateOutputType = {
   RegisterInviteOnly: boolean | null
   RegisterAnnounceChannelId: string | null
   MessageMaxLength: number | null
+  MessageMaxFileSize: number | null
 }
 
 export type ServerConfigCountAggregateOutputType = {
@@ -64,6 +68,7 @@ export type ServerConfigCountAggregateOutputType = {
   RegisterInviteOnly: number
   RegisterAnnounceChannelId: number
   MessageMaxLength: number
+  MessageMaxFileSize: number
   _all: number
 }
 
@@ -71,11 +76,13 @@ export type ServerConfigCountAggregateOutputType = {
 export type ServerConfigAvgAggregateInputType = {
   id?: true
   MessageMaxLength?: true
+  MessageMaxFileSize?: true
 }
 
 export type ServerConfigSumAggregateInputType = {
   id?: true
   MessageMaxLength?: true
+  MessageMaxFileSize?: true
 }
 
 export type ServerConfigMinAggregateInputType = {
@@ -86,6 +93,7 @@ export type ServerConfigMinAggregateInputType = {
   RegisterInviteOnly?: true
   RegisterAnnounceChannelId?: true
   MessageMaxLength?: true
+  MessageMaxFileSize?: true
 }
 
 export type ServerConfigMaxAggregateInputType = {
@@ -96,6 +104,7 @@ export type ServerConfigMaxAggregateInputType = {
   RegisterInviteOnly?: true
   RegisterAnnounceChannelId?: true
   MessageMaxLength?: true
+  MessageMaxFileSize?: true
 }
 
 export type ServerConfigCountAggregateInputType = {
@@ -106,6 +115,7 @@ export type ServerConfigCountAggregateInputType = {
   RegisterInviteOnly?: true
   RegisterAnnounceChannelId?: true
   MessageMaxLength?: true
+  MessageMaxFileSize?: true
   _all?: true
 }
 
@@ -203,6 +213,7 @@ export type ServerConfigGroupByOutputType = {
   RegisterInviteOnly: boolean
   RegisterAnnounceChannelId: string
   MessageMaxLength: number
+  MessageMaxFileSize: number
   _count: ServerConfigCountAggregateOutputType | null
   _avg: ServerConfigAvgAggregateOutputType | null
   _sum: ServerConfigSumAggregateOutputType | null
@@ -236,6 +247,7 @@ export type ServerConfigWhereInput = {
   RegisterInviteOnly?: Prisma.BoolFilter<"ServerConfig"> | boolean
   RegisterAnnounceChannelId?: Prisma.StringFilter<"ServerConfig"> | string
   MessageMaxLength?: Prisma.IntFilter<"ServerConfig"> | number
+  MessageMaxFileSize?: Prisma.IntFilter<"ServerConfig"> | number
 }
 
 export type ServerConfigOrderByWithRelationInput = {
@@ -246,6 +258,7 @@ export type ServerConfigOrderByWithRelationInput = {
   RegisterInviteOnly?: Prisma.SortOrder
   RegisterAnnounceChannelId?: Prisma.SortOrder
   MessageMaxLength?: Prisma.SortOrder
+  MessageMaxFileSize?: Prisma.SortOrder
 }
 
 export type ServerConfigWhereUniqueInput = Prisma.AtLeast<{
@@ -259,6 +272,7 @@ export type ServerConfigWhereUniqueInput = Prisma.AtLeast<{
   RegisterInviteOnly?: Prisma.BoolFilter<"ServerConfig"> | boolean
   RegisterAnnounceChannelId?: Prisma.StringFilter<"ServerConfig"> | string
   MessageMaxLength?: Prisma.IntFilter<"ServerConfig"> | number
+  MessageMaxFileSize?: Prisma.IntFilter<"ServerConfig"> | number
 }, "id">
 
 export type ServerConfigOrderByWithAggregationInput = {
@@ -269,6 +283,7 @@ export type ServerConfigOrderByWithAggregationInput = {
   RegisterInviteOnly?: Prisma.SortOrder
   RegisterAnnounceChannelId?: Prisma.SortOrder
   MessageMaxLength?: Prisma.SortOrder
+  MessageMaxFileSize?: Prisma.SortOrder
   _count?: Prisma.ServerConfigCountOrderByAggregateInput
   _avg?: Prisma.ServerConfigAvgOrderByAggregateInput
   _max?: Prisma.ServerConfigMaxOrderByAggregateInput
@@ -287,6 +302,7 @@ export type ServerConfigScalarWhereWithAggregatesInput = {
   RegisterInviteOnly?: Prisma.BoolWithAggregatesFilter<"ServerConfig"> | boolean
   RegisterAnnounceChannelId?: Prisma.StringWithAggregatesFilter<"ServerConfig"> | string
   MessageMaxLength?: Prisma.IntWithAggregatesFilter<"ServerConfig"> | number
+  MessageMaxFileSize?: Prisma.IntWithAggregatesFilter<"ServerConfig"> | number
 }
 
 export type ServerConfigCreateInput = {
@@ -296,6 +312,7 @@ export type ServerConfigCreateInput = {
   RegisterInviteOnly?: boolean
   RegisterAnnounceChannelId?: string
   MessageMaxLength?: number
+  MessageMaxFileSize?: number
 }
 
 export type ServerConfigUncheckedCreateInput = {
@@ -306,6 +323,7 @@ export type ServerConfigUncheckedCreateInput = {
   RegisterInviteOnly?: boolean
   RegisterAnnounceChannelId?: string
   MessageMaxLength?: number
+  MessageMaxFileSize?: number
 }
 
 export type ServerConfigUpdateInput = {
@@ -315,6 +333,7 @@ export type ServerConfigUpdateInput = {
   RegisterInviteOnly?: Prisma.BoolFieldUpdateOperationsInput | boolean
   RegisterAnnounceChannelId?: Prisma.StringFieldUpdateOperationsInput | string
   MessageMaxLength?: Prisma.IntFieldUpdateOperationsInput | number
+  MessageMaxFileSize?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type ServerConfigUncheckedUpdateInput = {
@@ -325,6 +344,7 @@ export type ServerConfigUncheckedUpdateInput = {
   RegisterInviteOnly?: Prisma.BoolFieldUpdateOperationsInput | boolean
   RegisterAnnounceChannelId?: Prisma.StringFieldUpdateOperationsInput | string
   MessageMaxLength?: Prisma.IntFieldUpdateOperationsInput | number
+  MessageMaxFileSize?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type ServerConfigCreateManyInput = {
@@ -335,6 +355,7 @@ export type ServerConfigCreateManyInput = {
   RegisterInviteOnly?: boolean
   RegisterAnnounceChannelId?: string
   MessageMaxLength?: number
+  MessageMaxFileSize?: number
 }
 
 export type ServerConfigUpdateManyMutationInput = {
@@ -344,6 +365,7 @@ export type ServerConfigUpdateManyMutationInput = {
   RegisterInviteOnly?: Prisma.BoolFieldUpdateOperationsInput | boolean
   RegisterAnnounceChannelId?: Prisma.StringFieldUpdateOperationsInput | string
   MessageMaxLength?: Prisma.IntFieldUpdateOperationsInput | number
+  MessageMaxFileSize?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type ServerConfigUncheckedUpdateManyInput = {
@@ -354,6 +376,7 @@ export type ServerConfigUncheckedUpdateManyInput = {
   RegisterInviteOnly?: Prisma.BoolFieldUpdateOperationsInput | boolean
   RegisterAnnounceChannelId?: Prisma.StringFieldUpdateOperationsInput | string
   MessageMaxLength?: Prisma.IntFieldUpdateOperationsInput | number
+  MessageMaxFileSize?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type ServerConfigCountOrderByAggregateInput = {
@@ -364,11 +387,13 @@ export type ServerConfigCountOrderByAggregateInput = {
   RegisterInviteOnly?: Prisma.SortOrder
   RegisterAnnounceChannelId?: Prisma.SortOrder
   MessageMaxLength?: Prisma.SortOrder
+  MessageMaxFileSize?: Prisma.SortOrder
 }
 
 export type ServerConfigAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   MessageMaxLength?: Prisma.SortOrder
+  MessageMaxFileSize?: Prisma.SortOrder
 }
 
 export type ServerConfigMaxOrderByAggregateInput = {
@@ -379,6 +404,7 @@ export type ServerConfigMaxOrderByAggregateInput = {
   RegisterInviteOnly?: Prisma.SortOrder
   RegisterAnnounceChannelId?: Prisma.SortOrder
   MessageMaxLength?: Prisma.SortOrder
+  MessageMaxFileSize?: Prisma.SortOrder
 }
 
 export type ServerConfigMinOrderByAggregateInput = {
@@ -389,11 +415,13 @@ export type ServerConfigMinOrderByAggregateInput = {
   RegisterInviteOnly?: Prisma.SortOrder
   RegisterAnnounceChannelId?: Prisma.SortOrder
   MessageMaxLength?: Prisma.SortOrder
+  MessageMaxFileSize?: Prisma.SortOrder
 }
 
 export type ServerConfigSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   MessageMaxLength?: Prisma.SortOrder
+  MessageMaxFileSize?: Prisma.SortOrder
 }
 
 
@@ -406,6 +434,7 @@ export type ServerConfigSelect<ExtArgs extends runtime.Types.Extensions.Internal
   RegisterInviteOnly?: boolean
   RegisterAnnounceChannelId?: boolean
   MessageMaxLength?: boolean
+  MessageMaxFileSize?: boolean
 }, ExtArgs["result"]["serverConfig"]>
 
 export type ServerConfigSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -416,6 +445,7 @@ export type ServerConfigSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   RegisterInviteOnly?: boolean
   RegisterAnnounceChannelId?: boolean
   MessageMaxLength?: boolean
+  MessageMaxFileSize?: boolean
 }, ExtArgs["result"]["serverConfig"]>
 
 export type ServerConfigSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -426,6 +456,7 @@ export type ServerConfigSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   RegisterInviteOnly?: boolean
   RegisterAnnounceChannelId?: boolean
   MessageMaxLength?: boolean
+  MessageMaxFileSize?: boolean
 }, ExtArgs["result"]["serverConfig"]>
 
 export type ServerConfigSelectScalar = {
@@ -436,9 +467,10 @@ export type ServerConfigSelectScalar = {
   RegisterInviteOnly?: boolean
   RegisterAnnounceChannelId?: boolean
   MessageMaxLength?: boolean
+  MessageMaxFileSize?: boolean
 }
 
-export type ServerConfigOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "introduction" | "RegisterAvailable" | "RegisterInviteOnly" | "RegisterAnnounceChannelId" | "MessageMaxLength", ExtArgs["result"]["serverConfig"]>
+export type ServerConfigOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "introduction" | "RegisterAvailable" | "RegisterInviteOnly" | "RegisterAnnounceChannelId" | "MessageMaxLength" | "MessageMaxFileSize", ExtArgs["result"]["serverConfig"]>
 
 export type $ServerConfigPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ServerConfig"
@@ -451,6 +483,7 @@ export type $ServerConfigPayload<ExtArgs extends runtime.Types.Extensions.Intern
     RegisterInviteOnly: boolean
     RegisterAnnounceChannelId: string
     MessageMaxLength: number
+    MessageMaxFileSize: number
   }, ExtArgs["result"]["serverConfig"]>
   composites: {}
 }
@@ -881,6 +914,7 @@ export interface ServerConfigFieldRefs {
   readonly RegisterInviteOnly: Prisma.FieldRef<"ServerConfig", 'Boolean'>
   readonly RegisterAnnounceChannelId: Prisma.FieldRef<"ServerConfig", 'String'>
   readonly MessageMaxLength: Prisma.FieldRef<"ServerConfig", 'Int'>
+  readonly MessageMaxFileSize: Prisma.FieldRef<"ServerConfig", 'Int'>
 }
     
 
