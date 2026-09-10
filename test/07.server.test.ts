@@ -238,6 +238,7 @@ describe("PUT /server/bot", () => {
       method: "PUT",
       body: {
         name: "newBot",
+        description: "This is a new bot",
         canFetchUserinfo: true,
         canManageUser: true,
         permissionChannelIds: ["TESTCHANNEL1"],
@@ -245,6 +246,7 @@ describe("PUT /server/bot", () => {
     });
     const j = await res.json();
     expect(j.data.botName).toBe("newBot");
+    expect(j.data.botDescription).toBe("This is a new bot");
     expect(j.data.useAllChannel).toBeFalse();
     expect(j.data.canFetchUserinfo).toBeTrue();
 
@@ -465,7 +467,6 @@ describe("PATCH /server/bot", () => {
       body: { botId: "TESTBOT1", description: "testing new description" },
     });
     const j = await res.json();
-    console.log("07.server :: PATCH /server/bot : ", j);
     expect(res.ok).toBe(true);
     expect(j.data.id).toBe("TESTBOT1");
     expect(j.data.botDescription).toBe("testing new description");
