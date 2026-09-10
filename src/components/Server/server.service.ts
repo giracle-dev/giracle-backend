@@ -6,6 +6,9 @@ import { status } from "elysia";
 import sharp from "sharp";
 import { db, GIRACLE_SERVER_CONFIG } from "../..";
 import {
+  type BotManage,
+  botChannelPermissions,
+  botManages,
   channelJoinOnDefaults,
   customEmojis,
   invitations,
@@ -13,6 +16,8 @@ import {
   serverConfigs,
   users,
 } from "../../db/schema";
+import CheckChannelVisibility from "../../Utils/CheckChannelVisibility";
+import { WSDisconnectUser } from "../../ws";
 
 export namespace ServiceServer {
   export const Config = async () => {
@@ -53,6 +58,207 @@ export namespace ServiceServer {
     }
 
     throw status(404, "Banner not found");
+  };
+
+  export const GetBotMe = async (userId: string, cursorBotId?: string) => {
+    let queryFromCursor: SQL | undefined;
+    if (cursorBotId) {
+      const cursorBot = db
+        .select({ createdAt: botManages.createdAt })
+        .from(botManages)
+        .where(eq(botManages.id, cursorBotId))
+        .get();
+      if (cursorBot === undefined)
+        throw status(400, "Cursor bot does not exists");
+      queryFromCursor = or(
+        lt(botManages.createdAt, cursorBot.createdAt),
+        and(
+          eq(botManages.createdAt, cursorBot.createdAt),
+          lt(botManages.id, cursorBotId),
+        ),
+      );
+    }
+
+    const mybot = await db
+      .select({
+        id: botManages.id,
+        botName: botManages.botName,
+        createdAt: botManages.createdAt,
+        createdBy: botManages.createdBy,
+      })
+      .from(botManages)
+      .where(and(queryFromCursor, eq(botManages.createdBy, userId)))
+      .limit(50)
+      .orderBy(desc(botManages.createdAt), desc(botManages.id));
+
+    return mybot;
+  };
+
+  export const PutBot = async (
+    name: string,
+    description: string | undefined = undefined,
+    _userId: string,
+    permissionChannelIds: string[] = [],
+    useAllChannel: boolean = false,
+    permissionConfig: {
+      canFetchUserinfo?: boolean;
+      canFetchRoleinfo?: boolean;
+      canManageUser?: boolean;
+      canManageServerConfig?: boolean;
+      canReadMessage?: boolean;
+      canSendMessage?: boolean;
+    },
+  ) => {
+    if (!GIRACLE_SERVER_CONFIG.BotEnabled) {
+      throw status(400, "Using or creating bot is not allowed");
+    }
+    //チャンネル全透過じゃないならチャンネル検査
+    if (!useAllChannel) {
+      if (permissionChannelIds.length > 100) {
+        throw status(400, "Too many channels to listen");
+      }
+      //TODO: どうにかしたい
+      for (const channelId of permissionChannelIds) {
+        if (!(await CheckChannelVisibility(channelId, _userId)))
+          throw status(400, "You cannot use a channel you cannot see");
+      }
+    }
+
+    let botCreated: BotManage | undefined;
+    await db.transaction(async (trx) => {
+      const [userForBot] = await trx
+        .insert(users)
+        .values({
+          name,
+          selfIntroduction: "I am a bot",
+          isBot: true,
+        })
+        .returning();
+
+      const [bot] = await trx
+        .insert(botManages)
+        .values({
+          botName: name,
+          botDescription: description,
+          createdBy: _userId,
+          remoteUserId: userForBot.id,
+          approveStatus: "PENDING",
+          useAllChannel: useAllChannel,
+          ...permissionConfig,
+        })
+        .returning();
+      if (bot === undefined) throw status(500, "Bot creation failed");
+
+      //チャンネル登録
+      if (!useAllChannel && permissionChannelIds.length !== 0) {
+        await trx.insert(botChannelPermissions).values(
+          permissionChannelIds.map((channelId) => {
+            return {
+              botId: bot.id,
+              channelId: channelId,
+            };
+          }),
+        );
+      }
+
+      botCreated = { ...bot };
+    });
+    return botCreated;
+  };
+
+  export const DeleteBot = async (botId: string, _userId: string) => {
+    const [bot] = await db
+      .select({ remoteUserId: botManages.remoteUserId })
+      .from(botManages)
+      .where(and(eq(botManages.id, botId), eq(botManages.createdBy, _userId)));
+    if (bot === undefined) throw status(404, "Bot not found");
+
+    await db.transaction(async (trx) => {
+      await trx.delete(botManages).where(eq(botManages.id, botId));
+      await trx
+        .update(users)
+        .set({ isDeleted: true })
+        .where(eq(users.id, bot.remoteUserId));
+    });
+
+    //削除済みBotのWS接続を切断(接続し続けるとpublishを受け取れ続ける)
+    WSDisconnectUser(bot.remoteUserId, "bot was deleted");
+
+    return true;
+  };
+
+  export const PatchBot = async (
+    botId: string,
+    _userId: string,
+    updateValue: {
+      name?: string;
+      description?: string;
+      canFetchUserinfo?: boolean;
+      canFetchRoleinfo?: boolean;
+      canManageUser?: boolean;
+      canManageServerConfig?: boolean;
+      canReadMessage?: boolean;
+      canSendMessage?: boolean;
+    },
+  ) => {
+    const currentBot = db
+      .select({
+        botName: botManages.botName,
+        canFetchUserinfo: botManages.canFetchUserinfo,
+        canFetchRoleinfo: botManages.canFetchRoleinfo,
+        canManageUser: botManages.canManageUser,
+        canManageServerConfig: botManages.canManageServerConfig,
+        canReadMessage: botManages.canReadMessage,
+        canSendMessage: botManages.canSendMessage,
+      })
+      .from(botManages)
+      .where(and(eq(botManages.id, botId), eq(botManages.createdBy, _userId)))
+      .get();
+    if (currentBot === undefined) {
+      throw status(404, "Bot not found");
+    }
+
+    const { botName: currentBotName, ...currentBotPermissions } = currentBot;
+    const { name, description, ...permissions } = updateValue;
+
+    //許可設定かBot名を変えているなら再申請扱いにして審査状況を初期化
+    const permissionChanged = (
+      Object.keys(
+        currentBotPermissions,
+      ) as (keyof typeof currentBotPermissions)[]
+    ).some(
+      (key) =>
+        permissions[key] !== undefined && // updateValueで未指定の権限は差分に数えない
+        permissions[key] !== currentBotPermissions[key],
+    );
+    const needsReapproval =
+      name !== undefined && (name !== currentBotName || permissionChanged);
+
+    const [bot] = await db
+      .update(botManages)
+      .set({
+        botName: name,
+        botDescription: description,
+        approveStatus: needsReapproval ? "PENDING" : undefined,
+        ...permissions,
+      })
+      .where(and(eq(botManages.id, botId), eq(botManages.createdBy, _userId)))
+      .returning()
+      .catch((e) => {
+        if (
+          e instanceof Error &&
+          e.message.includes("UNIQUE constraint failed")
+        ) {
+          throw status(400, "Bot name already exists");
+        }
+        throw status(500, "Database error");
+      });
+    if (bot === undefined) {
+      throw status(500, "Bot data should be available");
+    }
+
+    const { tokenCode, ...botTrimmed } = bot;
+    return botTrimmed;
   };
 
   export const GetInvite = async () => {
@@ -421,5 +627,59 @@ export namespace ServiceServer {
       group: logByGroup,
       firstDayLog: includeFirstDayLogs ? await GetLogs(weekStart) : undefined,
     };
+  };
+
+  export const GetBot = async (cursorBotId?: string) => {
+    let queryFromCursor: SQL | undefined;
+    if (cursorBotId) {
+      const cursorBot = db
+        .select({ createdAt: botManages.createdAt })
+        .from(botManages)
+        .where(eq(botManages.id, cursorBotId))
+        .get();
+      if (cursorBot === undefined)
+        throw status(400, "Cursor bot does not exists");
+      queryFromCursor = or(
+        lt(botManages.createdAt, cursorBot.createdAt),
+        and(
+          eq(botManages.createdAt, cursorBot.createdAt),
+          lt(botManages.id, cursorBotId),
+        ),
+      );
+    }
+
+    const bot = await db
+      .select({
+        id: botManages.id,
+        botName: botManages.botName,
+        createdAt: botManages.createdAt,
+        createdBy: botManages.createdBy,
+      })
+      .from(botManages)
+      .where(queryFromCursor)
+      .limit(50)
+      //新しい順で取得する
+      .orderBy(desc(botManages.createdAt), desc(botManages.id));
+
+    return bot;
+  };
+
+  export const PatchBotApproval = async (
+    botId: string,
+    approvalStatus: BotManage["approveStatus"],
+  ) => {
+    const [botManageUpdated] = await db
+      .update(botManages)
+      .set({
+        approveStatus: approvalStatus,
+      })
+      .where(eq(botManages.id, botId))
+      .returning({ id: botManages.id });
+
+    if (botManageUpdated === undefined) {
+      throw status(404, "Bot not found");
+    }
+
+    return botManageUpdated.id;
   };
 }
